@@ -1,0 +1,20 @@
+[package]
+name = "flow-sdk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+prost = "0.8.0" # protobuf library
+prost-types = "0.8.0" # protobuf well-known types for prost
+tonic = "0.5.2" # gRPC library
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] } # async runtime for examples
+
+[build-dependencies]
+prost-build = "0.8.0" # for generating Rust code from .proto files
+which = "4.2.2" # for finding protoc binary on musl targets
+
+[[example]]
+name = "helloworld"
+path = "examples/helloworld.rs"
