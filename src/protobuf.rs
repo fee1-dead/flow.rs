@@ -1,15 +1,18 @@
-include!("../proto_defs.rs");
 
-macro_rules! import_pkgs {
-    ($($pkg:ident),+$(,)?) => {
-        $(
-            pub mod $pkg {
-                include!(concat!(env!("OUT_DIR"), "/flow.", stringify!($pkg), ".rs"));
-            }
-        )+
-    };
-}
+pub mod access {
+    use otopr::{EncodableMessage, DecodableMessage};
 
-proto_pkgs! {
-    import_pkgs;
+    use crate::requests::FlowRequest;
+
+    #[derive(EncodableMessage)]
+    pub struct PingRequest;
+
+    impl FlowRequest<PingResponse> for PingRequest {
+        const PATH: &'static str = "/flow.access.AccessAPI/Ping";
+    }
+
+    impl crate::requests::private::Sealed for PingRequest {}
+
+    #[derive(DecodableMessage, Default)]
+    pub struct PingResponse;
 }

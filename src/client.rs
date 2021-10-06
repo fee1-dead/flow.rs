@@ -1,7 +1,9 @@
-use std::{error::Error, future::Future, pin::Pin};
+use std::{error::Error, future::Future, marker::PhantomData, pin::Pin};
 
-use prost::Message;
+use otopr::{decoding::DecodableMessage, traits::EncodableMessage};
 use tonic::{Request, body::BoxBody, client::{Grpc, GrpcService}, codec::ProstCodec, codegen::{Body, http::uri::PathAndQuery}, transport::Channel};
+
+use crate::codec::OtoprCodec;
 
 /// A gRPC client.
 ///
@@ -21,8 +23,8 @@ pub type TonicHyperFlowClient = TonicFlowClient<Channel>;
 
 impl<'a, I, O, Service> GrpcClient<I, O> for &'a mut Grpc<Service>
     where
-        I: FlowRequest<O> + Send + 'static,
-        O: Message + Send + Default + 'static,
+        I: FlowRequest<O> + Send + Sync + 'static,
+        O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
         Service: GrpcService<BoxBody> + 'static,
         Service::ResponseBody: Body + Send + Sync + 'static,
         <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>, 
@@ -35,7 +37,7 @@ impl<'a, I, O, Service> GrpcClient<I, O> for &'a mut Grpc<Service>
                 self.unary(
                     Request::new(input), 
                     PathAndQuery::from_static(I::PATH), 
-                    ProstCodec::default()
+                    OtoprCodec::default()
                 ).await?
             )
         })
@@ -68,11 +70,6 @@ impl<Inner> FlowClient<Inner> {
         /// Shortcut for `self.send(PingRequest {})`.
         pub fn ping() PingRequest => PingResponse {
             PingRequest {}
-        }
-
-        /// Returns information of the latest block.
-        pub fn latest_block_header(is_sealed: bool) GetLatestBlockHeaderRequest => BlockHeaderResponse {
-            GetLatestBlockHeaderRequest { is_sealed }
         }
     }
 }

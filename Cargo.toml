@@ -4,16 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-prost = "0.8.0" # protobuf library
-prost-types = "0.8.0" # protobuf well-known types for prost
+otopr = "0.1.3" # protobuf library
+# prost-types = "0.8.0" # protobuf well-known types for prost
 tonic = "0.5.2" # gRPC library
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples
 
-[build-dependencies]
-prost-build = "0.8.0" # for generating Rust code from .proto files
-which = "4.2.2" # for finding protoc binary on musl targets
+#[build-dependencies]
+#prost-build = "0.8.0" # for generating Rust code from .proto files
+#prost-types = "0.8.0" # for parsing file descriptors
+#which = "4.2.2" # for finding protoc binary on musl targets
+#tempfile = "3.2.0" # for outputting protoc file descriptors
 
 [[example]]
 name = "helloworld"

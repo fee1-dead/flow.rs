@@ -3,10 +3,10 @@ use std::env::{var, set_var};
 use std::error::Error;
 use std::fs::{ReadDir, read_dir};
 use std::path::PathBuf;
-use prost_build::{Config, ServiceGenerator};
+//use prost_build::{Config, ServiceGenerator};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    println!("cargo:rerun-if-changed=protobuf");
+fn main()/* -> Result<(), Box<dyn Error>>*/ {
+  /*  println!("cargo:rerun-if-changed=protobuf");
     println!("cargo:rerun-if-env-changed=PROTOC");
     println!("cargo:rerun-if-env-changed=PROTOC_INCLUDE");
 
@@ -31,13 +31,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         Ok(())
     }
+    let tmp = tempfile::Builder::new().prefix("prost-build").tempdir()?;
+    let descriptor_set = tmp.path().join("prost-descriptor-set");
 
-    Config::new().service_generator(Box::new(FlowServiceGenerator)).compile_protos(&files, &["protobuf/"])?;
+    Config::new()
+        .service_generator(Box::new(FlowServiceGenerator))
+        .file_descriptor_set_path(descriptor_set)
+        .compile_protos(&files, &["protobuf/"])?;
 
-    Ok(())
+    Ok(())*/
 }
 
-pub struct FlowServiceGenerator;
+/*pub struct FlowServiceGenerator;
 
 impl ServiceGenerator for FlowServiceGenerator {
     fn generate(&mut self, service: prost_build::Service, buf: &mut String) {
@@ -65,4 +70,4 @@ impl ServiceGenerator for FlowServiceGenerator {
             ))
         }
     }
-}
+}*/
