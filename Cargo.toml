@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-otopr = "0.1.4" # protobuf library
+otopr = "0.1.5" # protobuf library
 # prost-types = "0.8.0" # protobuf well-known types for prost
 tonic = "0.5.2" # gRPC library
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples
+chrono = "0.4.19" # Date and time library
 
 #[build-dependencies]
 #prost-build = "0.8.0" # for generating Rust code from .proto files
