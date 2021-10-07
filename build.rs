@@ -1,12 +1,13 @@
 use std::collections::HashSet;
-use std::env::{var, set_var};
+use std::env::{set_var, var};
 use std::error::Error;
-use std::fs::{ReadDir, read_dir};
+use std::fs::{read_dir, ReadDir};
 use std::path::PathBuf;
 //use prost_build::{Config, ServiceGenerator};
 
-fn main()/* -> Result<(), Box<dyn Error>>*/ {
-  /*  println!("cargo:rerun-if-changed=protobuf");
+fn main() /* -> Result<(), Box<dyn Error>>*/
+{
+    /*  println!("cargo:rerun-if-changed=protobuf");
     println!("cargo:rerun-if-env-changed=PROTOC");
     println!("cargo:rerun-if-env-changed=PROTOC_INCLUDE");
 
@@ -55,7 +56,7 @@ impl ServiceGenerator for FlowServiceGenerator {
             buf.push_str(&format!(
 "impl crate::requests::FlowRequest<{output_ty}> for crate::protobuf::access::{input_ty} {{
     const PATH: &'static str = \"/flow.access.{service_name}/{method_name}\";
-}}", 
+}}",
                 input_ty = input_ty,
                 output_ty = method.output_type.split('.').last().unwrap(),
                 service_name = service_name,
@@ -65,7 +66,7 @@ impl ServiceGenerator for FlowServiceGenerator {
         }
         for ty in tys {
             buf.push_str(&format!(
-                "impl crate::requests::private::Sealed for crate::protobuf::access::{input_ty} {{}}", 
+                "impl crate::requests::private::Sealed for crate::protobuf::access::{input_ty} {{}}",
                 input_ty = ty,
             ))
         }

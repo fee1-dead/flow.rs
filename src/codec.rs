@@ -1,10 +1,10 @@
 use std::marker::PhantomData;
 
-use otopr::encoding::ProtobufSerializer;
 use otopr::decoding::{DecodableMessage, Deserializer};
+use otopr::encoding::ProtobufSerializer;
 use otopr::traits::EncodableMessage;
-use tonic::Status;
 use tonic::codec::{Codec, Decoder, Encoder};
+use tonic::Status;
 
 pub struct OtoprCodec<T, U>(PhantomData<(T, U)>);
 
@@ -12,7 +12,7 @@ impl<T, U> Default for OtoprCodec<T, U> {
     fn default() -> Self {
         Self(PhantomData)
     }
-} 
+}
 
 impl<T, U> Codec for OtoprCodec<T, U>
 where
@@ -47,7 +47,11 @@ impl<T: EncodableMessage> Encoder for PEnc<T> {
 
     type Error = Status;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut tonic::codec::EncodeBuf<'_>) -> Result<(), Self::Error> {
+    fn encode(
+        &mut self,
+        item: Self::Item,
+        dst: &mut tonic::codec::EncodeBuf<'_>,
+    ) -> Result<(), Self::Error> {
         let mut se = ProtobufSerializer::new(dst);
         item.encode(&mut se);
         Ok(())
@@ -59,15 +63,24 @@ impl<T: for<'de> DecodableMessage<'de> + Default> Decoder for PDec<T> {
 
     type Error = Status;
 
-    fn decode(&mut self, src: &mut tonic::codec::DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
+    fn decode(
+        &mut self,
+        src: &mut tonic::codec::DecodeBuf<'_>,
+    ) -> Result<Option<Self::Item>, Self::Error> {
         let mut des = Deserializer::new(src);
         match T::decode(&mut des) {
             Ok(t) => Ok(Some(t)),
             Err(e) => Err(match e {
                 otopr::decoding::DecodingError::Eof => Status::resource_exhausted("reached eof"),
-                otopr::decoding::DecodingError::VarIntOverflow => Status::invalid_argument("scalar overflow"),
-                otopr::decoding::DecodingError::Utf8Error(e) => Status::invalid_argument(&format!("{}", e)),
-                otopr::decoding::DecodingError::UnknownWireType(u) => Status::invalid_argument(&format!("unknown wire type: {}", u)),
+                otopr::decoding::DecodingError::VarIntOverflow => {
+                    Status::invalid_argument("scalar overflow")
+                }
+                otopr::decoding::DecodingError::Utf8Error(e) => {
+                    Status::invalid_argument(&format!("{}", e))
+                }
+                otopr::decoding::DecodingError::UnknownWireType(u) => {
+                    Status::invalid_argument(&format!("unknown wire type: {}", u))
+                }
             }),
         }
     }
