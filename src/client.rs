@@ -1,7 +1,7 @@
-use std::{error::Error, future::Future, marker::PhantomData, pin::Pin};
+use std::{error::Error, future::Future, pin::Pin};
 
-use otopr::{decoding::DecodableMessage, traits::EncodableMessage};
-use tonic::{Request, body::BoxBody, client::{Grpc, GrpcService}, codec::ProstCodec, codegen::{Body, http::uri::PathAndQuery}, transport::Channel};
+use otopr::decoding::DecodableMessage;
+use tonic::{Request, body::BoxBody, client::{Grpc, GrpcService}, codegen::{Body, http::uri::PathAndQuery}, transport::Channel};
 
 use crate::codec::OtoprCodec;
 
@@ -70,6 +70,9 @@ impl<Inner> FlowClient<Inner> {
         /// Shortcut for `self.send(PingRequest {})`.
         pub fn ping() PingRequest => PingResponse {
             PingRequest {}
+        }
+        pub fn latest_block_header(is_sealed: bool) GetLatestBlockHeaderRequest => BlockHeaderResponse {
+            GetLatestBlockHeaderRequest { is_sealed }
         }
     }
 }

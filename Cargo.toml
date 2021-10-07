@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-otopr = "0.1.3" # protobuf library
+otopr = "0.1.4" # protobuf library
 # prost-types = "0.8.0" # protobuf well-known types for prost
 tonic = "0.5.2" # gRPC library
 
