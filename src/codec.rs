@@ -1,34 +1,46 @@
 use std::marker::PhantomData;
 
 use otopr::decoding::{DecodableMessage, Deserializer};
+use otopr::encoding::EncodableMessage;
 use otopr::encoding::ProtobufSerializer;
-use otopr::traits::EncodableMessage;
 use tonic::codec::{Codec, Decoder, Encoder};
 use tonic::Status;
 
-pub struct OtoprCodec<T, U>(PhantomData<(T, U)>);
+use bytes::BufMut;
 
-impl<T, U> Default for OtoprCodec<T, U> {
+pub struct PreEncode(Box<[u8]>);
+
+impl PreEncode {
+    pub fn new<T: EncodableMessage>(msg: &T) -> Self {
+        let cap = msg.encoded_size();
+        let mut buf = Vec::with_capacity(cap);
+        msg.encode(&mut ProtobufSerializer::new(&mut buf));
+        Self(buf.into_boxed_slice())
+    }
+}
+
+pub struct OtoprCodec<U>(PhantomData<U>);
+
+impl<U> Default for OtoprCodec<U> {
     fn default() -> Self {
         Self(PhantomData)
     }
 }
 
-impl<T, U> Codec for OtoprCodec<T, U>
+impl<U> Codec for OtoprCodec<U>
 where
-    T: EncodableMessage + Send + 'static,
     U: for<'a> DecodableMessage<'a> + Default + Send + 'static,
 {
-    type Encode = T;
+    type Encode = PreEncode;
 
     type Decode = U;
 
-    type Encoder = PEnc<T>;
+    type Encoder = PEnc;
 
     type Decoder = PDec<U>;
 
     fn encoder(&mut self) -> Self::Encoder {
-        PEnc(PhantomData)
+        PEnc
     }
 
     fn decoder(&mut self) -> Self::Decoder {
@@ -36,14 +48,13 @@ where
     }
 }
 
-pub struct PEnc<T>(PhantomData<T>);
+pub struct PEnc;
 pub struct PDec<T>(PhantomData<T>);
 
-unsafe impl<T> Sync for PEnc<T> {}
 unsafe impl<T> Sync for PDec<T> {}
 
-impl<T: EncodableMessage> Encoder for PEnc<T> {
-    type Item = T;
+impl Encoder for PEnc {
+    type Item = PreEncode;
 
     type Error = Status;
 
@@ -52,8 +63,7 @@ impl<T: EncodableMessage> Encoder for PEnc<T> {
         item: Self::Item,
         dst: &mut tonic::codec::EncodeBuf<'_>,
     ) -> Result<(), Self::Error> {
-        let mut se = ProtobufSerializer::new(dst);
-        item.encode(&mut se);
+        dst.put_slice(&item.0);
         Ok(())
     }
 }

@@ -4,13 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-otopr = "0.1.5" # protobuf library
+otopr = { git = "https://github.com/fee1-dead/otopr" } # protobuf library
 # prost-types = "0.8.0" # protobuf well-known types for prost
 tonic = "0.5.2" # gRPC library
+tiny-keccak = { version = "2.0.2", features = ["sha3"], optional = true }
+sha2 = { version = "0.9.8", optional = true }
+secp256k1 = { version = "0.20.3", optional = true }
+rlp = "0.5.1"
+bytes = "1.1.0"
+thiserror = "1.0.30"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples
 chrono = "0.4.19" # Date and time library
+hex = "0.4.3"
+rand = "0.6.5"
+secp256k1 = { version = "0.20.3", features = ["rand"] }
 
 #[build-dependencies]
 #prost-build = "0.8.0" # for generating Rust code from .proto files
@@ -21,3 +30,9 @@ chrono = "0.4.19" # Date and time library
 [[example]]
 name = "helloworld"
 path = "examples/helloworld.rs"
+
+[features]
+default = ["sha3-hash", "secp256k1-sign"]
+sha2-hash = ["sha2"]
+sha3-hash = ["tiny-keccak"]
+secp256k1-sign = ["secp256k1"]

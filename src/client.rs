@@ -9,17 +9,21 @@ use tonic::{
     Request,
 };
 
-use crate::codec::OtoprCodec;
+use crate::{
+    codec::{OtoprCodec, PreEncode},
+    RepSlice, TransactionE,
+};
 
 /// A gRPC client.
-///
-/// This trait is very simple to implement.
-/// We recommend implementing this for &mut T instead of just T.
 pub trait GrpcClient<I, O> {
-    type Output;
-    fn send(self, input: I) -> Self::Output;
+    type Error: Into<Box<dyn Error + Send + Sync>>;
+    fn send<'a>(
+        &'a mut self,
+        input: I,
+    ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>>;
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct FlowClient<T> {
     inner: T,
 }
@@ -27,43 +31,42 @@ pub struct FlowClient<T> {
 pub type TonicFlowClient<Service> = FlowClient<Grpc<Service>>;
 pub type TonicHyperFlowClient = TonicFlowClient<Channel>;
 
-impl<'a, I, O, Service> GrpcClient<I, O> for &'a mut Grpc<Service>
+impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
-    I: FlowRequest<O> + Send + Sync + 'static,
+    I: FlowRequest<O> + Send + Sync,
     O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
     Service: GrpcService<BoxBody> + 'static,
     Service::ResponseBody: Body + Send + Sync + 'static,
     <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    type Output = Pin<
-        Box<dyn Future<Output = Result<tonic::Response<O>, Box<dyn Error + Send + Sync>>> + 'a>,
-    >;
-    fn send(
-        self,
+    type Error = Box<dyn Error + Send + Sync>;
+    fn send<'a>(
+        &'a mut self,
         input: I,
-    ) -> Pin<Box<dyn Future<Output = Result<tonic::Response<O>, Box<dyn Error + Send + Sync>>> + 'a>>
-    {
+    ) -> Pin<Box<dyn Future<Output = Result<O, Box<dyn Error + Send + Sync>>> + 'a>> {
+        let preenc = PreEncode::new(&input);
         Box::pin(async move {
             self.ready().await.map_err(|error| error.into())?;
             Ok(self
                 .unary(
-                    Request::new(input),
+                    Request::new(preenc),
                     PathAndQuery::from_static(I::PATH),
                     OtoprCodec::default(),
                 )
-                .await?)
+                .await?
+                .into_inner())
         })
     }
 }
 
-use crate::{protobuf::access::*, requests::FlowRequest};
+use crate::{protobuf::*, requests::FlowRequest};
 
 macro_rules! define_reqs {
-    ($($(#[$meta:meta])* $vis:vis fn $fn_name:ident($($tt:tt)*) $input:ty => $output:ty { $expr:expr })+) => {
+    ($($(#[$meta:meta])* $vis:vis fn $fn_name:ident$(<$($lt:lifetime),+>)?($($tt:tt)*) $input:ty => $output:ty { $expr:expr })+) => {
         $($(#[$meta])*
-        $vis fn $fn_name<'a>(&'a mut self,$($tt)*) -> <&'a mut Inner as GrpcClient<$input, $output>>::Output
+        $vis fn $fn_name<'grpc, $($($lt),*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
             where
-                &'a mut Inner: GrpcClient<$input, $output>,
+                Inner: GrpcClient<$input, $output>,
         {
             self.send($expr)
         })+
@@ -71,9 +74,16 @@ macro_rules! define_reqs {
 }
 
 impl<Inner> FlowClient<Inner> {
-    pub fn send<'a, T, U>(&'a mut self, input: T) -> <&'a mut Inner as GrpcClient<T, U>>::Output
+    #[inline]
+    pub const fn new(inner: Inner) -> Self {
+        Self { inner }
+    }
+    pub fn send<'a, T, U>(
+        &'a mut self,
+        input: T,
+    ) -> Pin<Box<dyn Future<Output = Result<U, Inner::Error>> + 'a>>
     where
-        &'a mut Inner: GrpcClient<T, U>,
+        Inner: GrpcClient<T, U>,
     {
         self.inner.send(input)
     }
@@ -89,6 +99,33 @@ impl<Inner> FlowClient<Inner> {
         pub fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
             GetBlockHeaderByHeightRequest { height }
         }
+        pub fn block_header_by_id<'a>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
+            GetBlockHeaderByIdRequest { id }
+        }
+        pub fn latest_block(is_sealed: bool) GetLatestBlockRequest => BlockResponse {
+            GetLatestBlockRequest { is_sealed }
+        }
+        pub fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
+            GetBlockByHeightRequest { height }
+        }
+        pub fn block_by_id<'a>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
+            GetBlockByIdRequest { id }
+        }
+        pub fn collection_by_id<'a>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
+            GetCollectionByIdRequest { id }
+        }
+        pub fn events_for_height_range<'a>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
+            GetEventsForHeightRangeRequest { r#type, start_height, end_height }
+        }
+        pub fn execute_script_at_latest_block<'a>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
+            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments) }
+        }
+        pub fn account_at_latest_block<'a>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
+            GetAccountAtLatestBlockRequest { id: address }
+        }
+        pub fn send_transaction<'a>(transaction: TransactionE<'a>) SendTransactionRequest<'a> => SendTransactionResponse {
+            SendTransactionRequest { transaction }
+        }
     }
 }
 
@@ -97,6 +134,15 @@ impl TonicHyperFlowClient {
         Ok(Self {
             inner: Grpc::new(
                 Channel::from_static("http://access.mainnet.nodes.onflow.org:9000")
+                    .connect_lazy()?,
+            ),
+        })
+    }
+
+    pub fn testnet() -> Result<Self, tonic::transport::Error> {
+        Ok(Self {
+            inner: Grpc::new(
+                Channel::from_static("http://access.devnet.nodes.onflow.org:9000")
                     .connect_lazy()?,
             ),
         })

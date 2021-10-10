@@ -1,4 +1,4 @@
-use otopr::traits::EncodableMessage;
+use otopr::encoding::EncodableMessage;
 
 //use prost::{Message, bytes::BufMut};
 

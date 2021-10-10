@@ -1,4 +1,5 @@
 use otopr::DecodableMessage;
+
 #[derive(Clone, Copy, Default, DecodableMessage, Debug, PartialEq, Eq)]
 pub struct Timestamp {
     #[otopr(1)]
@@ -10,4 +11,5 @@ pub struct Timestamp {
 mod entities;
 pub use entities::*;
 
-pub mod access;
+mod access;
+pub use access::*;

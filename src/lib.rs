@@ -1,4 +1,10 @@
 pub mod client;
 pub mod codec;
-pub mod protobuf;
+
+mod protobuf;
+pub use protobuf::*;
+
+pub mod algorithms;
 pub mod requests;
+
+pub mod access;
