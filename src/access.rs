@@ -108,3 +108,6 @@ where
         })
     }
 }
+
+#[cfg(all(feature = "secp256k1-sign", feature = "sha3-hash"))]
+pub type SimpleSecp256k1Sha3Account<Client> = SimpleAccount<secp256k1::SecretKey, secp256k1::Secp256k1<secp256k1::SignOnly>, tiny_keccak::Sha3, Client>;

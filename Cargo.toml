@@ -36,3 +36,6 @@ default = ["sha3-hash", "secp256k1-sign"]
 sha2-hash = ["sha2"]
 sha3-hash = ["tiny-keccak"]
 secp256k1-sign = ["secp256k1"]
+
+[workspace]
+members = ["cadence_json"]
