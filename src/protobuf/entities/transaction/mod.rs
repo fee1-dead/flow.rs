@@ -1,5 +1,11 @@
+mod rlp;
+pub use self::rlp::*;
+
 mod signing;
 pub use signing::*;
+
+mod template;
+pub use template::*;
 
 use otopr::*;
 
@@ -43,7 +49,7 @@ pub struct SignatureD {
     pub signature: Vec<u8>,
 }
 
-#[derive(EncodableMessage, Clone, Copy, PartialEq, Eq)]
+#[derive(EncodableMessage, Clone, PartialEq, Eq)]
 pub struct TransactionE<'a> {
     pub script: &'a [u8],
     pub arguments: RepSlice<'a, &'a [u8]>,

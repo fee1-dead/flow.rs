@@ -6,7 +6,7 @@ use chrono::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut net = TonicHyperFlowClient::mainnet()?;
+    let mut net = TonicHyperFlowClient::testnet()?;
     let _ = net.ping().await?;
     let latest_block_header = net.latest_block_header(true).await?;
     let block_header = latest_block_header.0.into_inner();

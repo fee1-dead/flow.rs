@@ -1,9 +1,18 @@
-use std::fmt::{Display, Write};
+use serde_with::*;
+use std::{
+    fmt::{Display, Write},
+    num::ParseIntError,
+    str::FromStr,
+};
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(
+    SerializeDisplay, DeserializeFromStr, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default,
+)]
 pub struct UFix64(u64);
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(
+    SerializeDisplay, DeserializeFromStr, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default,
+)]
 pub struct Fix64(i64);
 
 macro_rules! fix_impl {
@@ -14,7 +23,7 @@ macro_rules! fix_impl {
             /// The minimum value this can represent.
             pub const MIN: Self = Self::from_raw($inner::MIN);
 
-            /// Creates Self from the raw representation. 
+            /// Creates Self from the raw representation.
             pub const fn from_raw(n: $inner) -> Self {
                 Self(n)
             }
@@ -27,6 +36,29 @@ macro_rules! fix_impl {
         impl std::fmt::Debug for $ty {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 Display::fmt(self, f)
+            }
+        }
+        impl FromStr for $ty {
+            type Err = ParseIntError;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                // 0.15
+                let dot = s.find('.');
+                // dot at 1, numbers after dot: 2
+                let numbers_after_dot = dot.map(|dot| s.len() - dot - 1).unwrap_or(0);
+                let st = if let Some(dot) = dot {
+                    let mut st = s.to_string();
+                    st.remove(dot);
+                    Some(st)
+                } else {
+                    None
+                };
+
+                let s = st.as_deref().unwrap_or(s);
+
+                let inner: $inner = s.parse()?;
+                let multiplier = 10 * (8 - numbers_after_dot as $inner);
+                Ok(Self(inner * multiplier))
             }
         }
     };
@@ -56,7 +88,7 @@ impl Display for Fix64 {
             for _ in s.len()..8 {
                 f.write_char('0')?;
             }
-            f.write_str(&s)
+            f.write_str(s)
         } else {
             f.write_str(&s[..s.len() - 8])?;
             f.write_char('.')?;

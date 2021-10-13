@@ -1,0 +1,14 @@
+transaction(publicKey: [UInt8]) {{
+	prepare(signer: AuthAccount) {{
+        let key = PublicKey(
+            publicKey: publicKey,
+            signatureAlgorithm: SignatureAlgorithm.{}
+        )
+		let acct = AuthAccount(payer: signer)
+        acct.keys.add(
+            publicKey: key,
+            hashAlgorithm: HashAlgorithm.{},
+            weight: 1000.0
+        )
+	}}
+}}

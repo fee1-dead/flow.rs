@@ -78,6 +78,12 @@ impl<Inner> FlowClient<Inner> {
     pub const fn new(inner: Inner) -> Self {
         Self { inner }
     }
+
+    #[inline]
+    pub fn into_inner(self) -> Inner {
+        self.inner
+    }
+
     pub fn send<'a, T, U>(
         &'a mut self,
         input: T,
@@ -118,7 +124,7 @@ impl<Inner> FlowClient<Inner> {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
         pub fn execute_script_at_latest_block<'a>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
-            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments) }
+            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments.into()) }
         }
         pub fn account_at_latest_block<'a>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address }

@@ -1,26 +1,23 @@
-use std::collections::HashSet;
+/*use std::{borrow::Cow, collections::HashSet};
 
 use otopr::Repeated;
 use rlp::RlpStream;
 
-use crate::{
-    algorithms::{FlowHasher, FlowSigner, SecretKey},
-    ProposalKeyE, RepSlice, SignatureE, TransactionE,
-};
+use crate::{CowBytes, CowSlice, ProposalKeyE, RepCow, SignatureE, TransactionE, algorithms::{FlowHasher, FlowSigner, SecretKey}};
 
 /// All the data one needs to sign a transaction payload.
 ///
 /// Sign this only if you are the proposer or one of the authorizers of the transaction
 pub struct TransactionPayload<'a> {
     pub script: &'a [u8],
-    pub arguments: &'a [&'a [u8]],
+    pub arguments: CowSlice<'a, CowBytes<'a>>,
     pub reference_block_id: &'a [u8],
     pub gas_limit: u64,
     pub proposal_key_address: &'a [u8],
     pub proposal_key_id: u32,
     pub proposal_key_sequence_number: u64,
     pub payer: &'a [u8],
-    pub authorizers: &'a [&'a [u8]],
+    pub authorizers: CowSlice<'a, CowBytes<'a>>,
 }
 
 pub struct PayloadSignature<S> {
@@ -48,9 +45,6 @@ const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
     new_buf
 }
 
-const PADDED_LEN: usize = 32;
-const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
-    padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
 /// common methods for payload and envelope.
 macro_rules! sign_methods {
@@ -93,41 +87,7 @@ macro_rules! sign_methods {
 }
 
 impl<'a> TransactionPayload<'a> {
-    sign_methods!();
 
-    pub fn to_transaction(
-        self,
-        payload_signatures: RepSlice<'a, SignatureE<'a>>,
-        envelope_signatures: RepSlice<'a, SignatureE<'a>>,
-    ) -> TransactionE<'a> {
-        let TransactionPayload {
-            script,
-            arguments,
-            reference_block_id,
-            gas_limit,
-            proposal_key_address,
-            proposal_key_id,
-            proposal_key_sequence_number,
-            payer,
-            authorizers,
-        } = self;
-
-        TransactionE {
-            script,
-            arguments: Repeated::new(arguments),
-            reference_block_id,
-            gas_limit,
-            proposal_key: ProposalKeyE {
-                address: proposal_key_address,
-                key_id: proposal_key_id,
-                sequence_number: proposal_key_sequence_number,
-            },
-            payer,
-            authorizers: Repeated::new(authorizers),
-            payload_signatures,
-            envelope_signatures,
-        }
-    }
 
     /// Build a list with all the signers of this transaction. Indices are **canonical**.
     pub fn signers(&self) -> Vec<&'a [u8]> {
@@ -148,7 +108,7 @@ impl<'a> TransactionPayload<'a> {
             add_signer(self.payer);
         }
 
-        for authorizer in self.authorizers {
+        for authorizer in self.authorizers.as_ref() {
             add_signer(authorizer);
         }
 
@@ -207,3 +167,4 @@ impl<'a, B: AsRef<[u8]>> TransactionEnvelope<'a, B> {
         }
     }
 }
+*/

@@ -1,17 +1,19 @@
 macro_rules! algorithms {
-    ($($algo:ident {$($name:ident = $code:expr),+$(,)?})+) => {
+    ($($algo:ident {$($name:ident = ($code:expr, $algoname:expr)),+$(,)?})+) => {
         mod private {
             pub trait Sealed {}
         }
         $(
             pub trait $algo: private::Sealed {
                 const CODE: u32;
+                const NAME: &'static str;
             }
             $(
                 pub struct $name;
                 impl private::Sealed for $name {}
                 impl $algo for $name {
                     const CODE: u32 = $code;
+                    const NAME: &'static str = $algoname;
                 }
             )+
         )+
@@ -20,12 +22,12 @@ macro_rules! algorithms {
 
 algorithms! {
     HashAlgorithm {
-        Sha2 = 1,
-        Sha3 = 3,
+        Sha2 = (1, "SHA2_256"),
+        Sha3 = (3, "SHA3_256"),
     }
     SignatureAlgorithm {
-        P256 = 2,
-        Secp256k1 = 3,
+        P256 = (2, "ECDSA_P256"),
+        Secp256k1 = (3, "ECDSA_secp256k1"),
     }
 }
 
@@ -84,10 +86,10 @@ impl FlowHasher for tiny_keccak::Sha3 {
 
 #[cfg(feature = "secp256k1-sign")]
 impl Signature for secp256k1::Signature {
-    type Serialized = secp256k1::SerializedSignature;
+    type Serialized = [u8; 64];
 
     fn serialize(&self) -> Self::Serialized {
-        self.serialize_der()
+        self.serialize_compact()
     }
 }
 
@@ -106,14 +108,14 @@ impl FlowSigner for secp256k1::Secp256k1<secp256k1::SignOnly> {
     }
 
     fn sign(&self, hasher: impl FlowHasher, secret_key: &Self::SecretKey) -> Self::Signature {
-        struct TTBH([u8; 32]);
-        impl secp256k1::ThirtyTwoByteHash for TTBH {
+        struct Ttbh([u8; 32]);
+        impl secp256k1::ThirtyTwoByteHash for Ttbh {
             fn into_32(self) -> [u8; 32] {
                 self.0
             }
         }
         self.sign(
-            &secp256k1::Message::from(TTBH(hasher.finalize())),
+            &secp256k1::Message::from(Ttbh(hasher.finalize())),
             secret_key,
         )
     }
