@@ -1,7 +1,11 @@
-use std::{error::Error, io::{stdin, BufRead}, marker::PhantomData};
+use std::{
+    error::Error,
+    io::{stdin, BufRead},
+    marker::PhantomData,
+};
 
 use cadence_json::AddressOwned;
-use flow_sdk::{CreateAccountTransaction, access::SimpleAccount, client::TonicHyperFlowClient};
+use flow_sdk::{access::SimpleAccount, client::TonicHyperFlowClient, CreateAccountTransaction};
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey, SignOnly};
 
@@ -38,7 +42,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let net = TonicHyperFlowClient::testnet()?;
 
-    let mut account = SimpleAccount::<_, secp256k1::Secp256k1<SignOnly>, tiny_keccak::Sha3, _>::new(net.into_inner(), &address.data, secret_key).await?;
+    let mut account =
+        SimpleAccount::<_, secp256k1::Secp256k1<SignOnly>, tiny_keccak::Sha3, _>::new(
+            net.into_inner(),
+            &address.data,
+            secret_key,
+        )
+        .await?;
 
     let create_account = CreateAccountTransaction::<_, tiny_keccak::Sha3> {
         public_keys: &[account.public_key()],
@@ -48,9 +58,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_account_header = create_account.to_header();
 
-    let res = account.send_transaction_header(create_account_header).await?;
+    let res = account
+        .send_transaction_header(&create_account_header)
+        .await?;
 
-    println!("Just made {} to create another account :p", hex::encode(res.id));
+    println!(
+        "Just made {} to create another account :p",
+        hex::encode(res.id)
+    );
 
     Ok(())
 }

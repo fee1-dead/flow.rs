@@ -1,7 +1,11 @@
 use std::iter::empty;
 use std::{error::Error as StdError, marker::PhantomData};
 
-use crate::{Account, AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest, GetLatestBlockHeaderRequest, ProposalKeyE, RepSlice, SendTransactionRequest, SendTransactionResponse, SignatureE, TransactionE, TransactionHeader};
+use crate::{
+    Account, AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
+    GetLatestBlockHeaderRequest, ProposalKeyE, RepSlice, SendTransactionRequest,
+    SendTransactionResponse, SignatureE, TransactionE, TransactionHeader,
+};
 
 use crate::algorithms::{FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
 
@@ -49,7 +53,10 @@ pub struct SimpleAccount<SecretKey, Signer, Hasher, Client> {
 }
 
 impl<Sk, Sn, Hs, Cl> SimpleAccount<Sk, Sn, Hs, Cl> {
-    pub fn public_key(&self) -> Sn::PublicKey where Sn: FlowSigner<SecretKey = Sk> {
+    pub fn public_key(&self) -> Sn::PublicKey
+    where
+        Sn: FlowSigner<SecretKey = Sk>,
+    {
         self.signer.to_public_key(&self.secret_key)
     }
     #[inline]
@@ -131,16 +138,23 @@ where
         self.signer.sign(hasher, &self.secret_key)
     }
 
-    pub async fn send_transaction_header<const ARGS: usize>(&mut self, transaction: TransactionHeader<ARGS>) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
+    pub async fn send_transaction_header<const ARGS: usize>(
+        &mut self,
+        transaction: &TransactionHeader<ARGS>,
+    ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
     where
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
         for<'a> Client: GrpcClient<SendTransactionRequest<'a>, SendTransactionResponse>,
     {
-        let latest_block = self.client().latest_block_header(true).await.map_err(|e| e.into())?;
+        let latest_block = self
+            .client()
+            .latest_block_header(true)
+            .await
+            .map_err(|e| e.into())?;
         let reference_block_id = &latest_block.0.into_inner().id;
         let args: Vec<&[u8]> = transaction.arguments.iter().map(|v| v.as_slice()).collect();
         let gas_limit = 1000;
-        let sig = self.sign_transaction_header(&transaction, reference_block_id, gas_limit);
+        let sig = self.sign_transaction_header(transaction, reference_block_id, gas_limit);
         let sig = sig.serialize();
         let authorizers = [&self.address[..]];
         let envelope_signatures = [SignatureE {
@@ -163,7 +177,10 @@ where
             payload_signatures: RepSlice::new(&[]),
             envelope_signatures: RepSlice::new(&envelope_signatures),
         };
-        self.client.send_transaction(transaction).await.map_err(|e| e.into())
+        self.client
+            .send_transaction(transaction)
+            .await
+            .map_err(|e| e.into())
     }
 }
 

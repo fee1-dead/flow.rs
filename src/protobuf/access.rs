@@ -152,6 +152,12 @@ pub struct ExecuteScriptResponse {
     pub value: Vec<u8>,
 }
 
+impl ExecuteScriptResponse {
+    pub fn parse(&self) -> serde_json::Result<cadence_json::ValueOwned> {
+        serde_json::from_slice(&self.value)
+    }
+}
+
 #[derive(EncodableMessage)]
 pub struct GetEventsForHeightRangeRequest<'a> {
     pub r#type: &'a str,

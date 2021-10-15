@@ -28,7 +28,11 @@ impl<'a, S: FlowSigner, H: FlowHasher> CreateAccountTransaction<'a, S, H> {
             [pubkey] => {
                 let bytes = self.signer.serialize_public_key(pubkey);
                 let bytes = bytes.map(ValueRef::UInt8);
-                let script = format!(include_str!("create_account_one_key.cdc.template"), S::Algorithm::NAME, H::Algorithm::NAME);
+                let script = format!(
+                    include_str!("create_account_one_key.cdc.template"),
+                    S::Algorithm::NAME,
+                    H::Algorithm::NAME
+                );
                 header(script.into_bytes().into(), [ValueRef::Array(&bytes)])
             }
             pubs => {
@@ -46,7 +50,16 @@ impl<'a, S: FlowSigner, H: FlowHasher> CreateAccountTransaction<'a, S, H> {
 
                 let val = ValueRef::Array(&args);
 
-                header(format!(include_str!("create_account.cdc.template"), S::Algorithm::NAME, H::Algorithm::NAME).into_bytes().into(), [val])
+                header(
+                    format!(
+                        include_str!("create_account.cdc.template"),
+                        S::Algorithm::NAME,
+                        H::Algorithm::NAME
+                    )
+                    .into_bytes()
+                    .into(),
+                    [val],
+                )
             }
         }
     }
