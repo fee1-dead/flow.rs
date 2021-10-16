@@ -3,7 +3,7 @@ use std::{error::Error as StdError, marker::PhantomData};
 
 use crate::{
     Account, AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
-    GetLatestBlockHeaderRequest, ProposalKeyE, RepSlice, SendTransactionRequest,
+    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest,
     SendTransactionResponse, SignatureE, TransactionE, TransactionHeader,
 };
 
@@ -81,6 +81,27 @@ impl<Sk, Sn, Hs, Cl> SimpleAccount<Sk, Sn, Hs, Cl> {
     }
 }
 
+#[repr(transparent)]
+pub struct SliceHelper<T>([T]);
+
+impl<T> SliceHelper<T> {
+    pub fn new_ref(slice: &[T]) -> &Self {
+        unsafe {
+            &*(slice as *const [T] as *const SliceHelper<T>)
+        }
+    }
+}
+
+impl<'a, 'b, T> IntoIterator for &'a &'b SliceHelper<T> {
+    type Item = &'a T;
+
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 impl<SecretKey, Signer, Hasher, Client> SimpleAccount<SecretKey, Signer, Hasher, Client>
 where
     Signer: FlowSigner<SecretKey = SecretKey>,
@@ -138,44 +159,55 @@ where
         self.signer.sign(hasher, &self.secret_key)
     }
 
-    pub async fn send_transaction_header<const ARGS: usize>(
-        &mut self,
-        transaction: &TransactionHeader<ARGS>,
+    pub async fn send_transaction_header<'a, const ARGS: usize>(
+        &'a mut self,
+        transaction: &'a TransactionHeader<ARGS>,
     ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
     where
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
-        for<'a> Client: GrpcClient<SendTransactionRequest<'a>, SendTransactionResponse>,
+        for<'b> Client: GrpcClient<
+            SendTransactionRequest<
+                &'a [u8],
+                &'a SliceHelper<Vec<u8>>,
+                &'b [u8],
+                &'a [u8],
+                &'a [u8],
+                [&'a [u8]; 1],
+                [SignatureE<&'a [u8], &'a [u8]>; 0],
+                [SignatureE<&'a [u8], &'b [u8]>; 1],
+            >,
+            SendTransactionResponse,
+        >,
     {
         let latest_block = self
             .client()
             .latest_block_header(true)
             .await
             .map_err(|e| e.into())?;
-        let reference_block_id = &latest_block.0.into_inner().id;
-        let args: Vec<&[u8]> = transaction.arguments.iter().map(|v| v.as_slice()).collect();
+        let latest_block = latest_block.0.into_inner();
+        let reference_block_id = latest_block.id.as_slice();
         let gas_limit = 1000;
         let sig = self.sign_transaction_header(transaction, reference_block_id, gas_limit);
         let sig = sig.serialize();
-        let authorizers = [&self.address[..]];
         let envelope_signatures = [SignatureE {
-            address: &self.address,
+            address: &self.address[..],
             key_id: self.key_id(),
             signature: sig.as_ref(),
         }];
         let transaction = TransactionE {
-            script: &transaction.script,
-            arguments: RepSlice::new(&args),
+            script: transaction.script.as_ref(),
+            arguments: SliceHelper::new_ref(&transaction.arguments),
             reference_block_id,
             gas_limit,
             proposal_key: ProposalKeyE {
-                address: &self.address,
+                address: &self.address[..],
                 key_id: self.key_id,
                 sequence_number: self.sequence_number() as u64,
             },
-            payer: &self.address,
-            authorizers: RepSlice::new(&authorizers),
-            payload_signatures: RepSlice::new(&[]),
-            envelope_signatures: RepSlice::new(&envelope_signatures),
+            payer: &self.address[..],
+            authorizers: [&self.address[..]],
+            payload_signatures: [],
+            envelope_signatures,
         };
         self.client
             .send_transaction(transaction)
@@ -190,6 +222,7 @@ where
     Hasher: FlowHasher,
     for<'a> Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
 {
+    /// Logs in to a simple account, verifying that the key and the address matches.
     pub async fn new(
         client: Client,
         address: &'_ [u8],

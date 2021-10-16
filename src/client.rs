@@ -62,11 +62,12 @@ where
 use crate::{protobuf::*, requests::FlowRequest};
 
 macro_rules! define_reqs {
-    ($($(#[$meta:meta])* $vis:vis fn $fn_name:ident$(<$($lt:lifetime),+>)?($($tt:tt)*) $input:ty => $output:ty { $expr:expr })+) => {
+    ($($(#[$meta:meta])* $vis:vis fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*) $input:ty => $output:ty $(where ($($tts:tt)*))? { $expr:expr })+) => {
         $($(#[$meta])*
-        $vis fn $fn_name<'grpc, $($($lt),*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
+        $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
             where
                 Inner: GrpcClient<$input, $output>,
+                $($($tts)*)?
         {
             self.send($expr)
         })+
@@ -105,7 +106,7 @@ impl<Inner> FlowClient<Inner> {
         pub fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
             GetBlockHeaderByHeightRequest { height }
         }
-        pub fn block_header_by_id<'a>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
+        pub fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
             GetBlockHeaderByIdRequest { id }
         }
         pub fn latest_block(is_sealed: bool) GetLatestBlockRequest => BlockResponse {
@@ -114,22 +115,50 @@ impl<Inner> FlowClient<Inner> {
         pub fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
             GetBlockByHeightRequest { height }
         }
-        pub fn block_by_id<'a>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
+        pub fn block_by_id<('a)>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
             GetBlockByIdRequest { id }
         }
-        pub fn collection_by_id<'a>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
+        pub fn collection_by_id<('a)>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
             GetCollectionByIdRequest { id }
         }
-        pub fn events_for_height_range<'a>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
+        pub fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
-        pub fn execute_script_at_latest_block<'a>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
+        pub fn execute_script_at_latest_block<('a)>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments.into()) }
         }
-        pub fn account_at_latest_block<'a>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
+        pub fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address }
         }
-        pub fn send_transaction<'a>(transaction: TransactionE<'a>) SendTransactionRequest<'a> => SendTransactionResponse {
+        pub fn send_transaction<(
+            Script,
+            Arguments,
+            ReferenceBlockId,
+            ProposalKeyAddress,
+            Payer,
+            Authorizers,
+            PayloadSignatures,
+            EnvelopeSignatures,
+        )>(transaction: TransactionE<
+            Script,
+            Arguments,
+            ReferenceBlockId,
+            ProposalKeyAddress,
+            Payer,
+            Authorizers,
+            PayloadSignatures,
+            EnvelopeSignatures,
+        >) SendTransactionRequest<
+            Script,
+            Arguments,
+            ReferenceBlockId,
+            ProposalKeyAddress,
+            Payer,
+            Authorizers,
+            PayloadSignatures,
+            EnvelopeSignatures,
+        > => SendTransactionResponse
+        {
             SendTransactionRequest { transaction }
         }
     }
@@ -153,4 +182,26 @@ impl TonicHyperFlowClient {
             ),
         })
     }
+}
+
+pub mod test {
+    use tonic::transport::Channel;
+
+    use crate::{SendTransactionRequest, SendTransactionResponse, SignatureE, access::SliceHelper};
+
+    use super::GrpcClient;
+
+    pub fn test() where for<'a> super::Grpc<Channel>: GrpcClient<
+        SendTransactionRequest<
+            &'a [u8],
+            &'a SliceHelper<Vec<u8>>,
+            &'a [u8],
+            &'a [u8],
+            &'a [u8],
+            [&'a [u8]; 1],
+            [SignatureE<&'a [u8], &'a [u8]>; 0],
+            [SignatureE<&'a [u8], &'a [u8]>; 1],
+        >,
+        SendTransactionResponse,
+    >, {}
 }

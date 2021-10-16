@@ -1,13 +1,17 @@
 mod rlp;
+use std::{marker::PhantomData, slice};
+
 pub use self::rlp::*;
 
 mod signing;
+use cadence_json::ValueOwned;
 pub use signing::*;
 
 mod template;
 pub use template::*;
 
 use otopr::*;
+use wire_types::*;
 
 pub type RepSlice<'a, T> = Repeated<T, &'a [T]>;
 
@@ -22,8 +26,13 @@ pub enum TransactionStatus {
 }
 
 #[derive(EncodableMessage, Clone, Copy, PartialEq, Eq)]
-pub struct ProposalKeyE<'a> {
-    pub address: &'a [u8],
+#[otopr(encode_where_clause(
+    where
+        Address: AsRef<[u8]>,
+))]
+pub struct ProposalKeyE<Address> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub address: Address,
     pub key_id: u32,
     pub sequence_number: u64,
 }
@@ -36,10 +45,17 @@ pub struct ProposalKeyD {
 }
 
 #[derive(EncodableMessage, Clone, Copy, PartialEq, Eq)]
-pub struct SignatureE<'a> {
-    pub address: &'a [u8],
+#[otopr(encode_where_clause(
+    where
+        Address: AsRef<[u8]>,
+        Signature: AsRef<[u8]>,
+))]
+pub struct SignatureE<Address, Signature> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub address: Address,
     pub key_id: u32,
-    pub signature: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub signature: Signature,
 }
 
 #[derive(DecodableMessage, Default)]
@@ -50,16 +66,61 @@ pub struct SignatureD {
 }
 
 #[derive(EncodableMessage, Clone, PartialEq, Eq)]
-pub struct TransactionE<'a> {
-    pub script: &'a [u8],
-    pub arguments: RepSlice<'a, &'a [u8]>,
-    pub reference_block_id: &'a [u8],
+#[otopr(encode_extra_type_params(
+    ArgumentsItem,
+    AuthorizersItem,
+    PayloadSignatureAddress,
+    PayloadSignature,
+    EnvelopeSignatureAddress,
+    EnvelopeSignature,
+))]
+#[otopr(encode_where_clause(
+    where
+        Script: AsRef<[u8]>,
+        ReferenceBlockId: AsRef<[u8]>,
+        Payer: AsRef<[u8]>,
+        ArgumentsItem: AsRef<[u8]>,
+        AuthorizersItem: AsRef<[u8]>,
+        ProposalKeyAddress: AsRef<[u8]>,
+        PayloadSignatureAddress: AsRef<[u8]>,
+        PayloadSignature: AsRef<[u8]>,
+        EnvelopeSignatureAddress: AsRef<[u8]>,
+        EnvelopeSignature: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a ArgumentsItem>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a AuthorizersItem>,
+        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+))]
+pub struct TransactionE<
+    Script,
+    Arguments,
+    ReferenceBlockId,
+    ProposalKeyAddress,
+    Payer,
+    Authorizers,
+    PayloadSignatures,
+    EnvelopeSignatures,
+> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub script: Script,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<ArgumentsItem, &Arguments>>::from(&x).map(|it| it.map(AsRef::as_ref))))]
+    pub arguments: Arguments,
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub reference_block_id: ReferenceBlockId,
     pub gas_limit: u64,
-    pub proposal_key: ProposalKeyE<'a>,
-    pub payer: &'a [u8],
-    pub authorizers: RepSlice<'a, &'a [u8]>,
-    pub payload_signatures: RepSlice<'a, SignatureE<'a>>,
-    pub envelope_signatures: RepSlice<'a, SignatureE<'a>>,
+    pub proposal_key: ProposalKeyE<ProposalKeyAddress>,
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub payer: Payer,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<AuthorizersItem, &Authorizers>>::from(&x).map(|it| it.map(AsRef::as_ref))))]
+    pub authorizers: Authorizers,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<SignatureE<PayloadSignatureAddress, PayloadSignature>, &PayloadSignatures>>::from(&x)))]
+    pub payload_signatures: PayloadSignatures,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>, &EnvelopeSignatures>>::from(&x)))]
+    pub envelope_signatures: EnvelopeSignatures,
 }
 
 #[derive(DecodableMessage, Default)]
@@ -73,4 +134,60 @@ pub struct TransactionD {
     pub authorizers: Repeated<Vec<u8>>,
     pub payload_signatures: Repeated<SignatureD>,
     pub envelope_signatures: Repeated<SignatureD>,
+}
+
+impl TransactionD {
+    /// Parse a specific argument.
+    pub fn parse_argument(&self, index: usize) -> serde_json::Result<ValueOwned> {
+        let arg = &self.arguments.0[index];
+
+        serde_json::from_slice(arg)
+    }
+
+    /// Returns an iterator parsing the underlying arguments.
+    pub fn parse_arguments(&self) -> ParseArguments<slice::Iter<Vec<u8>>> {
+        ParseArguments::new(self.arguments.0.iter())
+    }
+}
+
+pub struct ParseArguments<'a, I>(I, PhantomData<&'a ()>);
+
+impl<I: Iterator> ParseArguments<'_, I> {
+    pub fn new(iter: I) -> Self {
+        Self(iter, PhantomData)
+    }
+
+    pub fn into_inner(self) -> I {
+        self.0
+    }
+}
+
+impl<'a, I: Iterator<Item = &'a Bytes>, Bytes: AsRef<[u8]> + 'a> Iterator for ParseArguments<'a, I> {
+    type Item = serde_json::Result<ValueOwned>;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(AsRef::as_ref).map(serde_json::from_slice)
+    }
+
+    fn fold<B, F>(self, init: B, f: F) -> B
+        where
+            Self: Sized,
+            F: FnMut(B, Self::Item) -> B, {
+        fn parse<'a, B, Bytes: AsRef<[u8]>>(mut f: impl FnMut(B, serde_json::Result<ValueOwned>) -> B) -> impl FnMut(B, &'a Bytes) -> B {
+            move |accum, bytes| {
+                f(accum, serde_json::from_slice(bytes.as_ref()))
+            }
+        }
+        self.0.fold(init, parse(f))
+    }
+
+    fn collect<B: FromIterator<Self::Item>>(self) -> B
+    where
+        Self: Sized, {
+        self.0.map(AsRef::as_ref).map(serde_json::from_slice).collect()
+    }
 }

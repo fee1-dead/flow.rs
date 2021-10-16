@@ -57,7 +57,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     };
 
     let create_account_header = create_account.to_header();
-
     let res = account
         .send_transaction_header(&create_account_header)
         .await?;

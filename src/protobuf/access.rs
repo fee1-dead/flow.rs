@@ -1,20 +1,20 @@
-use crate::{ExecutionResult, Timestamp};
+use crate::{ExecutionResult, SignatureE, Timestamp};
 use otopr::{DecodableMessage, EncodableMessage, Message, Repeated};
 
 macro_rules! access_api {
-    (rpc $servName:ident(noseal $reqTy:ty) returns ($resTy:ty)) => {
-        impl FlowRequest<$resTy> for $reqTy {
+    (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
+        impl$(<$($generics),+>)? FlowRequest<$resTy> for $reqTy $(where $($tt)*)? {
             const PATH: &'static str = concat!("/flow.access.AccessAPI/", stringify!($servName));
         }
     };
-    (rpc $servName:ident($reqTy:ty) returns ($resTy:ty)) => {
-        access_api!(rpc $servName(noseal $reqTy) returns ($resTy));
+    (rpc $servName:ident$(<$($generics:ident),+>)?($reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
+        access_api!(rpc $servName$(<$($generics),+>)?(noseal $reqTy) returns ($resTy) $(where($($tt)*))?);
 
-        impl crate::requests::private::Sealed for $reqTy {}
+        impl$(<$($generics),+>)? crate::requests::private::Sealed for $reqTy $(where $($tt)*)? {}
     };
-    ($(rpc $servName:ident($($tt:tt)*) returns ($resTy:ty);)+) => {
+    ($(rpc $servName:ident$(<$($generics:ident),+$(,)?>)?($($tt:tt)*) returns ($resTy:ty) $(where($($tts:tt)*))?;)+) => {
         $(
-            access_api!(rpc $servName($($tt)*) returns ($resTy));
+            access_api!(rpc $servName$(<$($generics),+>)?($($tt)*) returns ($resTy) $(where($($tts)*))?);
         )+
     };
 }
@@ -83,8 +83,55 @@ pub struct CollectionResponse {
 }
 
 #[derive(EncodableMessage)]
-pub struct SendTransactionRequest<'a> {
-    pub transaction: TransactionE<'a>,
+#[otopr(encode_extra_type_params(
+    ArgumentsItem,
+    AuthorizersItem,
+    PayloadSignatureAddress,
+    PayloadSignature,
+    EnvelopeSignatureAddress,
+    EnvelopeSignature,
+))]
+#[otopr(encode_where_clause(
+    where
+        Script: AsRef<[u8]>,
+        ReferenceBlockId: AsRef<[u8]>,
+        Payer: AsRef<[u8]>,
+        ArgumentsItem: AsRef<[u8]>,
+        AuthorizersItem: AsRef<[u8]>,
+        ProposalKeyAddress: AsRef<[u8]>,
+        PayloadSignatureAddress: AsRef<[u8]>,
+        PayloadSignature: AsRef<[u8]>,
+        EnvelopeSignatureAddress: AsRef<[u8]>,
+        EnvelopeSignature: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a ArgumentsItem>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a AuthorizersItem>,
+        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+))]
+pub struct SendTransactionRequest<
+    Script,
+    Arguments,
+    ReferenceBlockId,
+    ProposalKeyAddress,
+    Payer,
+    Authorizers,
+    PayloadSignatures,
+    EnvelopeSignatures,
+> {
+    pub transaction: TransactionE<
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >,
 }
 
 #[derive(DecodableMessage, Default)]
@@ -222,7 +269,50 @@ access_api! {
     rpc GetBlockByID(GetBlockByIdRequest<'_>) returns (BlockResponse);
     rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
     rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
-    rpc SendTransaction(SendTransactionRequest<'_>) returns (SendTransactionResponse);
+    rpc SendTransaction<
+        ArgumentsItem,
+        AuthorizersItem,
+        PayloadSignatureAddress,
+        PayloadSignature,
+        EnvelopeSignatureAddress,
+        EnvelopeSignature,
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >(SendTransactionRequest<
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >) returns (SendTransactionResponse) where (
+        Script: AsRef<[u8]>,
+        ReferenceBlockId: AsRef<[u8]>,
+        Payer: AsRef<[u8]>,
+        ArgumentsItem: AsRef<[u8]>,
+        AuthorizersItem: AsRef<[u8]>,
+        ProposalKeyAddress: AsRef<[u8]>,
+        PayloadSignatureAddress: AsRef<[u8]>,
+        PayloadSignature: AsRef<[u8]>,
+        EnvelopeSignatureAddress: AsRef<[u8]>,
+        EnvelopeSignature: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a ArgumentsItem>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a AuthorizersItem>,
+        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+    );
     rpc GetTransaction(GetTransactionRequest<'_>) returns (TransactionResponse);
     rpc GetTransactionResult(noseal GetTransactionRequest<'_>)
         returns (TransactionResultResponse);
