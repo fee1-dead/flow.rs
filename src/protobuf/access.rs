@@ -1,5 +1,5 @@
 use crate::{ExecutionResult, SignatureE, Timestamp};
-use otopr::{DecodableMessage, EncodableMessage, Message, Repeated};
+use otopr::*;
 
 macro_rules! access_api {
     (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
@@ -84,8 +84,6 @@ pub struct CollectionResponse {
 
 #[derive(EncodableMessage)]
 #[otopr(encode_extra_type_params(
-    ArgumentsItem,
-    AuthorizersItem,
     PayloadSignatureAddress,
     PayloadSignature,
     EnvelopeSignatureAddress,
@@ -96,19 +94,23 @@ pub struct CollectionResponse {
         Script: AsRef<[u8]>,
         ReferenceBlockId: AsRef<[u8]>,
         Payer: AsRef<[u8]>,
-        ArgumentsItem: AsRef<[u8]>,
-        AuthorizersItem: AsRef<[u8]>,
         ProposalKeyAddress: AsRef<[u8]>,
         PayloadSignatureAddress: AsRef<[u8]>,
         PayloadSignature: AsRef<[u8]>,
         EnvelopeSignatureAddress: AsRef<[u8]>,
         EnvelopeSignature: AsRef<[u8]>,
-        for<'a> &'a Arguments: IntoIterator<Item = &'a ArgumentsItem>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
         for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
-        for<'a> &'a Authorizers: IntoIterator<Item = &'a AuthorizersItem>,
+        Authorizers: HasItem,
+        <Authorizers as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
         for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
 ))]
@@ -154,7 +156,7 @@ pub struct TransactionResultResponse {
     pub status: TransactionStatus,
     pub status_code: u32,
     pub error_message: String,
-    pub events: Repeated<Event>,
+    pub events: Repeated<Vec<Event>>,
     pub block_id: Vec<u8>,
 }
 
@@ -222,13 +224,13 @@ pub struct GetEventsForBlockIdsRequest<'a> {
 pub struct EventsResult {
     pub block_id: Vec<u8>,
     pub block_height: u64,
-    pub events: Repeated<Event>,
+    pub events: Repeated<Vec<Event>>,
     pub block_timestamp: Timestamp,
 }
 
 #[derive(DecodableMessage, Default)]
 pub struct EventsResponse {
-    pub results: Repeated<EventsResult>,
+    pub results: Repeated<Vec<EventsResult>>,
 }
 
 #[derive(EncodableMessage)]
@@ -270,8 +272,6 @@ access_api! {
     rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
     rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
     rpc SendTransaction<
-        ArgumentsItem,
-        AuthorizersItem,
         PayloadSignatureAddress,
         PayloadSignature,
         EnvelopeSignatureAddress,
@@ -297,19 +297,23 @@ access_api! {
         Script: AsRef<[u8]>,
         ReferenceBlockId: AsRef<[u8]>,
         Payer: AsRef<[u8]>,
-        ArgumentsItem: AsRef<[u8]>,
-        AuthorizersItem: AsRef<[u8]>,
         ProposalKeyAddress: AsRef<[u8]>,
         PayloadSignatureAddress: AsRef<[u8]>,
         PayloadSignature: AsRef<[u8]>,
         EnvelopeSignatureAddress: AsRef<[u8]>,
         EnvelopeSignature: AsRef<[u8]>,
-        for<'a> &'a Arguments: IntoIterator<Item = &'a ArgumentsItem>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
         for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
-        for<'a> &'a Authorizers: IntoIterator<Item = &'a AuthorizersItem>,
+        Authorizers: HasItem,
+        <Authorizers as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
         for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
     );

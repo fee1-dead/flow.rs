@@ -1,7 +1,6 @@
 use std::{
     error::Error,
     io::{stdin, BufRead},
-    marker::PhantomData,
 };
 
 use cadence_json::AddressOwned;
@@ -50,13 +49,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         )
         .await?;
 
-    let create_account = CreateAccountTransaction::<_, tiny_keccak::Sha3> {
+    let create_account = CreateAccountTransaction {
         public_keys: &[account.public_key()],
-        signer: account.signer(),
-        _pd: PhantomData,
     };
 
-    let create_account_header = create_account.to_header();
+    let create_account_header = create_account.to_header::<_, tiny_keccak::Sha3>(account.signer());
     let res = account
         .send_transaction_header(&create_account_header)
         .await?;

@@ -1,10 +1,11 @@
 use std::iter::empty;
+use std::slice;
 use std::{error::Error as StdError, marker::PhantomData};
 
 use crate::{
     Account, AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
-    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest,
-    SendTransactionResponse, SignatureE, TransactionE, TransactionHeader,
+    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest, SendTransactionResponse,
+    SignatureE, TransactionE, TransactionHeader,
 };
 
 use crate::algorithms::{FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
@@ -82,24 +83,26 @@ impl<Sk, Sn, Hs, Cl> SimpleAccount<Sk, Sn, Hs, Cl> {
 }
 
 #[repr(transparent)]
-pub struct SliceHelper<T>([T]);
+pub struct SliceHelper<T, Item>(T, PhantomData<Item>);
 
-impl<T> SliceHelper<T> {
-    pub fn new_ref(slice: &[T]) -> &Self {
-        unsafe {
-            &*(slice as *const [T] as *const SliceHelper<T>)
-        }
+impl<T: AsRef<[Item]>, Item> SliceHelper<T, Item> {
+    pub fn new_ref(t: &T) -> &Self {
+        unsafe { &*(t as *const T as *const Self) }
     }
 }
 
-impl<'a, 'b, T> IntoIterator for &'a &'b SliceHelper<T> {
-    type Item = &'a T;
+impl<'a, 'b, T: AsRef<[Item]>, Item: 'a> IntoIterator for &'a &'b SliceHelper<T, Item> {
+    type Item = &'a Item;
 
-    type IntoIter = std::slice::Iter<'a, T>;
+    type IntoIter = slice::Iter<'a, Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
+        self.0.as_ref().iter()
     }
+}
+
+impl<T: AsRef<[Item]>, Item> otopr::HasItem for &'_ SliceHelper<T, Item> {
+    type Item = Item;
 }
 
 impl<SecretKey, Signer, Hasher, Client> SimpleAccount<SecretKey, Signer, Hasher, Client>
@@ -140,12 +143,17 @@ where
     }
 
     /// Sign a transaction header with a block id and gas limit.
-    pub fn sign_transaction_header<const ARGS: usize>(
+    pub fn sign_transaction_header<'a, Arguments>(
         &mut self,
-        header: &TransactionHeader<ARGS>,
+        header: &'a TransactionHeader<Arguments>,
         reference_block_id: impl AsRef<[u8]>,
         gas_limit: u64,
-    ) -> Signer::Signature {
+    ) -> Signer::Signature
+    where
+        &'a Arguments: IntoIterator,
+        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
+    {
         self.sign_transaction(
             &header.script,
             &header.arguments,
@@ -159,16 +167,16 @@ where
         self.signer.sign(hasher, &self.secret_key)
     }
 
-    pub async fn send_transaction_header<'a, const ARGS: usize>(
+    pub async fn send_transaction_header<'a, Arguments>(
         &'a mut self,
-        transaction: &'a TransactionHeader<ARGS>,
+        transaction: &'a TransactionHeader<Arguments>,
     ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
     where
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
         for<'b> Client: GrpcClient<
             SendTransactionRequest<
                 &'a [u8],
-                &'a SliceHelper<Vec<u8>>,
+                &'a SliceHelper<Arguments, Vec<u8>>,
                 &'b [u8],
                 &'a [u8],
                 &'a [u8],
@@ -178,6 +186,10 @@ where
             >,
             SendTransactionResponse,
         >,
+        Arguments: AsRef<[Vec<u8>]>,
+        &'a Arguments: IntoIterator,
+        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
     {
         let latest_block = self
             .client()

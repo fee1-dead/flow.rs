@@ -183,25 +183,3 @@ impl TonicHyperFlowClient {
         })
     }
 }
-
-pub mod test {
-    use tonic::transport::Channel;
-
-    use crate::{SendTransactionRequest, SendTransactionResponse, SignatureE, access::SliceHelper};
-
-    use super::GrpcClient;
-
-    pub fn test() where for<'a> super::Grpc<Channel>: GrpcClient<
-        SendTransactionRequest<
-            &'a [u8],
-            &'a SliceHelper<Vec<u8>>,
-            &'a [u8],
-            &'a [u8],
-            &'a [u8],
-            [&'a [u8]; 1],
-            [SignatureE<&'a [u8], &'a [u8]>; 0],
-            [SignatureE<&'a [u8], &'a [u8]>; 1],
-        >,
-        SendTransactionResponse,
-    >, {}
-}

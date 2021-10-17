@@ -36,9 +36,9 @@ pub struct BlockSeal {
     #[otopr(2)]
     pub execution_receipt_id: Vec<u8>,
     #[otopr(3)]
-    pub execution_receipt_signatures: Repeated<Vec<u8>>,
+    pub execution_receipt_signatures: Repeated<Vec<Vec<u8>>>,
     #[otopr(4)]
-    pub result_approval_signatures: Repeated<Vec<u8>>,
+    pub result_approval_signatures: Repeated<Vec<Vec<u8>>>,
 }
 
 #[derive(DecodableMessage, Default)]
@@ -52,9 +52,9 @@ pub struct Block {
     #[otopr(4)]
     pub timestamp: Message<super::Timestamp>,
     #[otopr(5)]
-    pub collection_guarantees: Repeated<CollectionGuarantee>,
+    pub collection_guarantees: Repeated<Vec<CollectionGuarantee>>,
     #[otopr(6)]
-    pub block_seals: Repeated<BlockSeal>,
+    pub block_seals: Repeated<Vec<BlockSeal>>,
     #[otopr(7)]
-    pub signatures: Repeated<Vec<u8>>,
+    pub signatures: Repeated<Vec<Vec<u8>>>,
 }

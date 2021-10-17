@@ -5,7 +5,7 @@ pub struct Account {
     pub address: Vec<u8>,
     pub balance: u64,
     pub code: Vec<u8>,
-    pub keys: Repeated<AccountKey>,
+    pub keys: Repeated<Vec<AccountKey>>,
     pub contracts: Map<String, Vec<u8>>,
 }
 

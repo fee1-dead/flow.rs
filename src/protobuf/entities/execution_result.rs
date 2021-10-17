@@ -4,8 +4,8 @@ use otopr::*;
 pub struct ExecutionResult {
     pub previous_result_id: Vec<u8>,
     pub block_id: Vec<u8>,
-    pub chunks: Repeated<Chunk>,
-    pub service_events: Repeated<ServiceEvent>,
+    pub chunks: Repeated<Vec<Chunk>>,
+    pub service_events: Repeated<Vec<ServiceEvent>>,
 }
 
 #[derive(DecodableMessage, Default)]
