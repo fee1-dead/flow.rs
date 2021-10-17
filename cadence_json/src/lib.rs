@@ -277,13 +277,20 @@ pub enum ValueOwned {
 }
 
 macro_rules! ty {
-    (pub enum Type {$($Variant:ident),*$(,)?}) => {
+    (pub enum Type {
+        Void,
+        $($Variant:ident),*$(,)?
+    }) => {
         #[derive(SerializeDisplay, DeserializeFromStr)]
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        pub enum Type { $($Variant),* }
+        pub enum Type {
+            Void,
+            $($Variant),*
+        }
         impl Type {
             pub const fn as_str(self) -> &'static str {
                 match self {
+                    Self::Void => "Void",
                     $(Type::$Variant => stringify!($Variant),)*
                 }
             }
@@ -292,8 +299,25 @@ macro_rules! ty {
             type Err = &'static str;
             fn from_str(s: &str) -> Result<Type, &'static str> {
                 match s {
+                    "Void" => Ok(Self::Void),
                     $(stringify!($Variant) => Ok(Type::$Variant),)*
                     _ => Err("invalid type string"),
+                }
+            }
+        }
+        impl ValueRef<'_> {
+            pub fn ty(&self) -> Type {
+                match self {
+                    Self::Void => Type::Void,
+                    $(Self::$Variant(_) => Type::$Variant,)*
+                }
+            }
+        }
+        impl ValueOwned {
+            pub fn ty(&self) -> Type {
+                match self {
+                    Self::Void => Type::Void,
+                    $(Self::$Variant(_) => Type::$Variant,)*
                 }
             }
         }

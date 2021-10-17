@@ -10,8 +10,8 @@ pub use signing::*;
 mod template;
 pub use template::*;
 
-use otopr::*;
 use otopr::encoding::EncodeAsRef;
+use otopr::*;
 use wire_types::*;
 
 pub type RepSlice<'a, T> = Repeated<&'a [T]>;

@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap};
 
 use cadence_json::ValueRef;
 
@@ -20,15 +20,58 @@ pub struct CreateAccountTransaction<'a, PubKey> {
     pub public_keys: &'a [PubKey],
 }
 
-pub struct AddContractTransaction<Name: AsRef<str>, Script: AsRef<str>, ExtraArgs> {
+pub struct AddContractTransaction<'a, Name: AsRef<str>, Script: AsRef<str>> {
     pub name: Name,
     pub script: Script,
-    pub extra_args: ExtraArgs,
+    pub extra_args: HashMap<String, ValueRef<'a>>,
 }
 
-impl<Name: AsRef<str>, Script: AsRef<str>, ExtraArgs>
-    AddContractTransaction<Name, Script, ExtraArgs>
-{
+impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Script> {
+    pub fn to_header(&self) -> TransactionHeader<Vec<Vec<u8>>> {
+        // Extra args passed to the transaction.
+        // name: type, name: type, ...
+        let mut extra_args_transaction_args = String::new();
+        // Extra args passed to contracts.add().
+        // name: name, name: name, ...
+        let mut extra_args_add_args = String::new();
+
+        let base_arguments = [
+            ValueRef::String(self.name.as_ref()),
+            ValueRef::String(self.script.as_ref()),
+        ];
+
+        let extra_args = self.extra_args.iter().enumerate().map(|(n, (name, val))| {
+            if n != 0 {
+                extra_args_transaction_args.push_str(", ");
+                extra_args_add_args.push_str(", ")
+            }
+            extra_args_transaction_args.push_str(name);
+            extra_args_transaction_args.push_str(": ");
+            extra_args_transaction_args.push_str(val.ty().as_str());
+
+            extra_args_add_args.push_str(name);
+            extra_args_add_args.push_str(": ");
+            extra_args_add_args.push_str(name);
+
+            val
+        });
+
+        let arguments = base_arguments
+            .iter()
+            .chain(extra_args)
+            .map(|v| serde_json::to_vec(v).unwrap())
+            .collect();
+
+        TransactionHeader {
+            script: format!(
+                include_str!("add_contract.cdc.template"),
+                extra_args_transaction_args, extra_args_add_args
+            )
+            .into_bytes()
+            .into(),
+            arguments,
+        }
+    }
 }
 
 impl<'a, PubKey> CreateAccountTransaction<'a, PubKey> {
