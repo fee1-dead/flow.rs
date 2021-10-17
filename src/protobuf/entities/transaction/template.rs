@@ -31,17 +31,56 @@ pub struct UpdateContractTransaction<Name: AsRef<str>, Script: AsRef<str>> {
     pub script: Script,
 }
 
-impl<Name: AsRef<str>, Script: AsRef<str>> UpdateContractTransaction<Name, Script> {
-    pub fn to_header(&self) -> TransactionHeader<[Vec<u8>; 2]> {
-        header_array(
-            include_str!("update_contract.cdc").as_bytes().into(),
-            [
-                ValueRef::String(self.name.as_ref()),
-                ValueRef::String(self.script.as_ref()),
-            ],
-        )
+pub struct RemoveContractTransaction<Name: AsRef<str>> {
+    pub name: Name,
+}
+
+impl<'a, PubKey> CreateAccountTransaction<'a, PubKey> {
+    pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(
+        &self,
+        signer: &S,
+    ) -> TransactionHeader<[Vec<u8>; 1]> {
+        match self.public_keys {
+            [pubkey] => {
+                let bytes = signer.serialize_public_key(pubkey);
+                let bytes = bytes.map(ValueRef::UInt8);
+                let script = format!(
+                    include_str!("create_account_one_key.cdc.template"),
+                    S::Algorithm::NAME,
+                    H::Algorithm::NAME
+                );
+                header_array(script.into_bytes().into(), [ValueRef::Array(&bytes)])
+            }
+            pubs => {
+                let arrays = pubs
+                    .iter()
+                    .map(|pubkey| signer.serialize_public_key(pubkey))
+                    .map(|bytes| bytes.map(ValueRef::UInt8))
+                    .collect::<Vec<_>>();
+
+                let args = arrays
+                    .iter()
+                    .map(AsRef::as_ref)
+                    .map(ValueRef::Array)
+                    .collect::<Vec<_>>();
+
+                let val = ValueRef::Array(&args);
+
+                header_array(
+                    format!(
+                        include_str!("create_account.cdc.template"),
+                        S::Algorithm::NAME,
+                        H::Algorithm::NAME
+                    )
+                    .into_bytes()
+                    .into(),
+                    [val],
+                )
+            }
+        }
     }
 }
+
 
 impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Script> {
     pub fn to_header(&self) -> TransactionHeader<Vec<Vec<u8>>> {
@@ -91,49 +130,26 @@ impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Scri
     }
 }
 
-impl<'a, PubKey> CreateAccountTransaction<'a, PubKey> {
-    pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(
-        &self,
-        signer: &S,
-    ) -> TransactionHeader<[Vec<u8>; 1]> {
-        match self.public_keys {
-            [pubkey] => {
-                let bytes = signer.serialize_public_key(pubkey);
-                let bytes = bytes.map(ValueRef::UInt8);
-                let script = format!(
-                    include_str!("create_account_one_key.cdc.template"),
-                    S::Algorithm::NAME,
-                    H::Algorithm::NAME
-                );
-                header_array(script.into_bytes().into(), [ValueRef::Array(&bytes)])
-            }
-            pubs => {
-                let arrays = pubs
-                    .iter()
-                    .map(|pubkey| signer.serialize_public_key(pubkey))
-                    .map(|bytes| bytes.map(ValueRef::UInt8))
-                    .collect::<Vec<_>>();
+impl<Name: AsRef<str>, Script: AsRef<str>> UpdateContractTransaction<Name, Script> {
+    pub fn to_header(&self) -> TransactionHeader<[Vec<u8>; 2]> {
+        header_array(
+            include_str!("update_contract.cdc").as_bytes().into(),
+            [
+                ValueRef::String(self.name.as_ref()),
+                ValueRef::String(self.script.as_ref()),
+            ],
+        )
+    }
+}
 
-                let args = arrays
-                    .iter()
-                    .map(AsRef::as_ref)
-                    .map(ValueRef::Array)
-                    .collect::<Vec<_>>();
-
-                let val = ValueRef::Array(&args);
-
-                header_array(
-                    format!(
-                        include_str!("create_account.cdc.template"),
-                        S::Algorithm::NAME,
-                        H::Algorithm::NAME
-                    )
-                    .into_bytes()
-                    .into(),
-                    [val],
-                )
-            }
-        }
+impl<Name: AsRef<str>> RemoveContractTransaction<Name> {
+    pub fn to_header(&self) -> TransactionHeader<[Vec<u8>; 1]> {
+        header_array(
+            include_str!("remove_contract.cdc").as_bytes().into(),
+            [
+                ValueRef::String(self.name.as_ref())
+            ],
+        )
     }
 }
 
