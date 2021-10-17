@@ -26,6 +26,23 @@ pub struct AddContractTransaction<'a, Name: AsRef<str>, Script: AsRef<str>> {
     pub extra_args: HashMap<String, ValueRef<'a>>,
 }
 
+pub struct UpdateContractTransaction<Name: AsRef<str>, Script: AsRef<str>> {
+    pub name: Name,
+    pub script: Script,
+}
+
+impl<Name: AsRef<str>, Script: AsRef<str>> UpdateContractTransaction<Name, Script> {
+    pub fn to_header(&self) -> TransactionHeader<[Vec<u8>; 2]> {
+        header_array(
+            include_str!("update_contract.cdc").as_bytes().into(),
+            [
+                ValueRef::String(self.name.as_ref()),
+                ValueRef::String(self.script.as_ref()),
+            ],
+        )
+    }
+}
+
 impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Script> {
     pub fn to_header(&self) -> TransactionHeader<Vec<Vec<u8>>> {
         // Extra args passed to the transaction.
