@@ -1,4 +1,4 @@
-use std::{array::IntoIter, borrow::Cow, iter};
+use std::borrow::Cow;
 
 use cadence_json::ValueRef;
 
@@ -77,7 +77,7 @@ impl<'a, PubKey> CreateAccountTransaction<'a, PubKey> {
     }
 }
 
-fn header_array<'a, const ARGS: usize>(
+fn header_array<const ARGS: usize>(
     script: Cow<'static, [u8]>,
     args: [ValueRef; ARGS],
 ) -> TransactionHeader<[Vec<u8>; ARGS]> {

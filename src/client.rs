@@ -125,7 +125,7 @@ impl<Inner> FlowClient<Inner> {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
         pub fn execute_script_at_latest_block<('a)>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
-            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments.into()) }
+            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments) }
         }
         pub fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address }
