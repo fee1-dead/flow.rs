@@ -1,4 +1,4 @@
-use crate::{access::PADDED_TRANSACTION_DOMAIN_TAG, rlp_encode_transaction_payload};
+use crate::rlp_encode_transaction_payload;
 
 use super::fixtures::Test;
 
@@ -19,7 +19,12 @@ impl Test for TxTest {
                     arguments,
                     ref_block,
                     compute_limit,
-                    proposal_key: ProposalKey { address, key_id, sequence_number },
+                    proposal_key:
+                        ProposalKey {
+                            address,
+                            key_id,
+                            sequence_number,
+                        },
                     payer,
                     authorizers,
                     payload_signatures,
@@ -44,8 +49,7 @@ impl Test for TxTest {
             authorizers.clone(),
         );
 
-        let domain_tag = hex::encode(&PADDED_TRANSACTION_DOMAIN_TAG);
-        assert_eq!(payload.strip_prefix(&domain_tag).unwrap(), hex::encode(stream.out())); 
+        assert_eq!(payload, hex::encode(stream.out()));
 
         Ok(())
     }

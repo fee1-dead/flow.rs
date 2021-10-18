@@ -13,7 +13,7 @@ use crate::algorithms::{FlowHasher, FlowSigner, HashAlgorithm, Signature, Signat
 use crate::client::{FlowClient, GrpcClient};
 
 const PADDED_LEN: usize = 32;
-pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
+const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
     padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
 const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {

@@ -77,9 +77,11 @@ pub fn rlp_encode_transaction_payload(
     }
 }
 
-// Given a slice of bytes and the padded length, returns an iterator of the data left-padded with zeros. 
+// Given a slice of bytes and the padded length, returns an iterator of the data left-padded with zeros.
 fn lpad(data: &impl AsRef<[u8]>, padded_len: usize) -> impl Iterator<Item = u8> + '_ {
     let data = data.as_ref();
 
-    std::iter::repeat(0).take(padded_len - data.as_ref().len()).chain(data.iter().copied())
+    std::iter::repeat(0)
+        .take(padded_len - data.as_ref().len())
+        .chain(data.iter().copied())
 }
