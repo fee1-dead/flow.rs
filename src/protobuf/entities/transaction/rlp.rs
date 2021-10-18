@@ -1,5 +1,6 @@
 use rlp::RlpStream;
 
+#[allow(clippy::too_many_arguments)]
 pub fn rlp_encode_transaction_envelope(
     s: &mut RlpStream,
     script: impl AsRef<[u8]>,
@@ -38,6 +39,7 @@ pub fn rlp_encode_transaction_envelope(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn rlp_encode_transaction_payload(
     stream: &mut RlpStream,
     script: impl AsRef<[u8]>,
