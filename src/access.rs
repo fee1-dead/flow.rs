@@ -132,7 +132,7 @@ where
             self.sequence_number() as u64,
             self.address(),
             [self.address()],
-            empty::<(u32, u32, &[u8])>(),
+            empty::<(&[u8], u32, &[u8])>(),
         );
 
         let mut hasher = Hasher::new();

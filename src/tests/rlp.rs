@@ -1,8 +1,8 @@
-use crate::rlp_encode_transaction_payload;
+use crate::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
 
 use super::fixtures::Test;
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct TxTest {
     #[serde(rename = "in")]
     pub tx_in: TxIn,
@@ -12,6 +12,7 @@ pub struct TxTest {
 
 impl Test for TxTest {
     fn run(self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        println!("{:?}", self);
         let TxTest {
             tx_in:
                 TxIn {
@@ -36,6 +37,7 @@ impl Test for TxTest {
         let payer = hex::decode(payer).unwrap();
         let authorizers = authorizers.iter().map(hex::decode).map(Result::unwrap);
         let mut stream = rlp::RlpStream::new();
+
         rlp_encode_transaction_payload(
             &mut stream,
             &cadence,
@@ -49,13 +51,33 @@ impl Test for TxTest {
             authorizers.clone(),
         );
 
-        assert_eq!(payload, hex::encode(stream.out()));
+        assert_eq!(payload, hex::encode(stream.as_raw()));
+
+        stream.clear();
+
+        rlp_encode_transaction_envelope(
+            &mut stream,
+            &cadence,
+            arguments,
+            reference_block_id,
+            compute_limit,
+            proposal_key_address,
+            key_id,
+            sequence_number,
+            payer,
+            authorizers,
+            payload_signatures
+                .into_iter()
+                .map(|ps| (hex::decode(ps.address).unwrap(), ps.key_id, hex::decode(ps.sig).unwrap())),
+        );
+
+        assert_eq!(envelope, hex::encode(stream.as_raw()));
 
         Ok(())
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct TxIn {
     pub cadence: String,
     pub arguments: Vec<String>,
@@ -71,13 +93,13 @@ pub struct TxIn {
     pub payload_signatures: Vec<PayloadSignature>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct TxOut {
     pub payload: String,
     pub envelope: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct ProposalKey {
     pub address: String,
     #[serde(rename = "keyId")]
@@ -86,7 +108,7 @@ pub struct ProposalKey {
     pub sequence_number: u64,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct PayloadSignature {
     pub address: String,
     #[serde(rename = "keyId")]
