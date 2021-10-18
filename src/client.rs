@@ -31,6 +31,8 @@ pub struct FlowClient<T> {
 pub type TonicFlowClient<Service> = FlowClient<Grpc<Service>>;
 pub type TonicHyperFlowClient = TonicFlowClient<Channel>;
 
+pub type GrpcSendResult<'a, Output> = Pin<Box<dyn Future<Output = Result<Output, Box<dyn Error + Send + Sync>>> + 'a>>;
+
 impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
     I: FlowRequest<O> + Send + Sync,
@@ -40,13 +42,13 @@ where
     <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
     type Error = Box<dyn Error + Send + Sync>;
-    fn send<'a>(
-        &'a mut self,
+    fn send(
+        &mut self,
         input: I,
-    ) -> Pin<Box<dyn Future<Output = Result<O, Box<dyn Error + Send + Sync>>> + 'a>> {
+    ) -> GrpcSendResult<O> {
         let preenc = PreEncode::new(&input);
         Box::pin(async move {
-            self.ready().await.map_err(|error| error.into())?;
+            self.ready().await.map_err(Into::into)?;
             Ok(self
                 .unary(
                     Request::new(preenc),

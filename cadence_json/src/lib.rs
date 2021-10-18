@@ -13,13 +13,26 @@ pub mod ser;
 
 pub(crate) mod wrapper {
     use std::str::FromStr;
+
+    /// A type in the cadence type system that needs to delegate serde implementation to a newtype wrapper.
+    ///
+    /// For example, integers are strings within the Cadence-JSON interchange format, so we need to use
+    /// the `FromStr` and `Display` implementations to (de)serialize instead.
+    ///
+    /// # Safety
+    /// 
+    /// `Self::Wrapped` must have the same layout as `Self`, i.e. they are safely transmutable.
+    ///
+    /// Make sure that `Self::Wrapped` is a newtype struct annotated with #[repr(transparent)]
     pub unsafe trait Wrap {
         type Wrapped;
     }
+
     pub fn wrap<T: Wrap>(of: &T) -> &T::Wrapped {
         // Safety: the wrapper is guarranteed to be #[repr(transparent)] over `T`.
         unsafe { &*(of as *const T as *const T::Wrapped) }
     }
+
     macro_rules! wrapper {
         ($Name:ident($ty:path)) => {
             #[derive(serde_with::DeserializeFromStr, serde_with::SerializeDisplay)]
