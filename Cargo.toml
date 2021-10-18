@@ -15,6 +15,7 @@ bytes = "1.1.0"
 thiserror = "1.0.30"
 cadence_json = { version = "0.1.0", path = "cadence_json/" }
 serde_json = "1.0.68"
+serde = "1.0.130"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples

@@ -9,3 +9,6 @@ pub mod algorithms;
 pub mod requests;
 
 pub mod access;
+
+#[cfg(test)]
+pub(crate) mod tests;

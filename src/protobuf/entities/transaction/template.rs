@@ -81,7 +81,6 @@ impl<'a, PubKey> CreateAccountTransaction<'a, PubKey> {
     }
 }
 
-
 impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Script> {
     pub fn to_header(&self) -> TransactionHeader<Vec<Vec<u8>>> {
         // Extra args passed to the transaction.
@@ -146,9 +145,7 @@ impl<Name: AsRef<str>> RemoveContractTransaction<Name> {
     pub fn to_header(&self) -> TransactionHeader<[Vec<u8>; 1]> {
         header_array(
             include_str!("remove_contract.cdc").as_bytes().into(),
-            [
-                ValueRef::String(self.name.as_ref())
-            ],
+            [ValueRef::String(self.name.as_ref())],
         )
     }
 }
