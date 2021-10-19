@@ -1,6 +1,6 @@
 use otopr::DecodableMessage;
 
-#[derive(DecodableMessage, Default)]
+#[derive(DecodableMessage, Default, Debug)]
 pub struct Event {
     pub r#type: String,
     pub transaction_id: Vec<u8>,

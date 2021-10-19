@@ -5,6 +5,8 @@ use std::{borrow::Cow, fmt::Display, num::Wrapping, str::FromStr};
 
 pub use num_bigint::{BigInt, BigUint};
 
+mod debug;
+
 mod fixed;
 pub use fixed::*;
 
@@ -133,7 +135,7 @@ pub struct CompositeFieldOwned {
     pub value: ValueOwned,
 }
 
-#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq, Eq)]
 pub struct CompositeOwned {
     pub id: String,
     pub fields: Vec<CompositeFieldOwned>,
@@ -151,7 +153,7 @@ pub struct EntryOwned {
     pub value: ValueOwned,
 }
 
-#[derive(DeserializeFromStr, Clone, Debug, PartialEq, Eq)]
+#[derive(DeserializeFromStr, Clone, PartialEq, Eq)]
 pub struct AddressOwned {
     pub data: Vec<u8>,
 }

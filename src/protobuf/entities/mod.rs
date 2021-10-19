@@ -29,7 +29,7 @@ pub struct BlockHeader {
     pub timestamp: Message<super::Timestamp>,
 }
 
-#[derive(DecodableMessage, Default)]
+#[derive(DecodableMessage, Default, PartialEq, Eq, Debug)]
 pub struct BlockSeal {
     #[otopr(1)]
     pub block_id: Vec<u8>,
@@ -41,7 +41,7 @@ pub struct BlockSeal {
     pub result_approval_signatures: Repeated<Vec<Vec<u8>>>,
 }
 
-#[derive(DecodableMessage, Default)]
+#[derive(DecodableMessage, Default, PartialEq, Eq, Debug)]
 pub struct Block {
     #[otopr(1)]
     pub id: Vec<u8>,

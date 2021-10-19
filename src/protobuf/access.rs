@@ -31,7 +31,7 @@ pub struct PingRequest;
 pub struct PingResponse;
 
 #[derive(DecodableMessage, Default)]
-pub struct BlockHeaderResponse(#[otopr(1)] pub Message<super::BlockHeader>);
+pub struct BlockHeaderResponse(#[otopr(1)] pub super::BlockHeader);
 
 #[derive(EncodableMessage)]
 pub struct GetLatestBlockHeaderRequest {
@@ -52,7 +52,7 @@ pub struct GetBlockHeaderByHeightRequest {
 }
 
 #[derive(DecodableMessage, Default)]
-pub struct BlockResponse(#[otopr(1)] pub Message<super::Block>);
+pub struct BlockResponse(pub super::Block);
 
 #[derive(EncodableMessage)]
 pub struct GetLatestBlockRequest {

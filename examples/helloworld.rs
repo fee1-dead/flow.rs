@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut net = TonicHyperFlowClient::testnet()?;
     let _ = net.ping().await?;
     let latest_block_header = net.latest_block_header(true).await?;
-    let block_header = latest_block_header.0.into_inner();
+    let block_header = latest_block_header.0;
     println!("{:?}", block_header);
     let Timestamp { nanos, seconds } = block_header.timestamp.into_inner();
     println!("{}", Utc.timestamp(seconds, nanos as u32));
@@ -19,8 +19,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let block_header2 = net
         .block_header_by_height(block_header.height)
         .await?
-        .0
-        .into_inner();
+        .0;
     println!("{:?}", block_header2);
     let Timestamp { nanos, seconds } = block_header2.timestamp.into_inner();
     println!("{}", Utc.timestamp(seconds, nanos as u32));

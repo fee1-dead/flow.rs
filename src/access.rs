@@ -196,7 +196,7 @@ where
             .latest_block_header(true)
             .await
             .map_err(|e| e.into())?;
-        let latest_block = latest_block.0.into_inner();
+        let latest_block = latest_block.0;
         let reference_block_id = latest_block.id.as_slice();
         let gas_limit = 1000;
         let sig = self.sign_transaction_header(transaction, reference_block_id, gas_limit);
@@ -255,7 +255,7 @@ where
         let public_key = signer.to_public_key(&secret_key);
         let serialized = signer.serialize_public_key(&public_key);
 
-        for key in keys.0 {
+        for key in keys.into_inner() {
             if key.public_key == serialized {
                 account_key = Some(key);
             }

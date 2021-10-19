@@ -142,14 +142,14 @@ pub struct TransactionD {
 impl TransactionD {
     /// Parse a specific argument.
     pub fn parse_argument(&self, index: usize) -> serde_json::Result<ValueOwned> {
-        let arg = &self.arguments.0[index];
+        let arg = &self.arguments[index];
 
         serde_json::from_slice(arg)
     }
 
     /// Returns an iterator parsing the underlying arguments.
     pub fn parse_arguments(&self) -> ParseArguments<slice::Iter<Vec<u8>>> {
-        ParseArguments::new(self.arguments.0.iter())
+        ParseArguments::new(self.arguments.iter())
     }
 }
 
