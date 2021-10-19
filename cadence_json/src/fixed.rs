@@ -5,6 +5,10 @@ use std::{
     str::FromStr,
 };
 
+/// ```
+/// # use cadence_json::UFix64;
+/// assert_eq!("0.00100000".parse::<UFix64>().unwrap(), UFix64::from_raw(100000));
+/// ```
 #[derive(
     SerializeDisplay, DeserializeFromStr, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default,
 )]
@@ -57,7 +61,8 @@ macro_rules! fix_impl {
                 let s = st.as_deref().unwrap_or(s);
 
                 let inner: $inner = s.parse()?;
-                let multiplier = 10 * (8 - numbers_after_dot as $inner);
+                let ten: $inner = 10;
+                let multiplier = ten.pow(8 - numbers_after_dot as u32);
                 Ok(Self(inner * multiplier))
             }
         }

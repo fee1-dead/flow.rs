@@ -45,7 +45,7 @@ pub(crate) mod wrapper {
                 type Err = <$ty as FromStr>::Err;
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    s.parse()
+                    s.parse().map($Name)
                 }
             }
 
@@ -252,7 +252,7 @@ pub enum ValueRef<'a> {
     Capability(CapabilityRef<'a>),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum ValueOwned {
     Void,
     Int(BigInt),
