@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 return getAccount(address)
             }
         ", &[ &encoded ]).await?;
-        println!("{:?}", res.parse()?);
+        println!("{:#?}", res.parse()?);
     }
 
     Ok(())

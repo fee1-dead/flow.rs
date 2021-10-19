@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         for event in events.events.iter() {
             let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
 
-            println!("  - {:?}", val);
+            println!("  - {:#?}", val);
         }
     }
 
