@@ -1,3 +1,5 @@
+use secp256k1::SignOnly;
+
 macro_rules! algorithms {
     ($($algo:ident {$($name:ident = ($code:expr, $algoname:expr)),+$(,)?})+) => {
         mod private {
@@ -134,3 +136,21 @@ impl FlowSigner for secp256k1::Secp256k1<secp256k1::SignOnly> {
 impl SecretKey for secp256k1::SecretKey {
     type Signer = secp256k1::Secp256k1<secp256k1::SignOnly>;
 }
+
+#[cfg(feature = "sha3-hash")]
+pub type DefaultHasher = tiny_keccak::Sha3;
+
+#[cfg(feature = "secp256k1-sign")]
+pub type DefaultSigner = secp256k1::Secp256k1<SignOnly>;
+
+#[cfg(not(any(feature = "sha3-hash")))]
+pub type DefaultHasher = NoDefaultHasherAvailable;
+
+#[cfg(not(any(feature = "sha3-hash")))]
+pub type DefaultSigner = NoDefaultSignerAvailable;
+
+#[cfg(not(any(feature = "sha3-hash")))]
+pub struct NoDefaultHasherAvailable;
+
+#[cfg(not(any(feature = "secp256k1-sign")))]
+pub struct NoDefaultSignerAvailable;

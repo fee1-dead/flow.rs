@@ -8,7 +8,7 @@ use crate::{
     SignatureE, TransactionE, TransactionHeader,
 };
 
-use crate::algorithms::{FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
+use crate::algorithms::{DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
 
 use crate::client::{FlowClient, GrpcClient};
 
@@ -43,7 +43,7 @@ pub enum Error {
 
 /// A simple account, no multisign.
 #[derive(Clone)]
-pub struct SimpleAccount<SecretKey, Signer, Hasher, Client> {
+pub struct SimpleAccount<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
     address: Vec<u8>,
     key_id: u32,
     sequence_number: u32,
@@ -53,7 +53,7 @@ pub struct SimpleAccount<SecretKey, Signer, Hasher, Client> {
     _pd: PhantomData<Hasher>,
 }
 
-impl<Sk, Sn, Hs, Cl> SimpleAccount<Sk, Sn, Hs, Cl> {
+impl<Cl, Sk, Sn, Hs> SimpleAccount<Cl, Sk, Sn, Hs> {
     pub fn public_key(&self) -> Sn::PublicKey
     where
         Sn: FlowSigner<SecretKey = Sk>,
@@ -105,7 +105,7 @@ impl<T: AsRef<[Item]>, Item> otopr::HasItem for &'_ SliceHelper<T, Item> {
     type Item = Item;
 }
 
-impl<SecretKey, Signer, Hasher, Client> SimpleAccount<SecretKey, Signer, Hasher, Client>
+impl<Client, SecretKey, Signer, Hasher> SimpleAccount<Client, SecretKey, Signer, Hasher>
 where
     Signer: FlowSigner<SecretKey = SecretKey>,
     Hasher: FlowHasher,
@@ -228,7 +228,7 @@ where
     }
 }
 
-impl<SecretKey, Signer, Hasher, Client> SimpleAccount<SecretKey, Signer, Hasher, Client>
+impl<Client, SecretKey, Signer, Hasher> SimpleAccount<Client, SecretKey, Signer, Hasher>
 where
     Signer: FlowSigner<SecretKey = SecretKey>,
     Hasher: FlowHasher,

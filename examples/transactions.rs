@@ -6,7 +6,7 @@ use std::{
 use cadence_json::AddressOwned;
 use flow_sdk::{access::SimpleAccount, client::TonicHyperFlowClient, CreateAccountTransaction};
 
-use secp256k1::{PublicKey, Secp256k1, SecretKey, SignOnly};
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let secret_key = SecretKey::new(&mut rng);
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
-    // The default formatter prints the public key as a hexadecimal.
+    // Print the public key as a hexadecimal.
     println!("This is your public key:");
     let public_key_bytes = public_key.serialize_uncompressed();
     // There is a leading 0x04 which we don't need to emit
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let net = TonicHyperFlowClient::testnet()?;
 
     let mut account =
-        SimpleAccount::<_, secp256k1::Secp256k1<SignOnly>, tiny_keccak::Sha3, _>::new(
+        SimpleAccount::<_, _>::new(
             net.into_inner(),
             &address.data,
             secret_key,
