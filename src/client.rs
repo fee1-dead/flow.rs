@@ -132,6 +132,9 @@ impl<Inner> FlowClient<Inner> {
         pub fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address }
         }
+        pub fn transaction_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResponse {
+            GetTransactionRequest { id }
+        }
         pub fn send_transaction<(
             Script,
             Arguments,
