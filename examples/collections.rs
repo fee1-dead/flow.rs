@@ -9,6 +9,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut latest_block: Block = client.latest_block(true).await?.0;
 
+    // traverse latest blocks until we find a collection guarantee.
     let collection_guarrantee = loop {
         if latest_block.collection_guarantees.is_empty() {
             // Go to the next block
@@ -18,12 +19,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     };
 
+    // retrieve the collection by id.
     let collection = client
         .collection_by_id(&collection_guarrantee.collection_id)
         .await?
         .collection;
 
-    println!("OK: {:?}", collection);
+    println!("OK: {:#?}", collection);
 
     Ok(())
 }

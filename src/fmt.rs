@@ -30,7 +30,12 @@ struct Addrs<'a>(&'a [Vec<u8>]);
 impl fmt::Debug for Addrs<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
-            .entries(self.0.iter().map(Deref::deref).map(|data| AddressRef { data }))
+            .entries(
+                self.0
+                    .iter()
+                    .map(Deref::deref)
+                    .map(|data| AddressRef { data }),
+            )
             .finish()
     }
 }
@@ -53,10 +58,7 @@ impl fmt::Debug for BlockSeal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BlockSeal")
             .field("block_id", &Hex(&self.block_id))
-            .field(
-                "execution_receipt_id",
-                &Hex(&self.execution_receipt_id),
-            )
+            .field("execution_receipt_id", &Hex(&self.execution_receipt_id))
             .field(
                 "execution_receipt_signatures",
                 &Hexes(&self.execution_receipt_signatures),
@@ -72,7 +74,12 @@ impl fmt::Debug for BlockSeal {
 impl fmt::Debug for ProposalKeyD {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProposalKey")
-            .field("address", &AddressRef { data: &self.address })
+            .field(
+                "address",
+                &AddressRef {
+                    data: &self.address,
+                },
+            )
             .field("key_id", &self.key_id)
             .field("sequence_number", &self.sequence_number)
             .finish()
@@ -81,7 +88,16 @@ impl fmt::Debug for ProposalKeyD {
 
 impl fmt::Debug for SignatureD {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Signature").field("address", &AddressRef { data: &self.address }).field("key_id", &self.key_id).field("signature", &Hex(&self.signature)).finish()
+        f.debug_struct("Signature")
+            .field(
+                "address",
+                &AddressRef {
+                    data: &self.address,
+                },
+            )
+            .field("key_id", &self.key_id)
+            .field("signature", &Hex(&self.signature))
+            .finish()
     }
 }
 
@@ -90,7 +106,9 @@ impl fmt::Debug for TransactionD {
         struct Arguments<'a>(&'a [Vec<u8>]);
         impl fmt::Debug for Arguments<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.debug_list().entries(self.0.iter().map(|v| String::from_utf8_lossy(v))).finish()
+                f.debug_list()
+                    .entries(self.0.iter().map(|v| String::from_utf8_lossy(v)))
+                    .finish()
             }
         }
 
@@ -128,15 +146,36 @@ impl fmt::Debug for Account {
 
         impl fmt::Debug for Contracts<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_map().entries(self.0.iter().map(|(key, value)| (key, String::from_utf8_lossy(value)))).finish()
+                f.debug_map()
+                    .entries(
+                        self.0
+                            .iter()
+                            .map(|(key, value)| (key, String::from_utf8_lossy(value))),
+                    )
+                    .finish()
             }
         }
 
         f.debug_struct("Account")
-            .field("address", &AddressRef { data: &self.address })
+            .field(
+                "address",
+                &AddressRef {
+                    data: &self.address,
+                },
+            )
             .field("balance", &self.balance)
             .field("code", &self.code)
             .field("keys", &self.keys)
-            .field("contracts", &Contracts(&self.contracts)).finish()
+            .field("contracts", &Contracts(&self.contracts))
+            .finish()
+    }
+}
+
+impl fmt::Debug for Collection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Collection")
+            .field("id", &Hex(&self.id))
+            .field("transactions", &Hexes(&self.transactions))
+            .finish()
     }
 }

@@ -426,12 +426,47 @@ Collections are used to improve consensus throughput by increasing the number of
 📖 **Collection ID** is SHA3-256 hash of the collection payload.
 
 Example retrieving a collection:
-```go
-// TODO get collection
+```rust
+use std::error::Error;
+
+use flow_sdk::{client::TonicHyperFlowClient, Block};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::testnet()?;
+    client.ping().await?;
+
+    let mut latest_block: Block = client.latest_block(true).await?.0;
+
+    // traverse latest blocks until we find a collection guarantee.
+    let collection_guarrantee = loop {
+        if latest_block.collection_guarantees.is_empty() {
+            // Go to the next block
+            latest_block = client.block_by_id(&latest_block.parent_id).await?.0;
+        } else {
+            break latest_block.collection_guarantees.pop().unwrap();
+        }
+    };
+
+    // retrieve the collection by id.
+    let collection = client
+        .collection_by_id(&collection_guarrantee.collection_id)
+        .await?
+        .collection;
+
+    println!("OK: {:#?}", collection);
+
+    Ok(())
+}
 ```
 Example output:
-```bash
-// TODO collection example
+```rust
+OK: Collection {
+    id: 6ccc4829aaab7e7d06446b201c49f092dcef9be0428eabd690692067e2e1d947,
+    transactions: [
+        9481cc10ed0938bf9a429e098684dd30b3a95fa66db6287c23eebd6b46c30eaf,
+    ],
+}
 ```
 
 ### Execute Scripts
@@ -446,37 +481,71 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 📖 **Block height** expresses the height of the block in the chain.
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```
-// simple script
-pub fun main(a: Int): Int {
-    return a + 10
-}
-// complex script
-pub struct User {
-    pub var balance: UFix64
-    pub var address: Address
-    pub var name: String
+```rust
+use std::error::Error;
 
-    init(name: String, address: Address, balance: UFix64) {
-        self.name = name
-        self.address = address
-        self.balance = balance
+use cadence_json::ValueRef;
+use flow_sdk::{ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
+
+const SIMPLE_SCRIPT: &str = "
+    pub fun main(a: Int): Int {
+        return a + 10
     }
-}
+";
 
-pub fun main(name: String): User {
-    return User(
-        name: name,
-        address: 0x1,
-        balance: 10.0
-    )
-}
+const COMPLEX_SCRIPT: &str = "
+    pub struct User {
+        pub var balance: UFix64
+        pub var address: Address
+        pub var name: String
 
-// TODO example for above scripts
+        init(name: String, address: Address, balance: UFix64) {
+            self.name = name
+            self.address = address
+            self.balance = balance
+        }
+    }
+
+    pub fun main(name: String): User {
+        return User(
+            name: name,
+            address: 0x1,
+            balance: 10.0
+        )
+    }
+";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::mainnet()?;
+    client.ping().await?;
+
+    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
+        script: SIMPLE_SCRIPT,
+        arguments: [ValueRef::Int(cadence_json::BigInt::from(32))],
+    }).await?.parse()?;
+
+    println!("{:#?}", ret);
+
+    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
+        script: COMPLEX_SCRIPT,
+        arguments: [ValueRef::String("John Doe")],
+    }).await?.parse()?;
+
+    println!("{:#?}", ret);
+
+    Ok(())
+}
 ```
 Example output:
-```bash
-// TODO example output
+```rust
+42
+Struct {
+    id: "s.ccbac9e72ee36be8881671e8939b970bb8bc81fb8cfd695c6fd848cf75248802.User",
+    balance: 10.00000000,
+    address: 0x0000000000000001,
+    name: "John Doe",
+}
 ```
 
 ## Mutate Flow Network

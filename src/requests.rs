@@ -1,4 +1,3 @@
-use otopr::encoding::EncodableMessage;
 
 //use prost::{Message, bytes::BufMut};
 
@@ -7,7 +6,7 @@ pub(crate) mod private {
 }
 
 /// A callable request of the Flow Access API.
-pub trait FlowRequest<Response>: private::Sealed + EncodableMessage {
+pub trait FlowRequest<Response>: private::Sealed {
     /// The path of the request.
     ///
     /// formatted as "/"({package} ".")? {service}"/" {method}.

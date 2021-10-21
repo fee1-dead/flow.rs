@@ -4,7 +4,7 @@
 
 use std::{error::Error, future::Future, pin::Pin};
 
-use otopr::decoding::DecodableMessage;
+use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
@@ -15,7 +15,7 @@ use tonic::{
 
 use crate::{
     codec::{OtoprCodec, PreEncode},
-    RepSlice, TransactionE,
+    TransactionE,
 };
 
 /// A gRPC client trait.
@@ -41,7 +41,7 @@ pub type GrpcSendResult<'a, Output> =
 
 impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
-    I: FlowRequest<O> + Send + Sync,
+    I: FlowRequest<O> + Send + Sync + EncodableMessage,
     O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
     Service: GrpcService<BoxBody> + 'static,
     Service::ResponseBody: Body + Send + Sync + 'static,
@@ -71,7 +71,7 @@ macro_rules! define_reqs {
         $($(#[$meta])*
         $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
             where
-                Inner: GrpcClient<$input, $output>,
+                Inner: GrpcClient< $input, $output >,
                 $($($tts)*)?
         {
             self.send($expr)
@@ -133,8 +133,8 @@ impl<Inner> FlowClient<Inner> {
         pub fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
-        pub fn execute_script_at_latest_block<('a)>(script: &'a [u8], arguments: &'a [&'a [u8]]) ExecuteScriptAtLatestBlockRequest<'a> => ExecuteScriptResponse {
-            ExecuteScriptAtLatestBlockRequest { script, arguments: RepSlice::new(arguments) }
+        pub fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
+            ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
         pub fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address }

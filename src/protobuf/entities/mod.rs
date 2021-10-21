@@ -48,4 +48,3 @@ pub struct Block {
     pub block_seals: Repeated<Vec<BlockSeal>>,
     pub signatures: Repeated<Vec<Vec<u8>>>,
 }
-

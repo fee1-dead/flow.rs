@@ -5,6 +5,7 @@ use crate::{
     ExecutionResult, Finalize, SignatureE, Timestamp,
 };
 use otopr::*;
+use otopr::wire_types::*;
 
 macro_rules! access_api {
     (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
@@ -198,10 +199,27 @@ pub struct AccountResponse {
     pub account: Account,
 }
 
+fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Clone + 'a>(it: It) -> std::iter::Map<It, fn(&T) -> Vec<u8>> {
+    fn enc<T: serde::Serialize>(t: &T) -> Vec<u8> {
+        serde_json::to_vec(t).unwrap()
+    }
+    it.map(enc)
+}
+
 #[derive(EncodableMessage)]
-pub struct ExecuteScriptAtLatestBlockRequest<'a> {
-    pub script: &'a [u8],
-    pub arguments: RepSlice<'a, &'a [u8]>,
+#[otopr(encode_where_clause(
+    where
+        Script: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: serde::Serialize,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+))]
+pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub script: Script,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    pub arguments: Arguments,
 }
 
 #[derive(EncodableMessage)]
@@ -346,7 +364,7 @@ access_api! {
         returns (AccountResponse);
     rpc GetAccountAtBlockHeight(GetAccountAtBlockHeightRequest<'_>)
         returns (AccountResponse);
-    rpc ExecuteScriptAtLatestBlock(ExecuteScriptAtLatestBlockRequest<'_>)
+    rpc ExecuteScriptAtLatestBlock<Script, Arguments>(ExecuteScriptAtLatestBlockRequest<Script, Arguments>)
         returns (ExecuteScriptResponse);
     rpc ExecuteScriptAtBlockID(ExecuteScriptAtBlockIdRequest<'_>)
         returns (ExecuteScriptResponse);

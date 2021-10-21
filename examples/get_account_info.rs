@@ -25,7 +25,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let latest_block_height = net.latest_block_header(true).await?.0.height;
 
-    let account1 = net.account_at_block_height(&address.data, latest_block_height).await?.account;
+    let account1 = net
+        .account_at_block_height(&address.data, latest_block_height)
+        .await?
+        .account;
 
     println!("{:#?}", account);
 

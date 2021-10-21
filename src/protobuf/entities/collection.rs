@@ -1,6 +1,6 @@
 use otopr::{DecodableMessage, Repeated};
 
-#[derive(DecodableMessage, Default, Debug)]
+#[derive(DecodableMessage, Default)]
 pub struct Collection {
     pub id: Vec<u8>,
     pub transactions: Repeated<Vec<Vec<u8>>>,
