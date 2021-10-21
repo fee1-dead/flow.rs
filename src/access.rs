@@ -54,12 +54,16 @@ pub struct SimpleAccount<Client, SecretKey, Signer = DefaultSigner, Hasher = Def
 }
 
 impl<Cl, Sk, Sn, Hs> SimpleAccount<Cl, Sk, Sn, Hs> {
+    /// Returns the public key of this account.
+    #[inline]
     pub fn public_key(&self) -> Sn::PublicKey
     where
         Sn: FlowSigner<SecretKey = Sk>,
     {
         self.signer.to_public_key(&self.secret_key)
     }
+
+    /// Returns the address of this account.
     #[inline]
     pub fn address(&self) -> &[u8] {
         &self.address
@@ -83,6 +87,7 @@ impl<Cl, Sk, Sn, Hs> SimpleAccount<Cl, Sk, Sn, Hs> {
 }
 
 #[repr(transparent)]
+#[doc(hidden)] // implementation details
 pub struct SliceHelper<T, Item>(T, PhantomData<Item>);
 
 impl<T: AsRef<[Item]>, Item> SliceHelper<T, Item> {
@@ -162,11 +167,17 @@ where
         )
     }
 
-    /// Creates a signature using this account's public key.
+    /// Creates a signature using this account's public key, consuming a populated hasher.
     pub fn sign(&self, hasher: Hasher) -> Signer::Signature {
         self.signer.sign(hasher, &self.secret_key)
     }
 
+    /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
+    /// and using the latest sealed block as a reference.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the client returns any errors when making requests.
     pub async fn send_transaction_header<'a, Arguments>(
         &'a mut self,
         transaction: &'a TransactionHeader<Arguments>,
@@ -235,6 +246,15 @@ where
     for<'a> Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
 {
     /// Logs in to a simple account, verifying that the key and the address matches.
+    ///
+    /// # Errors
+    /// 
+    /// This function returns an error if:
+    /// 
+    ///  - the client returns any errors while making requests
+    ///  - the secret key does not have the full weight to be able to act on its own (weight < 1000)
+    ///  - could not find any public key of the account that matches the secret key supplied.
+    ///  - the algorithms for the signer and the hasher do not match with the public information of the key.
     pub async fn new(
         client: Client,
         address: &'_ [u8],
@@ -270,7 +290,7 @@ where
             ..
         } = account_key.ok_or(Error::NoMatchingKeyFound)?;
 
-        if weight != 1000 {
+        if weight < 1000 {
             return Err(Error::NotEnoughWeight);
         }
 
@@ -289,11 +309,3 @@ where
         })
     }
 }
-
-#[cfg(all(feature = "secp256k1-sign", feature = "sha3-hash"))]
-pub type SimpleSecp256k1Sha3Account<Client> = SimpleAccount<
-    secp256k1::SecretKey,
-    secp256k1::Secp256k1<secp256k1::SignOnly>,
-    tiny_keccak::Sha3,
-    Client,
->;
