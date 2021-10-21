@@ -30,6 +30,7 @@ impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Fi
     ) -> Self {
         let timeout = futures_timer::Delay::new(timeout);
         let fut = client.send(GetTransactionRequest { id: tx_id });
+
         // transmute PinnedBox<dyn Future + 'a> to PinnedBox<dyn Future + 'static>
         //
         // SAFETY: this is safe since we never leak the future to elsewhere.

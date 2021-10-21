@@ -177,19 +177,10 @@ impl FromStr for AddressOwned {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct AddressRef<'a> {
     pub data: &'a [u8],
-}
-
-impl Display for AddressRef<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let hex = hex::encode(self.data);
-        f.write_str("0x")?;
-        assert_ne!(hex.len(), 0);
-        f.write_str(&hex)
-    }
 }
 
 impl Serialize for AddressRef<'_> {

@@ -8,10 +8,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client.ping().await?;
 
     let latest_block_height = client.latest_block_header(true).await?.0.height;
-    let start_height = latest_block_height - 100;
+    let start_height = latest_block_height - 20;
 
     println!(
-        "Searching for accounts created within the last 100 blocks ({}-{})...",
+        "Searching for accounts created within the last 20 blocks ({}-{})...",
         start_height, latest_block_height
     );
 

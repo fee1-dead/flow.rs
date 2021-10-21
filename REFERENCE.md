@@ -49,7 +49,7 @@ The Access Nodes APIs hosted by DapperLabs are accessible at:
 - Local Emulator `127.0.0.1:3569` 
 
 Example:
-```
+```rust
 use std::error::Error;
 use flow_sdk::client::TonicHyperFlowClient;
 
@@ -77,7 +77,7 @@ Query the network for block by id, height or get the latest block.
 This example depicts ways to get the latest block as well as any other block by height or ID:
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO link to example
-```
+```rust
 use std::error::Error;
 
 use flow_sdk::{Block, client::TonicHyperFlowClient};
@@ -102,7 +102,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 ```
 Result output:
-```bash
+```rust
 OK: Block {
     id: "1e41b761cfa9ef16ffb61c74d87d503ce34186a185cd376e2d4763554e671f21",
     parent_id: "904fedf25aa7db120304ef2627de63232c90ee7174fee75553ce5ae31c9e3553",
@@ -153,12 +153,65 @@ An account includes the following data:
 Example depicts ways to get an account at the latest block and at a specific block height:
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```
-// TODO get example 
+```rust
+use std::{
+    error::Error,
+    io::{stdin, BufRead},
+};
+
+use cadence_json::AddressOwned;
+use flow_sdk::client::TonicHyperFlowClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let stdin = stdin();
+    let mut stdin = stdin.lock();
+    let mut buf = String::new();
+
+    println!("Enter the account's address:");
+
+    stdin.read_line(&mut buf)?;
+
+    let addr = buf.trim();
+
+    let address: AddressOwned = addr.parse()?;
+    let mut net = TonicHyperFlowClient::mainnet()?;
+
+    let account = net.account_at_latest_block(&address.data).await?.account;
+
+    let latest_block_height = net.latest_block_header(true).await?.0.height;
+
+    let account1 = net.account_at_block_height(&address.data, latest_block_height).await?.account;
+
+    println!("{:#?}", account);
+
+    assert_eq!(account, account1);
+
+    Ok(())
+}
+
 ```
 Result output:
-```bash
-// TODO get account result
+```rust
+Enter the account's address:
+0x9e06eebf494e2d78
+Account {
+    address: 0x9e06eebf494e2d78,
+    balance: 9411868000,
+    code: [],
+    keys: [
+        AccountKey {
+            index: 0,
+            public_key: d5932abf2a4d22fe9fbf312ce44e984b0c6486cd221e9ea42d1fed48e8b685bdb7daf61f20ad560e2b5938958d48b9daf3fd9ae05608e012dd64f47453cb9ca2,
+            sign_algo: 2,
+            hash_algo: 3,
+            weight: 1000,
+            sequence_number: 35875,
+            revoked: false,
+        },
+    ],
+    contracts: {},
+}
 ```
 
 
@@ -184,12 +237,76 @@ Retrieve transactions from the network by providing a transaction ID. After a tr
 
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```
-// TODO get transaction example
+```rust
+use std::error::Error;
+
+use flow_sdk::{client::TonicHyperFlowClient, Block};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::testnet()?;
+    client.ping().await?;
+
+    // traverse the blocks until we find collection guarantees
+    let mut latest_block: Block = client.latest_block(true).await?.0;
+
+    let collection_guarrantee = loop {
+        if latest_block.collection_guarantees.is_empty() {
+            // Go to the next block
+            latest_block = client.block_by_id(&latest_block.parent_id).await?.0;
+        } else {
+            break latest_block.collection_guarantees.pop().unwrap();
+        }
+    };
+
+    let collection = client
+        .collection_by_id(&collection_guarrantee.collection_id)
+        .await?
+        .collection;
+
+    for transaction_id in collection.transactions.iter() {
+        let txn = client.transaction_by_id(transaction_id).await?.transaction;
+        println!("{:#?}", txn);
+        for argument in txn.parse_arguments() {
+            println!("Found a cadence argument in the wild: {:#?}", argument?);
+        }
+    }
+
+    Ok(())
+}
 ```
 Example output:
-```bash
-// TODO example output
+```rust
+Transaction {
+    script: "\nimport NonFungibleToken from 0x631e88ae7f1d7c20\nimport Vouchers from 0xe94a6e229293f196\ntransaction(recipients: [Address], rewards: {Address: [UInt64]}) {\n    let adminCollection: &Vouchers.Collection\n    let recipientCollections: {Address: &{Vouchers.CollectionPublic}}\n    prepare(signer: AuthAccount) {\n        log(\"--voucher send to addresses activated--\")\n        self.recipientCollections = {}\n        // get the recipients public account object\n        for address in recipients {\n            self.recipientCollections[address] = getAccount(address).getCapability(Vouchers.CollectionPublicPath).borrow<&{Vouchers.CollectionPublic}>()\n                ?? panic(\"Could not borrow a reference to the recipient's collection\")\n        }\n\n        // borrow a reference to the signer's NFT collection\n        self.adminCollection = signer.borrow<&Vouchers.Collection>(from: Vouchers.CollectionStoragePath)\n            ?? panic(\"Could not borrow a reference to the signer's collection\")\n    }\n\n    execute {\n        log(\"rewarding recipients\")\n        for address in recipients {\n            log(\"user address: \" + address);\n            if (rewards[address] != nil) {\n                let rewards = rewards[address] as! [UInt64]\n                for reward in rewards {\n                    log(\"-- reward: \" + reward)\n                    self.recipientCollections[address]!.deposit(token: <- self.adminCollection.withdraw(withdrawID: reward))\n                }\n            }\n        }\n    }\n}\n",
+    arguments: [
+        "{\"type\":\"Array\",\"value\":[{\"type\":\"Address\",\"value\":\"0x8c33bf917ab63d5b\"}]}",
+        "{\"type\":\"Dictionary\",\"value\":[]}",
+    ],
+    reference_block_id: 7de3a92f73726037ab554b3b8dd7ab29585c98d88d6d3b61532de1431dc0f4d3,
+    gas_limit: 100,
+    proposal_key: ProposalKey {
+        address: 0xe94a6e229293f196,
+        key_id: 1,
+        sequence_number: 181,
+    },
+    payer: 0xe94a6e229293f196,
+    authorizers: [
+        0xe94a6e229293f196,
+    ],
+    payload_signatures: [],
+    envelope_signatures: [
+        Signature {
+            address: 0xe94a6e229293f196,
+            key_id: 1,
+            signature: 2b11cf254a246df78b506c6a3c7dc3c314e192fdf4106521f16b81859cddb4dee8a379662392289d265d560d7f689cb9b168392f2c645de82142eadee85c10ad,
+        },
+    ],
+}
+Found a cadence argument in the wild: [
+    0x8c33bf917ab63d5b,
+]
+Found a cadence argument in the wild: {}
 ```
 
 
@@ -212,12 +329,92 @@ core events, and you should read more about them in [this document](https://docs
 Example depicts ways to get events within block range or by block IDs:
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```
-// TODO get events example
+```rust
+use std::error::Error;
+
+use flow_sdk::client::TonicHyperFlowClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::mainnet()?;
+    client.ping().await?;
+
+    let latest_block_height = client.latest_block_header(true).await?.0.height;
+    let start_height = latest_block_height - 20;
+
+    println!(
+        "Searching for accounts created within the last 20 blocks ({}-{})...",
+        start_height, latest_block_height
+    );
+
+    for events in client
+        .events_for_height_range("flow.AccountCreated", start_height, latest_block_height)
+        .await?
+        .results
+        .iter()
+    {
+        if events.events.is_empty() {
+            continue;
+        }
+        println!(
+            "\nBlock #{} ({}):",
+            events.block_height,
+            hex::encode(&events.block_id)
+        );
+        for event in events.events.iter() {
+            let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
+
+            println!(" - {:#?}", val);
+        }
+    }
+
+    Ok(())
+}
+
 ```
 Example output:
-```bash
-// TODO event example output
+```rust
+Searching for accounts created within the last 20 blocks (19495374-19495394)...
+
+Block #19495378 (6d9d4315127cc9f26fde6ca7429d1d6718d35cd4a8ef2a7804d3e1ae6d2b9bbe):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0x5231653750457b87,
+}
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0x44650004c94171e6,
+}
+
+Block #19495380 (aaecc42eceebc0c626f43515c56a4e2ca18736b70cc7f9bdcc51e0acbb0adc7b):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0xa002b9d9d8bb7139,
+}
+
+Block #19495386 (1140190de576c9d6ec7da897b5cf6aa92a246b33505be9d05285941bf5878be7):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0x4f4f329d05c40fcf,
+}
+
+Block #19495390 (daab11c3b29f44426f647748ab32db081b34eb38f8f237cd9a0d3d53b4cd9a93):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0xab288b40143e0f10,
+}
+
+Block #19495391 (9abfed42ac1e79ab91dfcb4192d802c1db251a28493cf4d8cceb0addb319cb0c):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0xbd7cee738d3a0571,
+}
+
+Block #19495392 (e3c457b6fc92d04c4087ce0ae3e647e76f4da8e10a12c456b9e0a888a161cc31):
+  - Event {
+    id: "flow.AccountCreated",
+    address: 0x591b57ae9cc005ae,
+}
 ```
 
 ### Get Collections

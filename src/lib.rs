@@ -14,3 +14,5 @@ pub mod access;
 
 #[cfg(test)]
 pub(crate) mod tests;
+
+mod fmt;

@@ -7,6 +7,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::testnet()?;
     client.ping().await?;
 
+    // traverse the blocks until we find collection guarantees
     let mut latest_block: Block = client.latest_block(true).await?.0;
 
     let collection_guarrantee = loop {
@@ -24,8 +25,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .collection;
 
     for transaction_id in collection.transactions.iter() {
-        let txn = client.transaction_by_id(transaction_id).await?;
-        for argument in txn.transaction.parse_arguments() {
+        let txn = client.transaction_by_id(transaction_id).await?.transaction;
+        println!("{:#?}", txn);
+        for argument in txn.parse_arguments() {
             println!("Found a cadence argument in the wild: {:#?}", argument?);
         }
     }

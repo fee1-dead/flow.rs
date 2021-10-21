@@ -1,6 +1,6 @@
 use otopr::{DecodableMessage, Map, Repeated};
 
-#[derive(DecodableMessage, Default)]
+#[derive(DecodableMessage, Default, PartialEq, Eq)]
 pub struct Account {
     pub address: Vec<u8>,
     pub balance: u64,
@@ -9,7 +9,7 @@ pub struct Account {
     pub contracts: Map<String, Vec<u8>>,
 }
 
-#[derive(DecodableMessage, Default)]
+#[derive(DecodableMessage, Default, PartialEq, Eq)]
 pub struct AccountKey {
     pub index: u32,
     pub public_key: Vec<u8>,
