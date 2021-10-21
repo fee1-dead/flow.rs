@@ -8,7 +8,10 @@ use crate::{
     SignatureE, TransactionE, TransactionHeader,
 };
 
-use crate::algorithms::{DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
+use crate::algorithms::{
+    DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature,
+    SignatureAlgorithm,
+};
 
 use crate::client::{FlowClient, GrpcClient};
 
@@ -248,9 +251,9 @@ where
     /// Logs in to a simple account, verifying that the key and the address matches.
     ///
     /// # Errors
-    /// 
+    ///
     /// This function returns an error if:
-    /// 
+    ///
     ///  - the client returns any errors while making requests
     ///  - the secret key does not have the full weight to be able to act on its own (weight < 1000)
     ///  - could not find any public key of the account that matches the secret key supplied.

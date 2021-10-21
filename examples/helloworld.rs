@@ -16,10 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("----------------");
 
-    let block_header2 = net
-        .block_header_by_height(block_header.height)
-        .await?
-        .0;
+    let block_header2 = net.block_header_by_height(block_header.height).await?.0;
     println!("{:?}", block_header2);
     let Timestamp { nanos, seconds } = block_header2.timestamp.into_inner();
     println!("{}", Utc.timestamp(seconds, nanos as u32));

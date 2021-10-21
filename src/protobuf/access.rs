@@ -1,4 +1,9 @@
-use crate::{ExecutionResult, SignatureE, Timestamp};
+use std::time::Duration;
+
+use crate::{
+    client::{FlowClient, GrpcClient},
+    ExecutionResult, Finalize, SignatureE, Timestamp,
+};
 use otopr::*;
 
 macro_rules! access_api {
@@ -139,6 +144,23 @@ pub struct SendTransactionRequest<
 #[derive(DecodableMessage, Default)]
 pub struct SendTransactionResponse {
     pub id: Vec<u8>,
+}
+
+impl SendTransactionResponse {
+    /// Returns a future that periodically queries the transaction response until the transaction is sealed or expired.
+    ///
+    /// The default delay is 2 seconds between requests, and the default timeout is 15 seconds.
+    pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>>(
+        &'a self,
+        client: &'a mut FlowClient<C>,
+    ) -> Finalize<'a, C> {
+        Finalize::new(
+            &self.id,
+            client,
+            Duration::from_secs(2),
+            Duration::from_secs(15),
+        )
+    }
 }
 
 #[derive(EncodableMessage)]

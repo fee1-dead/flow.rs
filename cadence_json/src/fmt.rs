@@ -7,7 +7,7 @@ impl fmt::Debug for CompositeOwned {
         let mut map = f.debug_map();
 
         map.entry(&"id", &self.id);
-        
+
         for field in &self.fields {
             map.entry(&field.name, &field.value);
         }
@@ -17,6 +17,12 @@ impl fmt::Debug for CompositeOwned {
 }
 
 impl fmt::Debug for AddressOwned {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl fmt::Display for AddressOwned {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("0x")?;
         f.write_str(&hex::encode(&self.data))

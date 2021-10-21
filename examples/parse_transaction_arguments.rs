@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use flow_sdk::{Block, client::TonicHyperFlowClient};
+use flow_sdk::{client::TonicHyperFlowClient, Block};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -18,7 +18,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     };
 
-    let collection = client.collection_by_id(&collection_guarrantee.collection_id).await?.collection;
+    let collection = client
+        .collection_by_id(&collection_guarrantee.collection_id)
+        .await?
+        .collection;
 
     for transaction_id in collection.transactions.iter() {
         let txn = client.transaction_by_id(transaction_id).await?;

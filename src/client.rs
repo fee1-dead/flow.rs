@@ -1,3 +1,7 @@
+//! ## Flow gRPC connections
+//!
+//!
+
 use std::{error::Error, future::Future, pin::Pin};
 
 use otopr::decoding::DecodableMessage;
@@ -14,7 +18,7 @@ use crate::{
     RepSlice, TransactionE,
 };
 
-/// A gRPC client.
+/// A gRPC client trait.
 pub trait GrpcClient<I, O> {
     type Error: Into<Box<dyn Error + Send + Sync>>;
     fn send<'a>(
@@ -29,9 +33,11 @@ pub struct FlowClient<T> {
 }
 
 pub type TonicFlowClient<Service> = FlowClient<Grpc<Service>>;
+
 pub type TonicHyperFlowClient = TonicFlowClient<Channel>;
 
-pub type GrpcSendResult<'a, Output> = Pin<Box<dyn Future<Output = Result<Output, Box<dyn Error + Send + Sync>>> + 'a>>;
+pub type GrpcSendResult<'a, Output> =
+    Pin<Box<dyn Future<Output = Result<Output, Box<dyn Error + Send + Sync>>> + 'a>>;
 
 impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
@@ -42,10 +48,7 @@ where
     <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
     type Error = Box<dyn Error + Send + Sync>;
-    fn send(
-        &mut self,
-        input: I,
-    ) -> GrpcSendResult<O> {
+    fn send(&mut self, input: I) -> GrpcSendResult<O> {
         let preenc = PreEncode::new(&input);
         Box::pin(async move {
             self.ready().await.map_err(Into::into)?;
@@ -77,16 +80,20 @@ macro_rules! define_reqs {
 }
 
 impl<Inner> FlowClient<Inner> {
+    /// Wraps the inner client to gain access to helper functions to send requests.
     #[inline]
     pub const fn new(inner: Inner) -> Self {
         Self { inner }
     }
 
+    /// Retrieve the inner client from this instance.
     #[inline]
     pub fn into_inner(self) -> Inner {
         self.inner
     }
 
+    /// Sends a request over the client.
+    #[inline]
     pub fn send<'a, T, U>(
         &'a mut self,
         input: T,
@@ -170,21 +177,20 @@ impl<Inner> FlowClient<Inner> {
 }
 
 impl TonicHyperFlowClient {
-    pub fn mainnet() -> Result<Self, tonic::transport::Error> {
+    /// Connects to a static endpoint. Does not connect until we try to send a request.
+    pub fn connect_static(endpoint: &'static str) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
-            inner: Grpc::new(
-                Channel::from_static("http://access.mainnet.nodes.onflow.org:9000")
-                    .connect_lazy()?,
-            ),
+            inner: Grpc::new(Channel::from_static(endpoint).connect_lazy()?),
         })
     }
 
+    /// Connects to the Mainnet access node provided by Dapper Labs.
+    pub fn mainnet() -> Result<Self, tonic::transport::Error> {
+        Self::connect_static("http://access.mainnet.nodes.onflow.org:9000")
+    }
+
+    /// Connects to the Testnet access node provided by Dapper Labs.
     pub fn testnet() -> Result<Self, tonic::transport::Error> {
-        Ok(Self {
-            inner: Grpc::new(
-                Channel::from_static("http://access.devnet.nodes.onflow.org:9000")
-                    .connect_lazy()?,
-            ),
-        })
+        Self::connect_static("http://access.devnet.nodes.onflow.org:9000")
     }
 }

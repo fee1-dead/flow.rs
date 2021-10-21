@@ -11,12 +11,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let latest_block_height = client.latest_block_header(true).await?.0.height;
     let start_height = latest_block_height - 100;
 
-    println!("Searching for accounts created within the last 100 blocks ({}-{})...", start_height, latest_block_height);
+    println!(
+        "Searching for accounts created within the last 100 blocks ({}-{})...",
+        start_height, latest_block_height
+    );
 
     let mut richest_account = None;
     let mut richest_balance = None;
 
-    for events in client.events_for_height_range("flow.AccountCreated", start_height, latest_block_height).await?.results.iter() {
+    for events in client
+        .events_for_height_range("flow.AccountCreated", start_height, latest_block_height)
+        .await?
+        .results
+        .iter()
+    {
         for event in events.events.iter() {
             let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
 
@@ -38,12 +46,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\nThe richest account is 0x{}.", hex::encode(&acc.address));
         let value = ValueRef::Address(AddressRef { data: &acc.address });
         let encoded = serde_json::to_vec(&value).unwrap();
-        
-        let res = client.execute_script_at_latest_block(b"
+
+        let res = client
+            .execute_script_at_latest_block(
+                b"
             pub fun main(address: Address): PublicAccount {
                 return getAccount(address)
             }
-        ", &[ &encoded ]).await?;
+        ",
+                &[&encoded],
+            )
+            .await?;
         println!("{:#?}", res.parse()?);
     }
 

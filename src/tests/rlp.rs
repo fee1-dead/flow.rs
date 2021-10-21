@@ -66,9 +66,13 @@ impl Test for TxTest {
             sequence_number,
             payer,
             authorizers,
-            payload_signatures
-                .into_iter()
-                .map(|ps| (hex::decode(ps.address).unwrap(), ps.key_id, hex::decode(ps.sig).unwrap())),
+            payload_signatures.into_iter().map(|ps| {
+                (
+                    hex::decode(ps.address).unwrap(),
+                    ps.key_id,
+                    hex::decode(ps.sig).unwrap(),
+                )
+            }),
         );
 
         assert_eq!(envelope, hex::encode(stream.as_raw()));

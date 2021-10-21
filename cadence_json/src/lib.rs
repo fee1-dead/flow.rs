@@ -5,13 +5,15 @@ use std::{borrow::Cow, fmt::Display, num::Wrapping, str::FromStr};
 
 pub use num_bigint::{BigInt, BigUint};
 
-mod debug;
+mod fmt;
 
 mod fixed;
 pub use fixed::*;
 
 pub mod de;
 pub mod ser;
+
+pub mod value;
 
 pub(crate) mod wrapper {
     use std::str::FromStr;
@@ -22,7 +24,7 @@ pub(crate) mod wrapper {
     /// the `FromStr` and `Display` implementations to (de)serialize instead.
     ///
     /// # Safety
-    /// 
+    ///
     /// `Self::Wrapped` must have the same layout as `Self`, i.e. they are safely transmutable.
     ///
     /// Make sure that `Self::Wrapped` is a newtype struct annotated with #[repr(transparent)]
@@ -252,6 +254,7 @@ pub enum ValueRef<'a> {
     Capability(CapabilityRef<'a>),
 }
 
+/// An owned Cadence value.
 #[derive(Clone, PartialEq, Eq)]
 pub enum ValueOwned {
     Void,

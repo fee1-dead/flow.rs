@@ -10,11 +10,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let latest_block_height = client.latest_block_header(true).await?.0.height;
     let start_height = latest_block_height - 100;
 
-    println!("Searching for accounts created within the last 100 blocks ({}-{})...", start_height, latest_block_height);
+    println!(
+        "Searching for accounts created within the last 100 blocks ({}-{})...",
+        start_height, latest_block_height
+    );
 
     let mut accounts = Vec::new();
 
-    for events in client.events_for_height_range("flow.AccountCreated", start_height, latest_block_height).await?.results.iter() {
+    for events in client
+        .events_for_height_range("flow.AccountCreated", start_height, latest_block_height)
+        .await?
+        .results
+        .iter()
+    {
         for event in events.events.iter() {
             let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
 
@@ -31,7 +39,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Found {} accounts.", accounts.len());
 
     if let Some(acc) = accounts.into_iter().max_by_key(|acc| acc.balance) {
-        println!("\nThe richest account is 0x{} with a balance of {}.", hex::encode(acc.address), acc.balance);
+        println!(
+            "\nThe richest account is 0x{} with a balance of {}.",
+            hex::encode(acc.address),
+            acc.balance
+        );
     }
 
     Ok(())

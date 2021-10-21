@@ -10,6 +10,9 @@ pub use signing::*;
 mod template;
 pub use template::*;
 
+mod finalize;
+pub use finalize::*;
+
 use otopr::encoding::EncodeAsRef;
 use otopr::*;
 use wire_types::*;

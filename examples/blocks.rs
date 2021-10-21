@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use flow_sdk::{Block, client::TonicHyperFlowClient};
+use flow_sdk::{client::TonicHyperFlowClient, Block};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     assert_eq!(latest_block, block_by_id);
     assert_eq!(latest_block, block_by_height);
 
-    println!("OK");
+    println!("OK: {:#?}", latest_block);
 
     Ok(())
 }

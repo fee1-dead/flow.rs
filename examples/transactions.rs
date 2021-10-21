@@ -3,7 +3,7 @@ use std::{
     io::{stdin, BufRead},
 };
 
-use cadence_json::AddressOwned;
+use cadence_json::{AddressOwned, ValueOwned};
 use flow_sdk::{access::SimpleAccount, client::TonicHyperFlowClient, CreateAccountTransaction};
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
@@ -42,12 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let net = TonicHyperFlowClient::testnet()?;
 
     let mut account =
-        SimpleAccount::<_, _>::new(
-            net.into_inner(),
-            &address.data,
-            secret_key,
-        )
-        .await?;
+        SimpleAccount::<_, _>::new(net.into_inner(), &address.data, secret_key).await?;
 
     let create_account = CreateAccountTransaction {
         public_keys: &[account.public_key()],
@@ -60,8 +55,40 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!(
         "Just made {} to create another account :p",
-        hex::encode(res.id)
+        hex::encode(&res.id)
     );
+
+    let response = res.finalize(account.client()).await?;
+
+    match response {
+        Some(res) => {
+            for ev in res.events.iter() {
+                if ev.ty == "flow.AccountCreated" {
+                    let payload = ev.parse_payload()?;
+                    match payload {
+                        ValueOwned::Event(composite) => {
+                            let addr = composite
+                                .fields
+                                .into_iter()
+                                .find(|field| field.name == "address")
+                                .map(|field| field.value)
+                                .unwrap();
+                            match addr {
+                                ValueOwned::Address(addr) => {
+                                    println!("Created account's address is: {}", addr);
+                                }
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        None => {
+            panic!("The transaction did not get sealed... Perhaps the network is malfunctioning?")
+        }
+    }
 
     Ok(())
 }
