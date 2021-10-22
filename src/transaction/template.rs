@@ -1,6 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use cadence_json::ValueRef;
+use serde::Serialize;
 
 use crate::algorithms::*;
 
@@ -9,10 +10,101 @@ use crate::algorithms::*;
 pub struct TransactionHeader<Arguments> {
     /// The script, provided by the template.
     pub script: Cow<'static, [u8]>,
-    /// An array of encoded arguments.
+    /// Encoded arguments.
     ///
     /// The number of arguments is determined by the template.
     pub arguments: Arguments,
+}
+
+#[derive(Default)]
+pub struct TransactionHeaderBuilder {
+    script: Option<Cow<'static, [u8]>>,
+    arguments: Vec<Vec<u8>>,
+}
+
+/// A builder for a transaction header.
+///
+/// ```rust
+/// use cadence_json::ValueRef;
+/// # use flow_sdk::{TransactionHeader, TransactionHeaderBuilder};
+/// const SCRIPT: &str = r#"
+///     transaction(greeting: String) {
+///        let guest: Address
+///
+///        prepare(authorizer: AuthAccount) {
+///            self.guest = authorizer.address
+///        }
+///
+///        execute {
+///            log(greeting.concat(",").concat(guest.toString()))
+///        }
+///     }
+/// "#;
+/// 
+/// let argument = ValueRef::String("Hello");
+/// 
+/// let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&argument);
+/// 
+/// assert_eq!(header.build(), TransactionHeader {
+///     script: SCRIPT.as_bytes().into(),
+///     arguments: vec![serde_json::to_vec(&argument).unwrap()]
+/// })
+/// ```
+impl TransactionHeaderBuilder {
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            script: None,
+            arguments: Vec::new(),
+        }
+    }
+
+    #[inline]
+    pub fn script_static<B: ?Sized + AsRef<[u8]>>(mut self, script: &'static B) -> Self {
+        self.script = Some(Cow::Borrowed(script.as_ref()));
+        self
+    }
+
+    #[inline]
+    pub fn script_owned(mut self, script: Vec<u8>) -> Self {
+        self.script = Some(Cow::Owned(script));
+        self
+    }
+
+    /// Clone the script into the builder. Do not use this if you have owned instances or static reference.
+    #[inline]
+    pub fn script_shared(mut self, script: impl AsRef<[u8]>) -> Self {
+        self.script = Some(Cow::Owned(script.as_ref().to_owned()));
+        self
+    }
+
+    #[inline]
+    pub fn argument<'a>(mut self, val: impl AsRef<ValueRef<'a>>) -> Self {
+        self.arguments.push(serde_json::to_vec(val.as_ref()).unwrap());
+        self
+    }
+
+    #[inline]
+    pub fn arguments<I>(mut self, args: I) -> Self where I: IntoIterator, I::Item: Serialize {
+        self.arguments.extend(args.into_iter().map(|v| serde_json::to_vec(&v)).map(Result::unwrap));
+        self
+    }
+
+    #[inline]
+    pub fn build(self) -> TransactionHeader<Vec<Vec<u8>>> {
+        TransactionHeader { script: self.script.unwrap(), arguments: self.arguments }
+    }
+
+    #[inline]
+    pub fn build_checked(self) -> Result<TransactionHeader<Vec<Vec<u8>>>, Self> {
+        match self.script {
+            Some(script) => Ok(TransactionHeader {
+                script,
+                arguments: self.arguments,
+            }),
+            None => Err(self),
+        }
+    }
 }
 
 /// A simple transaction to create an account with full weight keys.

@@ -628,8 +628,28 @@ transaction(greeting: String) {
 ```
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```go
-// TODO example for building a transaction
+```rust
+use cadence_json::ValueRef;
+use flow_sdk::TransactionHeaderBuilder;
+
+
+const SCRIPT: &str = r#"
+    transaction(greeting: String) {
+       let guest: Address
+
+       prepare(authorizer: AuthAccount) {
+           self.guest = authorizer.address
+       }
+
+       execute {
+           log(greeting.concat(",").concat(guest.toString()))
+       }
+    }
+"#;
+
+let argument = ValueRef::String("Hello");
+
+let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&argument).build();
 ```
 
 After you have successfully [built a transaction](#build-transactions) the next step in the process is to sign it.

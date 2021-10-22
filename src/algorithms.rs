@@ -48,7 +48,7 @@ pub trait FlowHasher {
 pub trait FlowSigner {
     type Algorithm: SignatureAlgorithm;
     type SecretKey;
-    type PublicKey;
+    type PublicKey: Copy;
     type Signature: Signature;
 
     /// Creates a new signer.
@@ -150,7 +150,9 @@ pub type DefaultHasher = NoDefaultHasherAvailable;
 pub type DefaultSigner = NoDefaultSignerAvailable;
 
 #[cfg(not(any(feature = "sha3-hash")))]
+#[doc(hidden)]
 pub struct NoDefaultHasherAvailable;
 
 #[cfg(not(any(feature = "secp256k1-sign")))]
+#[doc(hidden)]
 pub struct NoDefaultSignerAvailable;

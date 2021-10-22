@@ -4,6 +4,13 @@ use crate::ValueRef;
 
 use crate::wrapper::*;
 
+impl<'a> AsRef<ValueRef<'a>> for ValueRef<'a> {
+    #[inline]
+    fn as_ref(&self) -> &ValueRef<'a> {
+        self
+    }
+}
+
 impl<'a> Serialize for ValueRef<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

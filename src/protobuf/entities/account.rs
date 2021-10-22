@@ -2,7 +2,10 @@ use otopr::{DecodableMessage, Map, Repeated};
 
 #[derive(DecodableMessage, Default, PartialEq, Eq)]
 pub struct Account {
-    pub address: Vec<u8>,
+    /// The address of this account.
+    /// Since there is no need to push or remove bytes
+    /// from this owned buffer, we don't use a growable buffer.
+    pub address: Box<[u8]>,
     pub balance: u64,
     pub code: Vec<u8>,
     pub keys: Repeated<Vec<AccountKey>>,
