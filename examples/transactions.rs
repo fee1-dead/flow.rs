@@ -4,7 +4,7 @@ use std::{
 };
 
 use cadence_json::{AddressOwned, ValueOwned};
-use flow_sdk::{access::SimpleAccount, client::TonicHyperFlowClient, CreateAccountTransaction};
+use flow_sdk::{access::Account, client::TonicHyperFlowClient, CreateAccountTransaction};
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
@@ -41,11 +41,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let net = TonicHyperFlowClient::testnet()?;
 
-    let mut account =
-        SimpleAccount::<_, _>::new(net.into_inner(), &address.data, secret_key).await?;
+    let mut account = Account::<_, _>::new(net.into_inner(), &address.data, secret_key).await?;
 
     let create_account = CreateAccountTransaction {
-        public_keys: &[account.public_key()],
+        public_keys: &[public_key],
     };
 
     let create_account_header = create_account.to_header::<_, tiny_keccak::Sha3>(account.signer());

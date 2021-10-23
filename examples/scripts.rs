@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cadence_json::ValueRef;
-use flow_sdk::{ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
+use flow_sdk::{client::TonicHyperFlowClient, ExecuteScriptAtLatestBlockRequest};
 
 const SIMPLE_SCRIPT: &str = "
     pub fun main(a: Int): Int {
@@ -36,17 +36,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::mainnet()?;
     client.ping().await?;
 
-    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
-        script: SIMPLE_SCRIPT,
-        arguments: [ValueRef::Int(cadence_json::BigInt::from(32))],
-    }).await?.parse()?;
+    let ret = client
+        .send(ExecuteScriptAtLatestBlockRequest {
+            script: SIMPLE_SCRIPT,
+            arguments: [ValueRef::Int(cadence_json::BigInt::from(32))],
+        })
+        .await?
+        .parse()?;
 
     println!("{:#?}", ret);
 
-    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
-        script: COMPLEX_SCRIPT,
-        arguments: [ValueRef::String("John Doe")],
-    }).await?.parse()?;
+    let ret = client
+        .send(ExecuteScriptAtLatestBlockRequest {
+            script: COMPLEX_SCRIPT,
+            arguments: [ValueRef::String("John Doe")],
+        })
+        .await?
+        .parse()?;
 
     println!("{:#?}", ret);
 

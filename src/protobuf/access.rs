@@ -4,8 +4,8 @@ use crate::{
     client::{FlowClient, GrpcClient},
     ExecutionResult, Finalize, SignatureE, Timestamp,
 };
-use otopr::*;
 use otopr::wire_types::*;
+use otopr::*;
 
 macro_rules! access_api {
     (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
@@ -199,7 +199,9 @@ pub struct AccountResponse {
     pub account: Account,
 }
 
-fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Clone + 'a>(it: It) -> std::iter::Map<It, fn(&T) -> Vec<u8>> {
+fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Clone + 'a>(
+    it: It,
+) -> std::iter::Map<It, fn(&T) -> Vec<u8>> {
     fn enc<T: serde::Serialize>(t: &T) -> Vec<u8> {
         serde_json::to_vec(t).unwrap()
     }

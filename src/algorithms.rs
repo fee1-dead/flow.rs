@@ -34,7 +34,7 @@ algorithms! {
 }
 
 pub trait Signature {
-    type Serialized: AsRef<[u8]>;
+    type Serialized: AsRef<[u8]> + Clone;
     fn serialize(&self) -> Self::Serialized;
 }
 
@@ -55,7 +55,10 @@ pub trait FlowSigner {
     fn new() -> Self;
 
     /// Creates a signature by consuming a populated hasher and a secret key.
-    fn sign(&self, hasher: impl FlowHasher, secret_key: &Self::SecretKey) -> Self::Signature;
+    fn sign(&self, hasher: impl FlowHasher, secret_key: &Self::SecretKey) -> Self::Signature {
+        self.sign_populated(hasher.finalize(), secret_key)
+    }
+    fn sign_populated(&self, hashed: [u8; 32], secret_key: &Self::SecretKey) -> Self::Signature;
     /// Converts a secret key to its public counterpart.
     fn to_public_key(&self, secret_key: &Self::SecretKey) -> Self::PublicKey;
     /// Serializes a public key. Excluding the leading 0x04.
@@ -109,17 +112,14 @@ impl FlowSigner for secp256k1::Secp256k1<secp256k1::SignOnly> {
         Self::signing_only()
     }
 
-    fn sign(&self, hasher: impl FlowHasher, secret_key: &Self::SecretKey) -> Self::Signature {
+    fn sign_populated(&self, hashed: [u8; 32], secret_key: &Self::SecretKey) -> Self::Signature {
         struct Ttbh([u8; 32]);
         impl secp256k1::ThirtyTwoByteHash for Ttbh {
             fn into_32(self) -> [u8; 32] {
                 self.0
             }
         }
-        self.sign(
-            &secp256k1::Message::from(Ttbh(hasher.finalize())),
-            secret_key,
-        )
+        self.sign(&secp256k1::Message::from(Ttbh(hashed)), secret_key)
     }
 
     fn to_public_key(&self, secret_key: &Self::SecretKey) -> Self::PublicKey {

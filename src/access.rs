@@ -2,10 +2,11 @@ use std::iter::empty;
 use std::slice;
 use std::{error::Error as StdError, marker::PhantomData};
 
+use crate::sign::{MkSigIter, One, SignIter, SignMethod, KeyIdIter};
 use crate::{
-    Account, AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
-    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest, SendTransactionResponse,
-    SignatureE, TransactionE, TransactionHeader,
+    AccountKey, AccountResponse, BlockHeaderResponse,
+    GetAccountAtLatestBlockRequest, GetLatestBlockHeaderRequest, ProposalKeyE,
+    SendTransactionRequest, SendTransactionResponse, SignatureE, TransactionE, TransactionHeader,
 };
 
 use crate::algorithms::{
@@ -44,44 +45,18 @@ pub enum Error {
     Custom(#[from] Box<dyn StdError + Send + Sync>),
 }
 
-/// A simple account, no multisign.
+
 #[derive(Clone)]
-pub struct SimpleAccount<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
+pub struct Account<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
     // The address of this account.
     address: Box<[u8]>,
-    key_id: u32,
-    secret_key: SecretKey,
+    sign_method: SignMethod<SecretKey>,
     signer: Signer,
     client: FlowClient<Client>,
     _pd: PhantomData<Hasher>,
 }
 
-pub struct MultiSignAccount<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
-    address: Box<[u8]>,
-    primary_key_id: u32,
-    primary_key_index: usize,
-    secret_keys: Box<[SecretKey]>,
-    signer: Signer,
-    client: FlowClient<Client>,
-    _pd: PhantomData<Hasher>
-}
-
-impl<Cl, Sk, Sn, Hs> SimpleAccount<Cl, Sk, Sn, Hs> {
-    /// Returns the public key of this account.
-    #[inline]
-    pub fn public_key(&self) -> Sn::PublicKey
-    where
-        Sn: FlowSigner<SecretKey = Sk>,
-    {
-        self.signer.to_public_key(&self.secret_key)
-    }
-
-    /// Returns the key id number of this account.
-    #[inline]
-    pub fn key_id(&self) -> u32 {
-        self.key_id
-    }
-
+impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
     /// Returns the address of this account.
     #[inline]
     pub fn address(&self) -> &[u8] {
@@ -98,38 +73,111 @@ impl<Cl, Sk, Sn, Hs> SimpleAccount<Cl, Sk, Sn, Hs> {
         &mut self.client
     }
 
-}
+    pub fn primary_public_key(&self) -> Sn::PublicKey where Sn: FlowSigner<SecretKey = Sk> {
+        self.signer.to_public_key(self.sign_method.primary_secret_key())
+    }
 
-#[repr(transparent)]
-#[doc(hidden)] // implementation details
-pub struct SliceHelper<T, Item>(T, PhantomData<Item>);
-
-impl<T: AsRef<[Item]>, Item> SliceHelper<T, Item> {
-    pub fn new_ref(t: &T) -> &Self {
-        unsafe { &*(t as *const T as *const Self) }
+    pub fn primary_key_id(&self) -> u32 {
+        self.sign_method.primary_key_id()
     }
 }
 
-impl<'a, 'b, T: AsRef<[Item]>, Item: 'a> IntoIterator for &'a &'b SliceHelper<T, Item> {
-    type Item = &'a Item;
-
-    type IntoIter = slice::Iter<'a, Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.as_ref().iter()
-    }
-}
-
-impl<T: AsRef<[Item]>, Item> otopr::HasItem for &'_ SliceHelper<T, Item> {
-    type Item = Item;
-}
-
-impl<Client, SecretKey, Signer, Hasher> SimpleAccount<Client, SecretKey, Signer, Hasher>
+impl<Client, SecretKey, Signer, Hasher> Account<Client, SecretKey, Signer, Hasher>
 where
     Signer: FlowSigner<SecretKey = SecretKey>,
     Hasher: FlowHasher,
 {
-    /// Logs in to a simple account, verifying that the key and the address matches.
+    fn sign_<'a>(hasher: Hasher, signer: &'a Signer, method: &'a SignMethod<SecretKey>) -> SignIter<'a, Signer> {
+        SignIter::new(hasher.finalize(), signer, method)
+    }
+
+    /// Creates a signature using this account's public key(s), consuming a populated hasher.
+    pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
+        Self::sign_(hasher, self.signer(), &self.sign_method)
+    }
+
+    fn sign_transaction_<'a>(
+        key_id: u32,
+        address: &[u8],
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+        script: impl AsRef<[u8]>,
+        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<'a, Signer> {
+        let mut s = rlp::RlpStream::new();
+        crate::rlp_encode_transaction_envelope(
+            &mut s,
+            script,
+            arguments,
+            reference_block_id,
+            gas_limit,
+            address,
+            key_id as u64,
+            sequence_number,
+            address,
+            [address],
+            empty::<(&[u8], u32, &[u8])>(),
+        );
+
+        let mut hasher = Hasher::new();
+        hasher.update(&PADDED_TRANSACTION_DOMAIN_TAG);
+        hasher.update(&s.out());
+
+        Self::sign_(hasher, signer, method)
+    }
+
+    /// Sign a transaction with this account being the proposer, the payer and the only authorizer.
+    ///
+    /// Returns an envelope signature.
+    pub fn sign_transaction(
+        &self,
+        script: impl AsRef<[u8]>,
+        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<Signer> {
+        Self::sign_transaction_(self.primary_key_id(), &self.address, &self.signer, &self.sign_method, script, arguments, reference_block_id, sequence_number, gas_limit)
+    }
+
+    fn sign_transaction_header_<'a, 'b, Arguments>(
+        key_id: u32,
+        address: &[u8],
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+        header: &'b TransactionHeader<Arguments>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<'a, Signer>
+    where
+        &'b Arguments: IntoIterator,
+        <&'b Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'b Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
+    {
+        Self::sign_transaction_(key_id, address, signer, method, &header.script, &header.arguments, reference_block_id, sequence_number, gas_limit)
+    }
+
+    /// Sign a transaction header with a block id and gas limit.
+    pub fn sign_transaction_header<'a, Arguments>(
+        &self,
+        header: &'a TransactionHeader<Arguments>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<Signer>
+    where
+        &'a Arguments: IntoIterator,
+        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
+    {
+        Self::sign_transaction_header_(self.primary_key_id(), &self.address, &self.signer, &self.sign_method, header, reference_block_id, sequence_number, gas_limit)
+    }
+
+    /// Logs in to the account with one key, verifying that the key and the address matches.
     ///
     /// # Errors
     ///
@@ -139,21 +187,24 @@ where
     ///  - the secret key does not have the full weight to be able to act on its own (weight < 1000)
     ///  - could not find any public key of the account that matches the secret key supplied.
     ///  - the algorithms for the signer and the hasher do not match with the public information of the key.
-    pub async fn new(
+    pub async fn new<'a>(
         client: Client,
-        address: &'_ [u8],
+        address: &'a [u8],
         secret_key: SecretKey,
     ) -> Result<Self, Error>
-    where for<'a> Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+    where
+        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
     {
         let mut client = FlowClient::new(client);
         let acc = client
             .account_at_latest_block(address)
             .await
-            .map_err(Into::into)?;
-        assert_eq!(&*acc.account.address, address);
+            .map_err(Into::into)?
+            .account;
 
-        let Account { address, keys, .. } = acc.account;
+        assert_eq!(&*acc.address, address);
+
+        let crate::protobuf::Account { address, keys, .. } = acc;
 
         let mut account_key = None;
 
@@ -185,77 +236,19 @@ where
 
         Ok(Self {
             address,
-            key_id,
-            secret_key,
+            sign_method: SignMethod::One(One {
+                key_id,
+                key: secret_key,
+            }),
             signer,
             client,
             _pd: PhantomData,
         })
     }
 
-    /// Sign a transaction with this account being the proposer, the payer and the only authorizer.
-    ///
-    /// Returns an envelope signature.
-    pub fn sign_transaction(
-        &self,
-        script: impl AsRef<[u8]>,
-        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> Signer::Signature {
-        let mut s = rlp::RlpStream::new();
-        crate::rlp_encode_transaction_envelope(
-            &mut s,
-            script,
-            arguments,
-            reference_block_id,
-            gas_limit,
-            self.address(),
-            self.key_id() as u64,
-            sequence_number,
-            self.address(),
-            [self.address()],
-            empty::<(&[u8], u32, &[u8])>(),
-        );
-
-        let mut hasher = Hasher::new();
-        hasher.update(&PADDED_TRANSACTION_DOMAIN_TAG);
-        hasher.update(&s.out());
-
-        self.sign(hasher)
-    }
-
-    /// Sign a transaction header with a block id and gas limit.
-    pub fn sign_transaction_header<'a, Arguments>(
-        &mut self,
-        header: &'a TransactionHeader<Arguments>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> Signer::Signature
-    where
-        &'a Arguments: IntoIterator,
-        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        self.sign_transaction(
-            &header.script,
-            &header.arguments,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    /// Creates a signature using this account's public key, consuming a populated hasher.
-    pub fn sign(&self, hasher: Hasher) -> Signer::Signature {
-        self.signer.sign(hasher, &self.secret_key)
-    }
-
     /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
     /// and using the latest sealed block as a reference.
-    /// 
+    ///
     /// Note that this does not increment the sequence number.
     ///
     /// # Errors
@@ -270,14 +263,14 @@ where
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
         for<'b> Client: GrpcClient<
             SendTransactionRequest<
-                &'a [u8],
-                &'a SliceHelper<Arguments, Vec<u8>>,
                 &'b [u8],
-                &'a [u8],
-                &'a [u8],
-                [&'a [u8]; 1],
-                [SignatureE<&'a [u8], &'a [u8]>; 0],
-                [SignatureE<&'a [u8], &'b [u8]>; 1],
+                &'b SliceHelper<Arguments, Vec<u8>>,
+                &'b [u8],
+                &'b [u8],
+                &'b [u8],
+                [&'b [u8]; 1],
+                [SignatureE<&'b [u8], &'b [u8]>; 0],
+                EmitRefAndDropOnNext<SignatureE<&'b [u8], <Signer::Signature as Signature>::Serialized>, MkSigIter<'b, KeyIdIter<'b, Signer::SecretKey>, SignIter<'b, Signer>>>,
             >,
             SendTransactionResponse,
         >,
@@ -286,10 +279,21 @@ where
         <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
         <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
     {
-        let address = &self.address;
-        let acc = self.client.account_at_latest_block(address).await.map_err(Into::into)?.account;
-        let pub_key = self.signer().serialize_public_key(&self.public_key());
-        let key = acc.keys.into_inner().into_iter().find(|key| key.public_key == pub_key ).unwrap();
+        let address = &*self.address;
+        let acc = self
+            .client
+            .account_at_latest_block(address)
+            .await
+            .map_err(Into::into)?
+            .account;
+        let pub_key = self.primary_public_key();
+        let pub_key = self.signer.serialize_public_key(&pub_key);
+        let key = acc
+            .keys
+            .into_inner()
+            .into_iter()
+            .find(|key| key.public_key == pub_key)
+            .unwrap();
         let sequence_number = key.sequence_number as u64;
 
         let latest_block = self
@@ -301,25 +305,30 @@ where
         let latest_block = latest_block.0;
         let reference_block_id = latest_block.id.as_slice();
         let gas_limit = 1000;
-        let sig = self.sign_transaction_header(transaction, reference_block_id, sequence_number, gas_limit);
-        let sig = sig.serialize();
-        let envelope_signatures = [SignatureE {
-            address: &self.address[..],
-            key_id: self.key_id(),
-            signature: sig.as_ref(),
-        }];
+        let sig = Self::sign_transaction_header_(
+            self.primary_key_id(),
+            &self.address,
+            &self.signer,
+            &self.sign_method,
+            transaction,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        );
+
+        let envelope_signatures = EmitRefAndDropOnNext(MkSigIter::new(&self.address, self.sign_method.key_ids(), sig), PhantomData);
         let transaction = TransactionE {
             script: transaction.script.as_ref(),
             arguments: SliceHelper::new_ref(&transaction.arguments),
             reference_block_id,
             gas_limit,
             proposal_key: ProposalKeyE {
-                address: &self.address[..],
-                key_id: self.key_id,
-                sequence_number: sequence_number,
+                address: &*self.address,
+                key_id: self.primary_key_id(),
+                sequence_number,
             },
-            payer: &self.address[..],
-            authorizers: [&self.address[..]],
+            payer: &*self.address,
+            authorizers: [&*self.address],
             payload_signatures: [],
             envelope_signatures,
         };
@@ -328,4 +337,68 @@ where
             .await
             .map_err(|e| e.into())
     }
+}
+
+#[repr(transparent)]
+#[doc(hidden)] // implementation details
+pub struct SliceHelper<T, Item>(T, PhantomData<Item>);
+
+impl<T: AsRef<[Item]>, Item> SliceHelper<T, Item> {
+    pub fn new_ref(t: &T) -> &Self {
+        unsafe { &*(t as *const T as *const Self) }
+    }
+}
+
+impl<'a, 'b, T: AsRef<[Item]>, Item: 'a> IntoIterator for &'a &'b SliceHelper<T, Item> {
+    type Item = &'a Item;
+
+    type IntoIter = slice::Iter<'a, Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.as_ref().iter()
+    }
+}
+
+impl<T: AsRef<[Item]>, Item> otopr::HasItem for &'_ SliceHelper<T, Item> {
+    type Item = Item;
+}
+
+#[doc(hidden)] // implementation details
+#[derive(Clone)]
+pub struct EmitRefAndDropOnNextIter<'a, T, I>(Option<T>, I, PhantomData<&'a T>);
+
+#[doc(hidden)]
+#[derive(Clone)]
+pub struct EmitRefAndDropOnNext<T, I>(I, PhantomData<T>);
+
+
+impl<'a, T, I: Iterator<Item = T> + Clone> IntoIterator for &'a EmitRefAndDropOnNext<T, I> {
+    type Item = &'a T;
+
+    type IntoIter = EmitRefAndDropOnNextIter<'a, T, I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        EmitRefAndDropOnNextIter(None, self.0.clone(), PhantomData)
+    }
+}
+
+impl<'a, T, I: Iterator<Item = T>> Iterator for EmitRefAndDropOnNextIter<'a, T, I> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(it) = self.1.next() {
+            let r = self.0.insert(it);
+
+            // SAFETY: Must ensure that each item is dropped before calling `next()`.
+            //
+            // FIXME: Can we avoid this and work with the trait system instead?
+            Some(unsafe {&* (r as *const T) })
+        } else {
+            None
+        }
+    }
+}
+
+impl<T, I> otopr::HasItem for EmitRefAndDropOnNext<T, I> {
+    type Item = T;
 }

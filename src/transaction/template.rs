@@ -40,11 +40,11 @@ pub struct TransactionHeaderBuilder {
 ///        }
 ///     }
 /// "#;
-/// 
+///
 /// let argument = ValueRef::String("Hello");
-/// 
+///
 /// let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&argument);
-/// 
+///
 /// assert_eq!(header.build(), TransactionHeader {
 ///     script: SCRIPT.as_bytes().into(),
 ///     arguments: vec![serde_json::to_vec(&argument).unwrap()]
@@ -80,19 +80,31 @@ impl TransactionHeaderBuilder {
 
     #[inline]
     pub fn argument<'a>(mut self, val: impl AsRef<ValueRef<'a>>) -> Self {
-        self.arguments.push(serde_json::to_vec(val.as_ref()).unwrap());
+        self.arguments
+            .push(serde_json::to_vec(val.as_ref()).unwrap());
         self
     }
 
     #[inline]
-    pub fn arguments<I>(mut self, args: I) -> Self where I: IntoIterator, I::Item: Serialize {
-        self.arguments.extend(args.into_iter().map(|v| serde_json::to_vec(&v)).map(Result::unwrap));
+    pub fn arguments<I>(mut self, args: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Serialize,
+    {
+        self.arguments.extend(
+            args.into_iter()
+                .map(|v| serde_json::to_vec(&v))
+                .map(Result::unwrap),
+        );
         self
     }
 
     #[inline]
     pub fn build(self) -> TransactionHeader<Vec<Vec<u8>>> {
-        TransactionHeader { script: self.script.unwrap(), arguments: self.arguments }
+        TransactionHeader {
+            script: self.script.unwrap(),
+            arguments: self.arguments,
+        }
     }
 
     #[inline]
