@@ -1,7 +1,7 @@
 //! Common logic for signing transactions.
 
-use std::slice;
 use std::iter::{FusedIterator, Map, Zip};
+use std::slice;
 
 use crate::algorithms::{FlowSigner, Signature};
 
@@ -22,11 +22,11 @@ pub type KeyIdIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> u32>;
 
 pub type KeyIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> &'a T>;
 
-fn key_id<'a, T>(one: &'a One<T>) -> u32 {
+fn key_id<T>(one: &One<T>) -> u32 {
     one.key_id
 }
 
-fn key<'a, T>(one: &'a One<T>) -> &'a T {
+fn key<T>(one: &One<T>) -> &T {
     &one.key
 }
 
@@ -40,20 +40,20 @@ impl<SecretKey> Multi<SecretKey> {
         self.keys[self.primary_key_idx].key_id
     }
 
-    pub fn keys_and_key_ids<'a>(&'a self) -> (KeyIter<'a, SecretKey>, KeyIdIter<'a, SecretKey>) {
+    pub fn keys_and_key_ids(&self) -> (KeyIter<SecretKey>, KeyIdIter<SecretKey>) {
         (self.keys(), self.key_ids())
     }
 
-    pub fn key_ids<'a>(&'a self) -> KeyIdIter<'a, SecretKey> {
+    pub fn key_ids(&self) -> KeyIdIter<SecretKey> {
         self.keys.iter().map(key_id)
     }
     /// Returns an iterator over the secret keys.
-    pub fn keys<'a>(&'a self) -> KeyIter<'a, SecretKey> {
+    pub fn keys(&self) -> KeyIter<SecretKey> {
         self.keys.iter().map(key)
     }
 }
 
-/// How to sign? This describes whether to sign using only one secret key or with multiple keys (multisign). 
+/// How to sign? This describes whether to sign using only one secret key or with multiple keys (multisign).
 #[derive(Clone)]
 pub enum SignMethod<SecretKey> {
     One(One<SecretKey>),
@@ -105,7 +105,8 @@ where
     }
 }
 
-impl<'a, KeyIdIter: Iterator<Item = u32>, SigIter: Iterator> Iterator for MkSigIter<'a, KeyIdIter, SigIter>
+impl<'a, KeyIdIter: Iterator<Item = u32>, SigIter: Iterator> Iterator
+    for MkSigIter<'a, KeyIdIter, SigIter>
 where
     SigIter::Item: Signature,
 {
@@ -130,7 +131,11 @@ pub struct SignIter<'a, Signer: FlowSigner> {
 
 impl<'a, Signer: FlowSigner> SignIter<'a, Signer> {
     /// Creates a new signature iterator with the data being signed, the signer, and the method.
-    pub fn new(data: [u8; 32], signer: &'a Signer, method: &'a SignMethod<Signer::SecretKey>) -> Self {
+    pub fn new(
+        data: [u8; 32],
+        signer: &'a Signer,
+        method: &'a SignMethod<Signer::SecretKey>,
+    ) -> Self {
         Self {
             data,
             signer,
@@ -172,7 +177,8 @@ impl<Signer: FlowSigner> Iterator for SignIter<'_, Signer> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // SAFETY: checked that this iterator has remaining items
-        self.has_remaining().then(|| unsafe { self.next_unchecked() })
+        self.has_remaining()
+            .then(|| unsafe { self.next_unchecked() })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

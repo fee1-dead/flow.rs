@@ -2,11 +2,11 @@ use std::iter::empty;
 use std::slice;
 use std::{error::Error as StdError, marker::PhantomData};
 
-use crate::sign::{MkSigIter, One, SignIter, SignMethod, KeyIdIter};
+use crate::sign::{KeyIdIter, MkSigIter, One, SignIter, SignMethod};
 use crate::{
-    AccountKey, AccountResponse, BlockHeaderResponse,
-    GetAccountAtLatestBlockRequest, GetLatestBlockHeaderRequest, ProposalKeyE,
-    SendTransactionRequest, SendTransactionResponse, SignatureE, TransactionE, TransactionHeader,
+    AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
+    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest, SendTransactionResponse,
+    SignatureE, TransactionE, TransactionHeader,
 };
 
 use crate::algorithms::{
@@ -17,7 +17,7 @@ use crate::algorithms::{
 use crate::client::{FlowClient, GrpcClient};
 
 const PADDED_LEN: usize = 32;
-const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
+pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
     padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
 const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
@@ -44,7 +44,6 @@ pub enum Error {
     #[error(transparent)]
     Custom(#[from] Box<dyn StdError + Send + Sync>),
 }
-
 
 #[derive(Clone)]
 pub struct Account<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
@@ -73,8 +72,12 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
         &mut self.client
     }
 
-    pub fn primary_public_key(&self) -> Sn::PublicKey where Sn: FlowSigner<SecretKey = Sk> {
-        self.signer.to_public_key(self.sign_method.primary_secret_key())
+    pub fn primary_public_key(&self) -> Sn::PublicKey
+    where
+        Sn: FlowSigner<SecretKey = Sk>,
+    {
+        self.signer
+            .to_public_key(self.sign_method.primary_secret_key())
     }
 
     pub fn primary_key_id(&self) -> u32 {
@@ -87,7 +90,11 @@ where
     Signer: FlowSigner<SecretKey = SecretKey>,
     Hasher: FlowHasher,
 {
-    fn sign_<'a>(hasher: Hasher, signer: &'a Signer, method: &'a SignMethod<SecretKey>) -> SignIter<'a, Signer> {
+    fn sign_<'a>(
+        hasher: Hasher,
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+    ) -> SignIter<'a, Signer> {
         SignIter::new(hasher.finalize(), signer, method)
     }
 
@@ -140,7 +147,17 @@ where
         sequence_number: u64,
         gas_limit: u64,
     ) -> SignIter<Signer> {
-        Self::sign_transaction_(self.primary_key_id(), &self.address, &self.signer, &self.sign_method, script, arguments, reference_block_id, sequence_number, gas_limit)
+        Self::sign_transaction_(
+            self.primary_key_id(),
+            &self.address,
+            &self.signer,
+            &self.sign_method,
+            script,
+            arguments,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
     }
 
     fn sign_transaction_header_<'a, 'b, Arguments>(
@@ -158,7 +175,17 @@ where
         <&'b Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
         <<&'b Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
     {
-        Self::sign_transaction_(key_id, address, signer, method, &header.script, &header.arguments, reference_block_id, sequence_number, gas_limit)
+        Self::sign_transaction_(
+            key_id,
+            address,
+            signer,
+            method,
+            &header.script,
+            &header.arguments,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
     }
 
     /// Sign a transaction header with a block id and gas limit.
@@ -174,7 +201,16 @@ where
         <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
         <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
     {
-        Self::sign_transaction_header_(self.primary_key_id(), &self.address, &self.signer, &self.sign_method, header, reference_block_id, sequence_number, gas_limit)
+        Self::sign_transaction_header_(
+            self.primary_key_id(),
+            &self.address,
+            &self.signer,
+            &self.sign_method,
+            header,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
     }
 
     /// Logs in to the account with one key, verifying that the key and the address matches.
@@ -270,7 +306,10 @@ where
                 &'b [u8],
                 [&'b [u8]; 1],
                 [SignatureE<&'b [u8], &'b [u8]>; 0],
-                EmitRefAndDropOnNext<SignatureE<&'b [u8], <Signer::Signature as Signature>::Serialized>, MkSigIter<'b, KeyIdIter<'b, Signer::SecretKey>, SignIter<'b, Signer>>>,
+                EmitRefAndDropOnNext<
+                    SignatureE<&'b [u8], <Signer::Signature as Signature>::Serialized>,
+                    MkSigIter<'b, KeyIdIter<'b, Signer::SecretKey>, SignIter<'b, Signer>>,
+                >,
             >,
             SendTransactionResponse,
         >,
@@ -316,7 +355,10 @@ where
             gas_limit,
         );
 
-        let envelope_signatures = EmitRefAndDropOnNext(MkSigIter::new(&self.address, self.sign_method.key_ids(), sig), PhantomData);
+        let envelope_signatures = EmitRefAndDropOnNext(
+            MkSigIter::new(&self.address, self.sign_method.key_ids(), sig),
+            PhantomData,
+        );
         let transaction = TransactionE {
             script: transaction.script.as_ref(),
             arguments: SliceHelper::new_ref(&transaction.arguments),
@@ -371,7 +413,6 @@ pub struct EmitRefAndDropOnNextIter<'a, T, I>(Option<T>, I, PhantomData<&'a T>);
 #[derive(Clone)]
 pub struct EmitRefAndDropOnNext<T, I>(I, PhantomData<T>);
 
-
 impl<'a, T, I: Iterator<Item = T> + Clone> IntoIterator for &'a EmitRefAndDropOnNext<T, I> {
     type Item = &'a T;
 
@@ -392,7 +433,7 @@ impl<'a, T, I: Iterator<Item = T>> Iterator for EmitRefAndDropOnNextIter<'a, T, 
             // SAFETY: Must ensure that each item is dropped before calling `next()`.
             //
             // FIXME: Can we avoid this and work with the trait system instead?
-            Some(unsafe {&* (r as *const T) })
+            Some(unsafe { &*(r as *const T) })
         } else {
             None
         }

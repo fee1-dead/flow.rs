@@ -11,6 +11,7 @@ pub mod algorithms;
 pub mod requests;
 
 pub mod access;
+pub mod multi;
 pub mod sign;
 
 #[cfg(test)]

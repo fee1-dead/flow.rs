@@ -31,9 +31,9 @@ pub fn rlp_encode_transaction_envelope(
     );
     let payload_signatures = payload_signatures.into_iter();
     s.begin_list(payload_signatures.len());
-    for (signer_index, key_id, signature) in payload_signatures {
+    for (signer_address, key_id, signature) in payload_signatures {
         s.begin_list(3)
-            .append(&signer_index.as_ref())
+            .append(&signer_address.as_ref())
             .append(&key_id)
             .append(&signature.as_ref());
     }
