@@ -64,22 +64,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             for ev in res.events.iter() {
                 if ev.ty == "flow.AccountCreated" {
                     let payload = ev.parse_payload()?;
-                    match payload {
-                        ValueOwned::Event(composite) => {
-                            let addr = composite
-                                .fields
-                                .into_iter()
-                                .find(|field| field.name == "address")
-                                .map(|field| field.value)
-                                .unwrap();
-                            match addr {
-                                ValueOwned::Address(addr) => {
-                                    println!("Created account's address is: {}", addr);
-                                }
-                                _ => {}
-                            }
+                    if let ValueOwned::Event(composite) = payload {
+                        let addr = composite
+                            .fields
+                            .into_iter()
+                            .find(|field| field.name == "address")
+                            .map(|field| field.value)
+                            .unwrap();
+                        if let ValueOwned::Address(addr) = addr {
+                            println!("Created account's address is: {}", addr);
                         }
-                        _ => {}
                     }
                 }
             }

@@ -19,7 +19,7 @@ pub struct TransactionHeader<Arguments> {
 #[derive(Default)]
 pub struct TransactionHeaderBuilder {
     script: Option<Cow<'static, [u8]>>,
-    arguments: Vec<Vec<u8>>,
+    arguments: Vec<Box<[u8]>>,
 }
 
 /// A builder for a transaction header.
@@ -81,7 +81,7 @@ impl TransactionHeaderBuilder {
     #[inline]
     pub fn argument<'a>(mut self, val: impl AsRef<ValueRef<'a>>) -> Self {
         self.arguments
-            .push(serde_json::to_vec(val.as_ref()).unwrap());
+            .push(serde_json::to_vec(val.as_ref()).unwrap().into_boxed_slice());
         self
     }
 
@@ -94,13 +94,14 @@ impl TransactionHeaderBuilder {
         self.arguments.extend(
             args.into_iter()
                 .map(|v| serde_json::to_vec(&v))
-                .map(Result::unwrap),
+                .map(Result::unwrap)
+                .map(Vec::into_boxed_slice),
         );
         self
     }
 
     #[inline]
-    pub fn build(self) -> TransactionHeader<Vec<Vec<u8>>> {
+    pub fn build(self) -> TransactionHeader<Vec<Box<[u8]>>> {
         TransactionHeader {
             script: self.script.unwrap(),
             arguments: self.arguments,
@@ -108,7 +109,7 @@ impl TransactionHeaderBuilder {
     }
 
     #[inline]
-    pub fn build_checked(self) -> Result<TransactionHeader<Vec<Vec<u8>>>, Self> {
+    pub fn build_checked(self) -> Result<TransactionHeader<Vec<Box<[u8]>>>, Self> {
         match self.script {
             Some(script) => Ok(TransactionHeader {
                 script,

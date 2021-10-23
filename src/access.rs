@@ -282,6 +282,20 @@ where
         })
     }
 
+    pub unsafe fn new_unchecked(
+        client: Client,
+        address: Box<[u8]>,
+        sign_method: SignMethod<SecretKey>,
+    ) -> Self {
+        Self {
+            address,
+            sign_method,
+            signer: Signer::new(),
+            client: FlowClient::new(client),
+            _pd: PhantomData,
+        }
+    }
+
     /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
     /// and using the latest sealed block as a reference.
     ///
@@ -290,7 +304,7 @@ where
     /// # Errors
     ///
     /// This function returns an error if the client returns any errors when making requests.
-    pub async fn send_transaction_header<'a, Arguments>(
+    pub async fn send_transaction_header<'a, Arguments, Argument>(
         &'a mut self,
         transaction: &'a TransactionHeader<Arguments>,
     ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
@@ -300,7 +314,7 @@ where
         for<'b> Client: GrpcClient<
             SendTransactionRequest<
                 &'b [u8],
-                &'b SliceHelper<Arguments, Vec<u8>>,
+                &'b SliceHelper<Argument>,
                 &'b [u8],
                 &'b [u8],
                 &'b [u8],
@@ -313,7 +327,8 @@ where
             >,
             SendTransactionResponse,
         >,
-        Arguments: AsRef<[Vec<u8>]>,
+        Arguments: AsRef<[Argument]>,
+        Argument: AsRef<[u8]>,
         &'a Arguments: IntoIterator,
         <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
         <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
@@ -361,7 +376,7 @@ where
         );
         let transaction = TransactionE {
             script: transaction.script.as_ref(),
-            arguments: SliceHelper::new_ref(&transaction.arguments),
+            arguments: SliceHelper::new_ref(transaction.arguments.as_ref()),
             reference_block_id,
             gas_limit,
             proposal_key: ProposalKeyE {
@@ -383,15 +398,15 @@ where
 
 #[repr(transparent)]
 #[doc(hidden)] // implementation details
-pub struct SliceHelper<T, Item>(T, PhantomData<Item>);
+pub struct SliceHelper<Item>([Item]);
 
-impl<T: AsRef<[Item]>, Item> SliceHelper<T, Item> {
-    pub fn new_ref(t: &T) -> &Self {
-        unsafe { &*(t as *const T as *const Self) }
+impl<Item> SliceHelper<Item> {
+    pub fn new_ref(t: &[Item]) -> &Self {
+        unsafe { &*(t as *const [Item] as *const Self) }
     }
 }
 
-impl<'a, 'b, T: AsRef<[Item]>, Item: 'a> IntoIterator for &'a &'b SliceHelper<T, Item> {
+impl<'a, 'b, Item: 'a> IntoIterator for &'a &'b SliceHelper<Item> {
     type Item = &'a Item;
 
     type IntoIter = slice::Iter<'a, Item>;
@@ -401,7 +416,7 @@ impl<'a, 'b, T: AsRef<[Item]>, Item: 'a> IntoIterator for &'a &'b SliceHelper<T,
     }
 }
 
-impl<T: AsRef<[Item]>, Item> otopr::HasItem for &'_ SliceHelper<T, Item> {
+impl<Item> otopr::HasItem for &'_ SliceHelper<Item> {
     type Item = Item;
 }
 

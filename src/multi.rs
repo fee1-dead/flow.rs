@@ -51,7 +51,8 @@ impl<H: FlowHasher> Party<H> for SigningParty {
     }
 
     fn add_payload_signature(&mut self, signer_index: usize, signer_id: u32, signature: [u8; 64]) {
-        self.payload_signatures.push((signer_index, signer_id, signature));
+        self.payload_signatures
+            .push((signer_index, signer_id, signature));
     }
 
     fn envelope(&self) -> H {
@@ -69,7 +70,10 @@ impl<H: FlowHasher> Party<H> for SigningParty {
             self.proposal_key_sequence_number,
             &self.payer,
             self.authorizers.iter(),
-            self.payload_signatures.iter().copied().map(|(idx, key_id, sig)| (&self.authorizers[idx], key_id, sig)),
+            self.payload_signatures
+                .iter()
+                .copied()
+                .map(|(idx, key_id, sig)| (&self.authorizers[idx], key_id, sig)),
         );
         hasher.update(&stream.out());
         hasher
@@ -86,7 +90,7 @@ impl SigningParty {
         proposal_key_id: u64,
         proposal_key_sequence_number: u64,
         payer: Box<[u8]>,
-        authorizers: Box<[Box<[u8]>]>
+        authorizers: Box<[Box<[u8]>]>,
     ) -> Self {
         Self {
             script,
@@ -110,7 +114,7 @@ impl SigningParty {
         &self.arguments
     }
 
-    pub fn reference_block(&self) -> &[u8]  {
+    pub fn reference_block(&self) -> &[u8] {
         &self.reference_block
     }
 
@@ -140,7 +144,7 @@ impl SigningParty {
 }
 
 /// A party that prepopulates hashed payload and sends that around for signing.
-/// 
+///
 /// The party only supports one type of hashing algorithm,
 /// which means that all entities involved must use the same algorithm.
 #[derive(Clone)]
@@ -159,7 +163,7 @@ impl<H: FlowHasher> PreHashedParty<H> {
         proposal_key_id: u64,
         proposal_key_sequence_number: u64,
         payer: Box<[u8]>,
-        authorizers: Box<[Box<[u8]>]>
+        authorizers: Box<[Box<[u8]>]>,
     ) -> Self {
         let party = SigningParty::new(
             script,
@@ -173,10 +177,7 @@ impl<H: FlowHasher> PreHashedParty<H> {
             authorizers,
         );
         let payload = party.payload();
-        Self {
-            party,
-            payload,
-        }
+        Self { party, payload }
     }
 }
 
@@ -186,7 +187,12 @@ impl<H: FlowHasher + Clone> Party<H> for PreHashedParty<H> {
     }
 
     fn add_payload_signature(&mut self, signer_index: usize, signer_id: u32, signature: [u8; 64]) {
-        <SigningParty as Party<H>>::add_payload_signature(&mut self.party, signer_index, signer_id, signature)
+        <SigningParty as Party<H>>::add_payload_signature(
+            &mut self.party,
+            signer_index,
+            signer_id,
+            signature,
+        )
     }
 
     fn envelope(&self) -> H {
