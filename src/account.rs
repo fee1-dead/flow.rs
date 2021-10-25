@@ -4,7 +4,7 @@ use std::slice;
 use std::{error::Error as StdError, marker::PhantomData};
 
 use crate::protobuf::Seal;
-use crate::sign::{KeyIdIter, MkSigIter, One, SignIter, SignMethod};
+use crate::sign::{KeyIdIter, MkSigIter, Multi, One, SignIter, SignMethod};
 
 use crate::access::{BlockHeaderResponse, GetLatestBlockHeaderRequest, SendTransactionRequest, GetAccountAtLatestBlockRequest, AccountResponse, SendTransactionResponse};
 use crate::entities::AccountKey;
@@ -263,8 +263,13 @@ where
             sign_algo,
             hash_algo,
             weight,
+            revoked,
             ..
         } = account_key.ok_or(Error::NoMatchingKeyFound)?;
+
+        if revoked {
+            return Err(Error::KeyRevoked);
+        }
 
         if weight < 1000 {
             return Err(Error::NotEnoughWeight);
@@ -294,7 +299,10 @@ where
     ) -> Result<Self, Error>
     where
         Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+        SecretKey: Clone,
     {
+        assert!(secret_keys.len() > 1, "cannot have less than 2 secret keys specified for multisign");
+
         let mut client = FlowClient::new(client);
         let acc = client
             .account_at_latest_block(address)
@@ -312,10 +320,23 @@ where
         );
 
         let signer = Signer::new();
+        let mut primary_key_idx = usize::MAX;
+        let mut found_keys = Vec::new();
+
+        let mut add_key = |key_index: usize, key_id| {
+            if key_index == primary_index {
+                primary_key_idx = found_keys.len();
+            }
+
+            found_keys.push(One {
+                key_id,
+                key: secret_keys[key_index].clone(),
+            });
+        };
 
         if secret_keys.len() > 10 {
-            // a lot of secret keys, we might want to use a hashmap!
-            let public_keys: HashMap<_, _> = secret_keys
+            // Hash the large set of secret keys.
+            let mut public_keys_to_find: HashMap<_, _> = secret_keys
                 .iter()
                 .enumerate()
                 .map(|(idx, secret_key)| {
@@ -325,11 +346,47 @@ where
                     )
                 })
                 .collect();
-        } else {
+                
+            for key in keys.into_inner() {
+                if let Some(key_index) = public_keys_to_find.remove(&*key.public_key) {
+                    add_key(key_index, key.index);
+                }
+            }
 
+            if !public_keys_to_find.is_empty() {
+                return Err(Error::NoMatchingKeyFound);
+            }
+        } else {
+            // Hashing can be expensive for small sets.
+            let mut keys_found = 0;
+            let public_keys_to_find: Vec<_> = secret_keys
+                .iter()
+                .map(|sk| signer.to_public_key(sk))
+                .map(|pk| signer.serialize_public_key(&pk))
+                .collect();
+
+            for key in keys.into_inner() {
+                if let Some((index, _)) = public_keys_to_find.iter().enumerate().find(|(_, pubkey)| *pubkey == &*key.public_key) {
+                    keys_found += 1;
+                    add_key(index, key.index);
+                }
+            }
+
+            if keys_found != public_keys_to_find.len() {
+                return Err(Error::NoMatchingKeyFound);
+            }
         }
 
-        todo!()
+        Ok(Self {
+            address,
+            sign_method: SignMethod::Multi(Multi {
+                primary_key_idx,
+                keys: found_keys.into_boxed_slice(),
+            }),
+            signer,
+            client,
+            _pd: PhantomData,
+        })
     }
 
     pub unsafe fn new_unchecked(

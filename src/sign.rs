@@ -9,8 +9,8 @@ use crate::transaction::SignatureE;
 /// Specification of multisign. Has multiple keys and specifies which one to use when proposing.
 #[derive(Clone)]
 pub struct Multi<SecretKey> {
-    primary_key_idx: usize,
-    keys: Box<[One<SecretKey>]>,
+    pub(crate) primary_key_idx: usize,
+    pub(crate) keys: Box<[One<SecretKey>]>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
