@@ -80,7 +80,7 @@ This example depicts ways to get the latest block as well as any other block by 
 ```rust
 use std::error::Error;
 
-use flow_sdk::{Block, client::TonicHyperFlowClient};
+use flow_sdk::{entities::Block, client::TonicHyperFlowClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -240,7 +240,7 @@ Retrieve transactions from the network by providing a transaction ID. After a tr
 ```rust
 use std::error::Error;
 
-use flow_sdk::{client::TonicHyperFlowClient, Block};
+use flow_sdk::{client::TonicHyperFlowClient, entities::Block};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -429,20 +429,20 @@ Example retrieving a collection:
 ```rust
 use std::error::Error;
 
-use flow_sdk::{client::TonicHyperFlowClient, Block};
+use flow_sdk::client::TonicHyperFlowClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::testnet()?;
     client.ping().await?;
 
-    let mut latest_block: Block = client.latest_block(true).await?.0;
+    let mut latest_block = client.latest_block(true).await?;
 
     // traverse latest blocks until we find a collection guarantee.
     let collection_guarrantee = loop {
         if latest_block.collection_guarantees.is_empty() {
             // Go to the next block
-            latest_block = client.block_by_id(&latest_block.parent_id).await?.0;
+            latest_block = client.block_by_id(&latest_block.parent_id).await?;
         } else {
             break latest_block.collection_guarantees.pop().unwrap();
         }
@@ -485,7 +485,7 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 use std::error::Error;
 
 use cadence_json::ValueRef;
-use flow_sdk::{ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
+use flow_sdk::{access::ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
 
 const SIMPLE_SCRIPT: &str = "
     pub fun main(a: Int): Int {
@@ -630,7 +630,7 @@ transaction(greeting: String) {
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
 ```rust
 use cadence_json::ValueRef;
-use flow_sdk::TransactionHeaderBuilder;
+use flow_sdk::transaction::TransactionHeaderBuilder;
 
 
 const SCRIPT: &str = r#"

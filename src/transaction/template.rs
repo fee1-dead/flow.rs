@@ -26,7 +26,7 @@ pub struct TransactionHeaderBuilder {
 ///
 /// ```rust
 /// use cadence_json::ValueRef;
-/// # use flow_sdk::{TransactionHeader, TransactionHeaderBuilder};
+/// # use flow_sdk::transaction::{TransactionHeader, TransactionHeaderBuilder};
 /// const SCRIPT: &str = r#"
 ///     transaction(greeting: String) {
 ///        let guest: Address
@@ -47,7 +47,7 @@ pub struct TransactionHeaderBuilder {
 ///
 /// assert_eq!(header.build(), TransactionHeader {
 ///     script: SCRIPT.as_bytes().into(),
-///     arguments: vec![serde_json::to_vec(&argument).unwrap()]
+///     arguments: vec![serde_json::to_vec(&argument).unwrap().into_boxed_slice()]
 /// })
 /// ```
 impl TransactionHeaderBuilder {
