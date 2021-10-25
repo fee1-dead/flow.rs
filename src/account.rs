@@ -107,6 +107,7 @@ where
         Self::sign_(hasher, self.signer(), &self.sign_method)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn sign_transaction_<'a>(
         key_id: u32,
         address: &[u8],
@@ -164,6 +165,7 @@ where
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn sign_transaction_header_<'a, 'b, Arguments>(
         key_id: u32,
         address: &[u8],
@@ -387,6 +389,16 @@ where
         })
     }
 
+    /// Creates a new account without checking that the address has the specified key.
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because it can end up signing with a wrong/revoked key, which means
+    /// transactions sent to the network could fail.
+    ///
+    /// Do not do this unless you are sure that the key(s) contained in the sign method matches
+    /// the address.
+    #[inline]
     pub unsafe fn new_unchecked(
         client: Client,
         address: Box<[u8]>,

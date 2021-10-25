@@ -81,6 +81,7 @@ impl<H: FlowHasher> Party<H> for SigningParty {
 }
 
 impl SigningParty {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         script: Box<str>,
         arguments: Box<[Box<[u8]>]>,
@@ -154,6 +155,7 @@ pub struct PreHashedParty<H> {
 }
 
 impl<H: FlowHasher> PreHashedParty<H> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         script: Box<str>,
         arguments: Box<[Box<[u8]>]>,
