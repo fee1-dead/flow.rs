@@ -25,5 +25,5 @@ another crate by `RustCrypto`.
 [rustup]: rustup.rs
 [examples/]: ./examples/
 [libsecp256k1]: https://github.com/bitcoin-core/secp256k1/
-[tiny-keccak]: https://github.com/debris/tiny-keccak
+[`tiny-keccak`]: https://github.com/debris/tiny-keccak
 [better performance]: https://github.com/debris/tiny-keccak#benchmarks
