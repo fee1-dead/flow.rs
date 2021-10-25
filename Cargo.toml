@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-otopr = { git = "https://github.com/fee1-dead/otopr" } # protobuf library
+otopr = "0.3.0" # protobuf library
 # prost-types = "0.8.0" # protobuf well-known types for prost
 tonic = "0.5.2" # gRPC library
 tiny-keccak = { version = "2.0.2", features = ["sha3"], optional = true }
