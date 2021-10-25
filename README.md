@@ -1,6 +1,6 @@
 # Flow Rust SDK
 
-[![Continuous integration](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml)
+[![CI](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml)
 
 The minimum supported Rust version (MSRV) of this project is 1.56.0.
 
