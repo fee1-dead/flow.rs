@@ -106,7 +106,9 @@ impl FromStr for AddressOwned {
             .strip_prefix("0x")
             .ok_or(Cow::Borrowed("Address does not start with 0x"))?;
         hex::decode(s)
-            .map(|data| AddressOwned { data: data.into_boxed_slice() })
+            .map(|data| AddressOwned {
+                data: data.into_boxed_slice(),
+            })
             .map_err(|e| match e {
                 FromHexError::OddLength => Cow::Borrowed("Odd number of digits"),
                 FromHexError::InvalidStringLength => Cow::Borrowed("Invalid string length"),

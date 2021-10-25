@@ -13,10 +13,13 @@ use tonic::{
     Request,
 };
 
-use crate::{codec::{OtoprCodec, PreEncode}, entities::{Account, Block, BlockHeader, Collection}, transaction::TransactionD};
 use crate::access::*;
 use crate::transaction::TransactionE;
-
+use crate::{
+    codec::{OtoprCodec, PreEncode},
+    entities::{Account, Block, BlockHeader, Collection},
+    transaction::TransactionD,
+};
 
 /// A gRPC client trait.
 pub trait GrpcClient<I, O> {
@@ -83,12 +86,12 @@ macro_rules! define_requests {
 // Requests that `.map()`s the futures before returning.
 macro_rules! remapping_requests {
     ($($(#[$meta:meta])* $vis:vis async fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*)
-        $input:ty => $output:ty $(where ($($tts:tt)*))? { 
+        $input:ty => $output:ty $(where ($($tts:tt)*))? {
             $expr:expr;
-            remap = |$paramName:ident| -> $remappedty:ty $remap:block 
+            remap = |$paramName:ident| -> $remappedty:ty $remap:block
         })+) => {
         $($(#[$meta])*
-        $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> 
+        $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) ->
             futures_util::future::Map<
                 Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>,
                 fn(Result<$output, Inner::Error>) -> Result<$remappedty, Inner::Error>,
@@ -250,7 +253,9 @@ impl TonicHyperFlowClient {
         })
     }
 
-    pub fn connect_shared(endpoint: impl Into<bytes::Bytes>) -> Result<Self, Box<dyn Error + Send + Sync>> {
+    pub fn connect_shared(
+        endpoint: impl Into<bytes::Bytes>,
+    ) -> Result<Self, Box<dyn Error + Send + Sync>> {
         Ok(Self {
             inner: Grpc::new(Channel::from_shared(endpoint)?.connect_lazy()?),
         })

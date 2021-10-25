@@ -3,9 +3,9 @@ use std::{future::Future, pin::Pin, time::Duration};
 
 use std::task::Poll;
 
+use crate::access::*;
 use crate::client::{FlowClient, GrpcClient};
 use crate::transaction::*;
-use crate::access::*;
 
 /// Repeatedly queries a client about a transaction,
 /// yielding the result after it has been sealed or expired.

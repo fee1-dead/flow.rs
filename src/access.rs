@@ -3,8 +3,8 @@ use std::time::Duration;
 use crate::client::{FlowClient, GrpcClient};
 use crate::entities::*;
 use crate::protobuf::*;
-use crate::transaction::*;
 use crate::requests::FlowRequest;
+use crate::transaction::*;
 use otopr::wire_types::*;
 use otopr::*;
 
@@ -25,7 +25,6 @@ macro_rules! access_api {
         )+
     };
 }
-
 
 #[derive(EncodableMessage)]
 pub struct PingRequest;

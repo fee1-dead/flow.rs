@@ -1,4 +1,4 @@
-use otopr::{DecodableMessage, encoding::Encodable};
+use otopr::{encoding::Encodable, DecodableMessage};
 
 #[derive(Clone, Copy, Default, DecodableMessage, Debug, PartialEq, Eq, Hash)]
 pub struct Timestamp {

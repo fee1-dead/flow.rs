@@ -6,9 +6,14 @@ use std::{error::Error as StdError, marker::PhantomData};
 use crate::protobuf::Seal;
 use crate::sign::{KeyIdIter, MkSigIter, Multi, One, SignIter, SignMethod};
 
-use crate::access::{BlockHeaderResponse, GetLatestBlockHeaderRequest, SendTransactionRequest, GetAccountAtLatestBlockRequest, AccountResponse, SendTransactionResponse};
+use crate::access::{
+    AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
+    GetLatestBlockHeaderRequest, SendTransactionRequest, SendTransactionResponse,
+};
 use crate::entities::AccountKey;
-use crate::transaction::{TransactionHeader, ProposalKeyE, rlp_encode_transaction_envelope, TransactionE, SignatureE};
+use crate::transaction::{
+    rlp_encode_transaction_envelope, ProposalKeyE, SignatureE, TransactionE, TransactionHeader,
+};
 
 use crate::algorithms::{
     DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature,
@@ -302,7 +307,10 @@ where
         Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
         SecretKey: Clone,
     {
-        assert!(secret_keys.len() > 1, "cannot have less than 2 secret keys specified for multisign");
+        assert!(
+            secret_keys.len() > 1,
+            "cannot have less than 2 secret keys specified for multisign"
+        );
 
         let mut client = FlowClient::new(client);
         let acc = client
@@ -346,7 +354,7 @@ where
                     )
                 })
                 .collect();
-                
+
             for key in keys.into_inner() {
                 if let Some(key_index) = public_keys_to_find.remove(&*key.public_key) {
                     add_key(key_index, key.index);
@@ -366,7 +374,11 @@ where
                 .collect();
 
             for key in keys.into_inner() {
-                if let Some((index, _)) = public_keys_to_find.iter().enumerate().find(|(_, pubkey)| *pubkey == &*key.public_key) {
+                if let Some((index, _)) = public_keys_to_find
+                    .iter()
+                    .enumerate()
+                    .find(|(_, pubkey)| *pubkey == &*key.public_key)
+                {
                     keys_found += 1;
                     add_key(index, key.index);
                 }
