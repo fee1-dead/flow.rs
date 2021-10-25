@@ -34,7 +34,7 @@ pub struct PingRequest;
 pub struct PingResponse;
 
 #[derive(DecodableMessage, Default)]
-pub struct BlockHeaderResponse(#[otopr(1)] pub BlockHeader);
+pub struct BlockHeaderResponse(pub BlockHeader);
 
 #[derive(EncodableMessage)]
 pub struct GetLatestBlockHeaderRequest {
@@ -235,7 +235,7 @@ pub struct ExecuteScriptAtBlockHeightRequest<'a> {
 
 #[derive(DecodableMessage, Default)]
 pub struct ExecuteScriptResponse {
-    pub value: Vec<u8>,
+    pub value: Box<[u8]>,
 }
 
 impl ExecuteScriptResponse {

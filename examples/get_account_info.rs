@@ -21,14 +21,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let mut net = TonicHyperFlowClient::mainnet()?;
 
-    let account = net.account_at_latest_block(&address.data).await?.account;
+    let account = net.account_at_latest_block(&address.data).await?;
 
-    let latest_block_height = net.latest_block_header(Seal::Sealed).await?.0.height;
+    let latest_block_height = net.latest_block_header(Seal::Sealed).await?.height;
 
     let account1 = net
         .account_at_block_height(&address.data, latest_block_height)
-        .await?
-        .account;
+        .await?;
 
     println!("{:#?}", account);
 

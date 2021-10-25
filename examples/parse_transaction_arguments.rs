@@ -8,12 +8,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client.ping().await?;
 
     // traverse the blocks until we find collection guarantees
-    let mut latest_block = client.latest_block(Seal::Sealed).await?.0;
+    let mut latest_block = client.latest_block(Seal::Sealed).await?;
 
     let collection_guarrantee = loop {
         if latest_block.collection_guarantees.is_empty() {
             // Go to the next block
-            latest_block = client.block_by_id(&latest_block.parent_id).await?.0;
+            latest_block = client.block_by_id(&latest_block.parent_id).await?;
         } else {
             break latest_block.collection_guarantees.pop().unwrap();
         }
@@ -21,11 +21,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let collection = client
         .collection_by_id(&collection_guarrantee.collection_id)
-        .await?
-        .collection;
+        .await?;
 
     for transaction_id in collection.transactions.iter() {
-        let txn = client.transaction_by_id(transaction_id).await?.transaction;
+        let txn = client.transaction_by_id(transaction_id).await?;
         println!("{:#?}", txn);
         for argument in txn.parse_arguments() {
             println!("Found a cadence argument in the wild: {:#?}", argument?);

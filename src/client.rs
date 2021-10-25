@@ -13,7 +13,7 @@ use tonic::{
     Request,
 };
 
-use crate::codec::{OtoprCodec, PreEncode};
+use crate::{codec::{OtoprCodec, PreEncode}, entities::{Account, Block, BlockHeader, Collection}, transaction::TransactionD};
 use crate::access::*;
 use crate::transaction::TransactionE;
 
@@ -66,8 +66,9 @@ where
 
 use crate::{protobuf::*, requests::FlowRequest};
 
-macro_rules! define_reqs {
-    ($($(#[$meta:meta])* $vis:vis fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*) $input:ty => $output:ty $(where ($($tts:tt)*))? { $expr:expr })+) => {
+// Simple requests that constructs a request from parameters.
+macro_rules! define_requests {
+    ($($(#[$meta:meta])* $vis:vis async fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*) $input:ty => $output:ty $(where ($($tts:tt)*))? { $expr:expr })+) => {
         $($(#[$meta])*
         $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
             where
@@ -75,6 +76,35 @@ macro_rules! define_reqs {
                 $($($tts)*)?
         {
             self.send($expr)
+        })+
+    }
+}
+
+// Requests that `.map()`s the futures before returning.
+macro_rules! remapping_requests {
+    ($($(#[$meta:meta])* $vis:vis async fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*)
+        $input:ty => $output:ty $(where ($($tts:tt)*))? { 
+            $expr:expr;
+            remap = |$paramName:ident| -> $remappedty:ty $remap:block 
+        })+) => {
+        $($(#[$meta])*
+        $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> 
+            futures_util::future::Map<
+                Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>,
+                fn(Result<$output, Inner::Error>) -> Result<$remappedty, Inner::Error>,
+            >
+            where
+                Inner: GrpcClient< $input, $output >,
+                $($($tts)*)?
+        {
+            fn remap_ok($paramName: $output) -> $remappedty {
+                $remap
+            }
+            fn remap<E>(res: Result<$output, E>) -> Result<$remappedty, E> {
+                res.map(remap_ok)
+            }
+            use futures_util::FutureExt;
+            self.send($expr).map(remap::<Inner::Error>)
         })+
     }
 }
@@ -104,48 +134,18 @@ impl<Inner> FlowClient<Inner> {
         self.inner.send(input)
     }
 
-    define_reqs! {
+    define_requests! {
         /// Shortcut for `self.send(PingRequest {})`.
-        pub fn ping() PingRequest => PingResponse {
+        pub async fn ping() PingRequest => PingResponse {
             PingRequest {}
         }
-        pub fn latest_block_header(seal: Seal) GetLatestBlockHeaderRequest => BlockHeaderResponse {
-            GetLatestBlockHeaderRequest { seal }
-        }
-        pub fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
-            GetBlockHeaderByHeightRequest { height }
-        }
-        pub fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
-            GetBlockHeaderByIdRequest { id }
-        }
-        pub fn latest_block(seal: Seal) GetLatestBlockRequest => BlockResponse {
-            GetLatestBlockRequest { seal }
-        }
-        pub fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
-            GetBlockByHeightRequest { height }
-        }
-        pub fn block_by_id<('a)>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
-            GetBlockByIdRequest { id }
-        }
-        pub fn collection_by_id<('a)>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
-            GetCollectionByIdRequest { id }
-        }
-        pub fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
+        pub async fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
-        pub fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
+        pub async fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
-        pub fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
-            GetAccountAtLatestBlockRequest { id: address }
-        }
-        pub fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
-            GetAccountAtBlockHeightRequest { id: address, block_height }
-        }
-        pub fn transaction_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResponse {
-            GetTransactionRequest { id }
-        }
-        pub fn send_transaction<(
+        pub async fn send_transaction<(
             Script,
             Arguments,
             ReferenceBlockId,
@@ -175,6 +175,69 @@ impl<Inner> FlowClient<Inner> {
         > => SendTransactionResponse
         {
             SendTransactionRequest { transaction }
+        }
+    }
+
+    remapping_requests! {
+        pub async fn transaction_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResponse {
+            GetTransactionRequest { id };
+            remap = |txn_response| -> TransactionD {
+                txn_response.transaction
+            }
+        }
+        pub async fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
+            GetAccountAtLatestBlockRequest { id: address };
+            remap = |acc_response| -> Account {
+                acc_response.account
+            }
+        }
+        pub async fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
+            GetAccountAtBlockHeightRequest { id: address, block_height };
+            remap = |acc_response| -> Account {
+                acc_response.account
+            }
+        }
+        pub async fn latest_block_header(seal: Seal) GetLatestBlockHeaderRequest => BlockHeaderResponse {
+            GetLatestBlockHeaderRequest { seal };
+            remap = |header_response| -> BlockHeader {
+                header_response.0
+            }
+        }
+        pub async fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
+            GetBlockHeaderByHeightRequest { height };
+            remap = |header_response| -> BlockHeader {
+                header_response.0
+            }
+        }
+        pub async fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
+            GetBlockHeaderByIdRequest { id };
+            remap = |header_response| -> BlockHeader {
+                header_response.0
+            }
+        }
+        pub async fn latest_block(seal: Seal) GetLatestBlockRequest => BlockResponse {
+            GetLatestBlockRequest { seal };
+            remap = |block_response| -> Block {
+                block_response.0
+            }
+        }
+        pub async fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
+            GetBlockByHeightRequest { height };
+            remap = |block_response| -> Block {
+                block_response.0
+            }
+        }
+        pub async fn block_by_id<('a)>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
+            GetBlockByIdRequest { id };
+            remap = |block_response| -> Block {
+                block_response.0
+            }
+        }
+        pub async fn collection_by_id<('a)>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
+            GetCollectionByIdRequest { id };
+            remap = |collection_response| -> Collection {
+                collection_response.collection
+            }
         }
     }
 }

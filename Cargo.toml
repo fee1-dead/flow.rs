@@ -18,6 +18,7 @@ serde_json = "1.0.68"
 serde = "1.0.130"
 hex = "0.4.3"
 futures-timer = "3.0.2"
+futures-util = "0.3.17"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples

@@ -239,8 +239,7 @@ where
         let acc = client
             .account_at_latest_block(address)
             .await
-            .map_err(Into::into)?
-            .account;
+            .map_err(Into::into)?;
 
         assert_eq!(&*acc.address, address);
 
@@ -307,8 +306,7 @@ where
         let acc = client
             .account_at_latest_block(address)
             .await
-            .map_err(Into::into)?
-            .account;
+            .map_err(Into::into)?;
 
         assert_eq!(&*acc.address, address);
 
@@ -445,8 +443,7 @@ where
             .client
             .account_at_latest_block(address)
             .await
-            .map_err(Into::into)?
-            .account;
+            .map_err(Into::into)?;
         let pub_key = self.primary_public_key();
         let pub_key = self.signer.serialize_public_key(&pub_key);
         let key = acc
@@ -463,7 +460,6 @@ where
             .await
             .map_err(|e| e.into())?;
 
-        let latest_block = latest_block.0;
         let reference_block_id = latest_block.id.as_slice();
         let gas_limit = 1000;
         let sig = Self::sign_transaction_header_(

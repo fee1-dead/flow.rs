@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::mainnet()?;
     client.ping().await?;
 
-    let latest_block_height = client.latest_block_header(Seal::Sealed).await?.0.height;
+    let latest_block_height = client.latest_block_header(Seal::Sealed).await?.height;
     let start_height = latest_block_height - 100;
 
     println!(
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             if let cadence_json::ValueOwned::Event(c) = val {
                 for field in c.fields.into_iter().filter(|f| f.name == "address") {
                     if let cadence_json::ValueOwned::Address(addr) = field.value {
-                        accounts.push(client.account_at_latest_block(&addr.data).await?.account);
+                        accounts.push(client.account_at_latest_block(&addr.data).await?);
                     }
                 }
             }
