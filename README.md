@@ -1,9 +1,8 @@
 # Flow Rust SDK
 
-This project uses latest features from Rust 1.56, which will be released on October 21st.
+The minimum supported Rust version (MSRV) of this project is 1.56.0.
 
-In the meantime, a nightly Rust toolchain is necessary. To install Rust, visit the [rustup] website
-for information. Run `rustup toolchain install nightly` to install the nightly toolchain.
+To install Rust, visit the [rustup] website for information.
 
 ## Examples
 
