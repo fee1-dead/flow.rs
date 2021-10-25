@@ -13,10 +13,10 @@ use tonic::{
     Request,
 };
 
-use crate::{
-    codec::{OtoprCodec, PreEncode},
-    TransactionE,
-};
+use crate::codec::{OtoprCodec, PreEncode};
+use crate::access::*;
+use crate::transaction::TransactionE;
+
 
 /// A gRPC client trait.
 pub trait GrpcClient<I, O> {
@@ -109,8 +109,8 @@ impl<Inner> FlowClient<Inner> {
         pub fn ping() PingRequest => PingResponse {
             PingRequest {}
         }
-        pub fn latest_block_header(is_sealed: bool) GetLatestBlockHeaderRequest => BlockHeaderResponse {
-            GetLatestBlockHeaderRequest { is_sealed }
+        pub fn latest_block_header(seal: Seal) GetLatestBlockHeaderRequest => BlockHeaderResponse {
+            GetLatestBlockHeaderRequest { seal }
         }
         pub fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
             GetBlockHeaderByHeightRequest { height }
@@ -118,8 +118,8 @@ impl<Inner> FlowClient<Inner> {
         pub fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
             GetBlockHeaderByIdRequest { id }
         }
-        pub fn latest_block(is_sealed: bool) GetLatestBlockRequest => BlockResponse {
-            GetLatestBlockRequest { is_sealed }
+        pub fn latest_block(seal: Seal) GetLatestBlockRequest => BlockResponse {
+            GetLatestBlockRequest { seal }
         }
         pub fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
             GetBlockByHeightRequest { height }
@@ -184,6 +184,12 @@ impl TonicHyperFlowClient {
     pub fn connect_static(endpoint: &'static str) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
             inner: Grpc::new(Channel::from_static(endpoint).connect_lazy()?),
+        })
+    }
+
+    pub fn connect_shared(endpoint: impl Into<bytes::Bytes>) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        Ok(Self {
+            inner: Grpc::new(Channel::from_shared(endpoint)?.connect_lazy()?),
         })
     }
 

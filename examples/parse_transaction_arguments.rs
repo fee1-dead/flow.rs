@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use flow_sdk::{client::TonicHyperFlowClient, Block};
+use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client.ping().await?;
 
     // traverse the blocks until we find collection guarantees
-    let mut latest_block: Block = client.latest_block(true).await?.0;
+    let mut latest_block = client.latest_block(Seal::Sealed).await?.0;
 
     let collection_guarrantee = loop {
         if latest_block.collection_guarantees.is_empty() {

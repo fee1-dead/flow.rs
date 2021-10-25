@@ -4,6 +4,7 @@ use std::iter::{FusedIterator, Map, Zip};
 use std::slice;
 
 use crate::algorithms::{FlowSigner, Signature};
+use crate::transaction::SignatureE;
 
 /// Specification of multisign. Has multiple keys and specifies which one to use when proposing.
 #[derive(Clone)]
@@ -110,9 +111,9 @@ impl<'a, KeyIdIter: Iterator<Item = u32>, SigIter: Iterator> Iterator
 where
     SigIter::Item: Signature,
 {
-    type Item = crate::SignatureE<&'a [u8], <SigIter::Item as Signature>::Serialized>;
+    type Item = SignatureE<&'a [u8], <SigIter::Item as Signature>::Serialized>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(key_id, sig)| crate::SignatureE {
+        self.iter.next().map(|(key_id, sig)| SignatureE {
             address: self.address,
             signature: sig.serialize(),
             key_id,

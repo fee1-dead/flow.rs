@@ -2,10 +2,10 @@ use std::ops::Deref;
 
 use rlp::RlpStream;
 
-use crate::{
-    access::PADDED_TRANSACTION_DOMAIN_TAG, algorithms::FlowHasher, rlp_encode_transaction_envelope,
-    rlp_encode_transaction_payload,
-};
+use crate::account::PADDED_TRANSACTION_DOMAIN_TAG;
+use crate::algorithms::FlowHasher;
+use crate::transaction::rlp_encode_transaction_envelope;
+use crate::transaction::rlp_encode_transaction_payload;
 
 pub trait Party<H: FlowHasher> {
     fn payload(&self) -> H;

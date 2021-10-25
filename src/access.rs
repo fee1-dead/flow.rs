@@ -1,460 +1,380 @@
-use std::iter::empty;
-use std::slice;
-use std::{error::Error as StdError, marker::PhantomData};
-
-use crate::sign::{KeyIdIter, MkSigIter, One, SignIter, SignMethod};
-use crate::{
-    AccountKey, AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
-    GetLatestBlockHeaderRequest, ProposalKeyE, SendTransactionRequest, SendTransactionResponse,
-    SignatureE, TransactionE, TransactionHeader,
-};
-
-use crate::algorithms::{
-    DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature,
-    SignatureAlgorithm,
-};
+use std::time::Duration;
 
 use crate::client::{FlowClient, GrpcClient};
+use crate::entities::*;
+use crate::protobuf::*;
+use crate::transaction::*;
+use crate::requests::FlowRequest;
+use otopr::wire_types::*;
+use otopr::*;
 
-const PADDED_LEN: usize = 32;
-pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
-    padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
-
-const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
-    let mut new_buf = [0; N];
-
-    let mut i = 0;
-
-    while i < src.len() {
-        new_buf[i] = src[i];
-        i += 1;
-    }
-
-    new_buf
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Could not find a matching key for the private key.")]
-    NoMatchingKeyFound,
-    #[error("The hashing and signing algorithms do not match.")]
-    AlgoMismatch,
-    #[error("The key(s) does not have enough weight.")]
-    NotEnoughWeight,
-    #[error(transparent)]
-    Custom(#[from] Box<dyn StdError + Send + Sync>),
-}
-
-#[derive(Clone)]
-pub struct Account<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
-    // The address of this account.
-    address: Box<[u8]>,
-    sign_method: SignMethod<SecretKey>,
-    signer: Signer,
-    client: FlowClient<Client>,
-    _pd: PhantomData<Hasher>,
-}
-
-impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
-    /// Returns the address of this account.
-    #[inline]
-    pub fn address(&self) -> &[u8] {
-        &self.address
-    }
-
-    #[inline]
-    pub fn signer(&self) -> &Sn {
-        &self.signer
-    }
-
-    #[inline]
-    pub fn client(&mut self) -> &mut FlowClient<Cl> {
-        &mut self.client
-    }
-
-    pub fn primary_public_key(&self) -> Sn::PublicKey
-    where
-        Sn: FlowSigner<SecretKey = Sk>,
-    {
-        self.signer
-            .to_public_key(self.sign_method.primary_secret_key())
-    }
-
-    pub fn primary_key_id(&self) -> u32 {
-        self.sign_method.primary_key_id()
-    }
-}
-
-impl<Client, SecretKey, Signer, Hasher> Account<Client, SecretKey, Signer, Hasher>
-where
-    Signer: FlowSigner<SecretKey = SecretKey>,
-    Hasher: FlowHasher,
-{
-    fn sign_<'a>(
-        hasher: Hasher,
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-    ) -> SignIter<'a, Signer> {
-        SignIter::new(hasher.finalize(), signer, method)
-    }
-
-    /// Creates a signature using this account's public key(s), consuming a populated hasher.
-    pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
-        Self::sign_(hasher, self.signer(), &self.sign_method)
-    }
-
-    fn sign_transaction_<'a>(
-        key_id: u32,
-        address: &[u8],
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-        script: impl AsRef<[u8]>,
-        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<'a, Signer> {
-        let mut s = rlp::RlpStream::new();
-        crate::rlp_encode_transaction_envelope(
-            &mut s,
-            script,
-            arguments,
-            reference_block_id,
-            gas_limit,
-            address,
-            key_id as u64,
-            sequence_number,
-            address,
-            [address],
-            empty::<(&[u8], u32, &[u8])>(),
-        );
-
-        let mut hasher = Hasher::new();
-        hasher.update(&PADDED_TRANSACTION_DOMAIN_TAG);
-        hasher.update(&s.out());
-
-        Self::sign_(hasher, signer, method)
-    }
-
-    /// Sign a transaction with this account being the proposer, the payer and the only authorizer.
-    ///
-    /// Returns an envelope signature.
-    pub fn sign_transaction(
-        &self,
-        script: impl AsRef<[u8]>,
-        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<Signer> {
-        Self::sign_transaction_(
-            self.primary_key_id(),
-            &self.address,
-            &self.signer,
-            &self.sign_method,
-            script,
-            arguments,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    fn sign_transaction_header_<'a, 'b, Arguments>(
-        key_id: u32,
-        address: &[u8],
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-        header: &'b TransactionHeader<Arguments>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<'a, Signer>
-    where
-        &'b Arguments: IntoIterator,
-        <&'b Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'b Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        Self::sign_transaction_(
-            key_id,
-            address,
-            signer,
-            method,
-            &header.script,
-            &header.arguments,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    /// Sign a transaction header with a block id and gas limit.
-    pub fn sign_transaction_header<'a, Arguments>(
-        &self,
-        header: &'a TransactionHeader<Arguments>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<Signer>
-    where
-        &'a Arguments: IntoIterator,
-        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        Self::sign_transaction_header_(
-            self.primary_key_id(),
-            &self.address,
-            &self.signer,
-            &self.sign_method,
-            header,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    /// Logs in to the account with one key, verifying that the key and the address matches.
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error if:
-    ///
-    ///  - the client returns any errors while making requests
-    ///  - the secret key does not have the full weight to be able to act on its own (weight < 1000)
-    ///  - could not find any public key of the account that matches the secret key supplied.
-    ///  - the algorithms for the signer and the hasher do not match with the public information of the key.
-    pub async fn new<'a>(
-        client: Client,
-        address: &'a [u8],
-        secret_key: SecretKey,
-    ) -> Result<Self, Error>
-    where
-        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
-    {
-        let mut client = FlowClient::new(client);
-        let acc = client
-            .account_at_latest_block(address)
-            .await
-            .map_err(Into::into)?
-            .account;
-
-        assert_eq!(&*acc.address, address);
-
-        let crate::protobuf::Account { address, keys, .. } = acc;
-
-        let mut account_key = None;
-
-        let signer = Signer::new();
-        let public_key = signer.to_public_key(&secret_key);
-        let serialized = signer.serialize_public_key(&public_key);
-
-        for key in keys.into_inner() {
-            if key.public_key == serialized {
-                account_key = Some(key);
-            }
+macro_rules! access_api {
+    (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
+        impl$(<$($generics),+>)? FlowRequest<$resTy> for $reqTy $(where $($tt)*)? {
+            const PATH: &'static str = concat!("/flow.access.AccessAPI/", stringify!($servName));
         }
+    };
+    (rpc $servName:ident$(<$($generics:ident),+>)?($reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
+        access_api!(rpc $servName$(<$($generics),+>)?(noseal $reqTy) returns ($resTy) $(where($($tt)*))?);
 
-        let AccountKey {
-            index: key_id,
-            sign_algo,
-            hash_algo,
-            weight,
-            ..
-        } = account_key.ok_or(Error::NoMatchingKeyFound)?;
+        impl$(<$($generics),+>)? crate::requests::private::Sealed for $reqTy $(where $($tt)*)? {}
+    };
+    ($(rpc $servName:ident$(<$($generics:ident),+$(,)?>)?($($tt:tt)*) returns ($resTy:ty) $(where($($tts:tt)*))?;)+) => {
+        $(
+            access_api!(rpc $servName$(<$($generics),+>)?($($tt)*) returns ($resTy) $(where($($tts)*))?);
+        )+
+    };
+}
 
-        if weight < 1000 {
-            return Err(Error::NotEnoughWeight);
-        }
 
-        if Signer::Algorithm::CODE != sign_algo || Hasher::Algorithm::CODE != hash_algo {
-            return Err(Error::AlgoMismatch);
-        }
+#[derive(EncodableMessage)]
+pub struct PingRequest;
 
-        Ok(Self {
-            address,
-            sign_method: SignMethod::One(One {
-                key_id,
-                key: secret_key,
-            }),
-            signer,
+#[derive(DecodableMessage, Default)]
+pub struct PingResponse;
+
+#[derive(DecodableMessage, Default)]
+pub struct BlockHeaderResponse(#[otopr(1)] pub BlockHeader);
+
+#[derive(EncodableMessage)]
+pub struct GetLatestBlockHeaderRequest {
+    pub seal: Seal,
+}
+
+#[derive(EncodableMessage)]
+pub struct GetBlockHeaderByIdRequest<'a> {
+    #[otopr(1)]
+    pub id: &'a [u8],
+}
+
+#[derive(EncodableMessage)]
+pub struct GetBlockHeaderByHeightRequest {
+    #[otopr(1)]
+    pub height: u64,
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct BlockResponse(pub Block);
+
+#[derive(EncodableMessage)]
+pub struct GetLatestBlockRequest {
+    pub seal: Seal,
+}
+
+#[derive(EncodableMessage)]
+pub struct GetBlockByIdRequest<'a> {
+    #[otopr(1)]
+    pub id: &'a [u8],
+}
+
+#[derive(EncodableMessage)]
+pub struct GetBlockByHeightRequest {
+    #[otopr(1)]
+    pub height: u64,
+}
+
+#[derive(EncodableMessage)]
+pub struct GetCollectionByIdRequest<'a> {
+    pub id: &'a [u8],
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct CollectionResponse {
+    pub collection: Collection,
+}
+
+#[derive(EncodableMessage)]
+#[otopr(encode_extra_type_params(
+    PayloadSignatureAddress,
+    PayloadSignature,
+    EnvelopeSignatureAddress,
+    EnvelopeSignature,
+))]
+#[otopr(encode_where_clause(
+    where
+        Script: AsRef<[u8]>,
+        ReferenceBlockId: AsRef<[u8]>,
+        Payer: AsRef<[u8]>,
+        ProposalKeyAddress: AsRef<[u8]>,
+        PayloadSignatureAddress: AsRef<[u8]>,
+        PayloadSignature: AsRef<[u8]>,
+        EnvelopeSignatureAddress: AsRef<[u8]>,
+        EnvelopeSignature: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        Authorizers: HasItem,
+        <Authorizers as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
+        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+))]
+pub struct SendTransactionRequest<
+    Script,
+    Arguments,
+    ReferenceBlockId,
+    ProposalKeyAddress,
+    Payer,
+    Authorizers,
+    PayloadSignatures,
+    EnvelopeSignatures,
+> {
+    pub transaction: TransactionE<
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >,
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct SendTransactionResponse {
+    pub id: Vec<u8>,
+}
+
+impl SendTransactionResponse {
+    /// Returns a future that periodically queries the transaction response until the transaction is sealed or expired.
+    ///
+    /// The default delay is 2 seconds between requests, and the default timeout is 15 seconds.
+    pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>>(
+        &'a self,
+        client: &'a mut FlowClient<C>,
+    ) -> Finalize<'a, C> {
+        Finalize::new(
+            &self.id,
             client,
-            _pd: PhantomData,
-        })
+            Duration::from_secs(2),
+            Duration::from_secs(15),
+        )
     }
+}
 
-    pub unsafe fn new_unchecked(
-        client: Client,
-        address: Box<[u8]>,
-        sign_method: SignMethod<SecretKey>,
-    ) -> Self {
-        Self {
-            address,
-            sign_method,
-            signer: Signer::new(),
-            client: FlowClient::new(client),
-            _pd: PhantomData,
-        }
+#[derive(EncodableMessage)]
+pub struct GetTransactionRequest<'a> {
+    pub id: &'a [u8],
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct TransactionResponse {
+    pub transaction: TransactionD,
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct TransactionResultResponse {
+    pub status: TransactionStatus,
+    pub status_code: u32,
+    pub error_message: String,
+    pub events: Repeated<Vec<Event>>,
+    pub block_id: Vec<u8>,
+}
+
+#[derive(EncodableMessage)]
+pub struct GetAccountAtLatestBlockRequest<'a> {
+    pub id: &'a [u8],
+}
+
+#[derive(EncodableMessage)]
+pub struct GetAccountAtBlockHeightRequest<'a> {
+    pub id: &'a [u8],
+    pub block_height: u64,
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct AccountResponse {
+    pub account: Account,
+}
+
+fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Clone + 'a>(
+    it: It,
+) -> std::iter::Map<It, fn(&T) -> Vec<u8>> {
+    fn enc<T: serde::Serialize>(t: &T) -> Vec<u8> {
+        serde_json::to_vec(t).unwrap()
     }
+    it.map(enc)
+}
 
-    /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
-    /// and using the latest sealed block as a reference.
-    ///
-    /// Note that this does not increment the sequence number.
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error if the client returns any errors when making requests.
-    pub async fn send_transaction_header<'a, Arguments, Argument>(
-        &'a mut self,
-        transaction: &'a TransactionHeader<Arguments>,
-    ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
+#[derive(EncodableMessage)]
+#[otopr(encode_where_clause(
     where
-        Client: for<'b> GrpcClient<GetAccountAtLatestBlockRequest<'b>, AccountResponse>,
-        Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
-        for<'b> Client: GrpcClient<
-            SendTransactionRequest<
-                &'b [u8],
-                &'b SliceHelper<Argument>,
-                &'b [u8],
-                &'b [u8],
-                &'b [u8],
-                [&'b [u8]; 1],
-                [SignatureE<&'b [u8], &'b [u8]>; 0],
-                EmitRefAndDropOnNext<
-                    SignatureE<&'b [u8], <Signer::Signature as Signature>::Serialized>,
-                    MkSigIter<'b, KeyIdIter<'b, Signer::SecretKey>, SignIter<'b, Signer>>,
-                >,
-            >,
-            SendTransactionResponse,
-        >,
-        Arguments: AsRef<[Argument]>,
-        Argument: AsRef<[u8]>,
-        &'a Arguments: IntoIterator,
-        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        let address = &*self.address;
-        let acc = self
-            .client
-            .account_at_latest_block(address)
-            .await
-            .map_err(Into::into)?
-            .account;
-        let pub_key = self.primary_public_key();
-        let pub_key = self.signer.serialize_public_key(&pub_key);
-        let key = acc
-            .keys
-            .into_inner()
-            .into_iter()
-            .find(|key| key.public_key == pub_key)
-            .unwrap();
-        let sequence_number = key.sequence_number as u64;
+        Script: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: serde::Serialize,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+))]
+pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub script: Script,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    pub arguments: Arguments,
+}
 
-        let latest_block = self
-            .client
-            .latest_block_header(true)
-            .await
-            .map_err(|e| e.into())?;
+#[derive(EncodableMessage)]
+pub struct ExecuteScriptAtBlockIdRequest<'a> {
+    pub block_id: &'a [u8],
+    pub script: &'a [u8],
+    pub arguments: RepSlice<'a, &'a [u8]>,
+}
 
-        let latest_block = latest_block.0;
-        let reference_block_id = latest_block.id.as_slice();
-        let gas_limit = 1000;
-        let sig = Self::sign_transaction_header_(
-            self.primary_key_id(),
-            &self.address,
-            &self.signer,
-            &self.sign_method,
-            transaction,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        );
+#[derive(EncodableMessage)]
+pub struct ExecuteScriptAtBlockHeightRequest<'a> {
+    pub block_height: u64,
+    pub script: &'a [u8],
+    pub arguments: RepSlice<'a, &'a [u8]>,
+}
 
-        let envelope_signatures = EmitRefAndDropOnNext(
-            MkSigIter::new(&self.address, self.sign_method.key_ids(), sig),
-            PhantomData,
-        );
-        let transaction = TransactionE {
-            script: transaction.script.as_ref(),
-            arguments: SliceHelper::new_ref(transaction.arguments.as_ref()),
-            reference_block_id,
-            gas_limit,
-            proposal_key: ProposalKeyE {
-                address: &*self.address,
-                key_id: self.primary_key_id(),
-                sequence_number,
-            },
-            payer: &*self.address,
-            authorizers: [&*self.address],
-            payload_signatures: [],
-            envelope_signatures,
-        };
-        self.client
-            .send_transaction(transaction)
-            .await
-            .map_err(|e| e.into())
+#[derive(DecodableMessage, Default)]
+pub struct ExecuteScriptResponse {
+    pub value: Vec<u8>,
+}
+
+impl ExecuteScriptResponse {
+    pub fn parse(&self) -> serde_json::Result<cadence_json::ValueOwned> {
+        serde_json::from_slice(&self.value)
     }
 }
 
-#[repr(transparent)]
-#[doc(hidden)] // implementation details
-pub struct SliceHelper<Item>([Item]);
-
-impl<Item> SliceHelper<Item> {
-    pub fn new_ref(t: &[Item]) -> &Self {
-        unsafe { &*(t as *const [Item] as *const Self) }
-    }
+#[derive(EncodableMessage)]
+pub struct GetEventsForHeightRangeRequest<'a> {
+    pub r#type: &'a str,
+    pub start_height: u64,
+    pub end_height: u64,
 }
 
-impl<'a, 'b, Item: 'a> IntoIterator for &'a &'b SliceHelper<Item> {
-    type Item = &'a Item;
-
-    type IntoIter = slice::Iter<'a, Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.as_ref().iter()
-    }
+#[derive(EncodableMessage)]
+pub struct GetEventsForBlockIdsRequest<'a> {
+    pub r#type: &'a str,
+    pub block_ids: RepSlice<'a, &'a [u8]>,
 }
 
-impl<Item> otopr::HasItem for &'_ SliceHelper<Item> {
-    type Item = Item;
+#[derive(DecodableMessage, Default)]
+pub struct EventsResult {
+    pub block_id: Vec<u8>,
+    pub block_height: u64,
+    pub events: Repeated<Vec<Event>>,
+    pub block_timestamp: Timestamp,
 }
 
-#[doc(hidden)] // implementation details
-#[derive(Clone)]
-pub struct EmitRefAndDropOnNextIter<'a, T, I>(Option<T>, I, PhantomData<&'a T>);
-
-#[doc(hidden)]
-#[derive(Clone)]
-pub struct EmitRefAndDropOnNext<T, I>(I, PhantomData<T>);
-
-impl<'a, T, I: Iterator<Item = T> + Clone> IntoIterator for &'a EmitRefAndDropOnNext<T, I> {
-    type Item = &'a T;
-
-    type IntoIter = EmitRefAndDropOnNextIter<'a, T, I>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        EmitRefAndDropOnNextIter(None, self.0.clone(), PhantomData)
-    }
+#[derive(DecodableMessage, Default)]
+pub struct EventsResponse {
+    pub results: Repeated<Vec<EventsResult>>,
 }
 
-impl<'a, T, I: Iterator<Item = T>> Iterator for EmitRefAndDropOnNextIter<'a, T, I> {
-    type Item = &'a T;
+#[derive(EncodableMessage)]
+pub struct GetNetworkParametersRequest;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(it) = self.1.next() {
-            let r = self.0.insert(it);
-
-            // SAFETY: Must ensure that each item is dropped before calling `next()`.
-            //
-            // FIXME: Can we avoid this and work with the trait system instead?
-            Some(unsafe { &*(r as *const T) })
-        } else {
-            None
-        }
-    }
+#[derive(DecodableMessage, Default)]
+pub struct GetNetworkParametersResponse {
+    pub chain_id: String,
 }
 
-impl<T, I> otopr::HasItem for EmitRefAndDropOnNext<T, I> {
-    type Item = T;
+#[derive(EncodableMessage)]
+pub struct GetLatestProtocolStateSnapshotRequest;
+
+#[derive(DecodableMessage, Default)]
+pub struct ProtocolStateSnapshotResponse {
+    pub serialized_snapshot: Vec<u8>,
+}
+
+#[derive(EncodableMessage)]
+pub struct GetExecutionResultForBlockIdRequest<'a> {
+    pub block_id: &'a [u8],
+}
+
+#[derive(DecodableMessage, Default)]
+pub struct ExecutionResultForBlockIdResponse {
+    pub execution_result: ExecutionResult,
+}
+
+access_api! {
+    rpc Ping(PingRequest) returns (PingResponse);
+    rpc GetLatestBlockHeader(GetLatestBlockHeaderRequest)
+        returns (BlockHeaderResponse);
+    rpc GetBlockHeaderByID(GetBlockHeaderByIdRequest<'_>)
+        returns (BlockHeaderResponse);
+    rpc GetBlockHeaderByHeight(GetBlockHeaderByHeightRequest)
+        returns (BlockHeaderResponse);
+    rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockResponse);
+    rpc GetBlockByID(GetBlockByIdRequest<'_>) returns (BlockResponse);
+    rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
+    rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
+    rpc SendTransaction<
+        PayloadSignatureAddress,
+        PayloadSignature,
+        EnvelopeSignatureAddress,
+        EnvelopeSignature,
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >(SendTransactionRequest<
+        Script,
+        Arguments,
+        ReferenceBlockId,
+        ProposalKeyAddress,
+        Payer,
+        Authorizers,
+        PayloadSignatures,
+        EnvelopeSignatures,
+    >) returns (SendTransactionResponse) where (
+        Script: AsRef<[u8]>,
+        ReferenceBlockId: AsRef<[u8]>,
+        Payer: AsRef<[u8]>,
+        ProposalKeyAddress: AsRef<[u8]>,
+        PayloadSignatureAddress: AsRef<[u8]>,
+        PayloadSignature: AsRef<[u8]>,
+        EnvelopeSignatureAddress: AsRef<[u8]>,
+        EnvelopeSignature: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        Authorizers: HasItem,
+        <Authorizers as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
+        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+    );
+    rpc GetTransaction(GetTransactionRequest<'_>) returns (TransactionResponse);
+    rpc GetTransactionResult(noseal GetTransactionRequest<'_>)
+        returns (TransactionResultResponse);
+    rpc GetAccountAtLatestBlock(GetAccountAtLatestBlockRequest<'_>)
+        returns (AccountResponse);
+    rpc GetAccountAtBlockHeight(GetAccountAtBlockHeightRequest<'_>)
+        returns (AccountResponse);
+    rpc ExecuteScriptAtLatestBlock<Script, Arguments>(ExecuteScriptAtLatestBlockRequest<Script, Arguments>)
+        returns (ExecuteScriptResponse);
+    rpc ExecuteScriptAtBlockID(ExecuteScriptAtBlockIdRequest<'_>)
+        returns (ExecuteScriptResponse);
+    rpc ExecuteScriptAtBlockHeight(ExecuteScriptAtBlockHeightRequest<'_>)
+        returns (ExecuteScriptResponse);
+    rpc GetEventsForHeightRange(GetEventsForHeightRangeRequest<'_>)
+        returns (EventsResponse);
+    rpc GetEventsForBlockIDs(GetEventsForBlockIdsRequest<'_>)
+        returns (EventsResponse);
+    rpc GetNetworkParameters(GetNetworkParametersRequest)
+        returns (GetNetworkParametersResponse);
+    rpc GetLatestProtocolStateSnapshot(GetLatestProtocolStateSnapshotRequest)
+        returns (ProtocolStateSnapshotResponse);
+    rpc GetExecutionResultForBlockID(GetExecutionResultForBlockIdRequest<'_>)
+        returns (ExecutionResultForBlockIdResponse);
 }

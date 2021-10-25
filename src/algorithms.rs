@@ -47,7 +47,7 @@ pub trait FlowHasher {
 
 pub trait FlowSigner {
     type Algorithm: SignatureAlgorithm;
-    type SecretKey;
+    type SecretKey: Clone;
     type PublicKey: Copy;
     type Signature: Signature;
 

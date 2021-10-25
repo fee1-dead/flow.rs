@@ -1,13 +1,13 @@
 use std::error::Error;
 
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::mainnet()?;
     client.ping().await?;
 
-    let latest_block_height = client.latest_block_header(true).await?.0.height;
+    let latest_block_height = client.latest_block_header(Seal::Sealed).await?.0.height;
     let start_height = latest_block_height - 100;
 
     println!(

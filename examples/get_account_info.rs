@@ -4,7 +4,7 @@ use std::{
 };
 
 use cadence_json::AddressOwned;
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let account = net.account_at_latest_block(&address.data).await?.account;
 
-    let latest_block_height = net.latest_block_header(true).await?.0.height;
+    let latest_block_height = net.latest_block_header(Seal::Sealed).await?.0.height;
 
     let account1 = net
         .account_at_block_height(&address.data, latest_block_height)

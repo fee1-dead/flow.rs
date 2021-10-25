@@ -10,20 +10,17 @@ pub use event::*;
 mod execution_result;
 pub use execution_result::*;
 
+use crate::protobuf::Timestamp;
+
 use otopr::DecodableMessage;
-use otopr::Message;
 use otopr::Repeated;
 
 #[derive(DecodableMessage, Default, Debug, PartialEq, Eq)]
 pub struct BlockHeader {
-    #[otopr(1)]
     pub id: Vec<u8>,
-    #[otopr(2)]
     pub parent_id: Vec<u8>,
-    #[otopr(3)]
     pub height: u64,
-    #[otopr(4)]
-    pub timestamp: Message<super::Timestamp>,
+    pub timestamp: Timestamp,
 }
 
 #[derive(DecodableMessage, Default, PartialEq, Eq)]
@@ -43,7 +40,7 @@ pub struct Block {
     pub id: Vec<u8>,
     pub parent_id: Vec<u8>,
     pub height: u64,
-    pub timestamp: super::Timestamp,
+    pub timestamp: Timestamp,
     pub collection_guarantees: Repeated<Vec<CollectionGuarantee>>,
     pub block_seals: Repeated<Vec<BlockSeal>>,
     pub signatures: Repeated<Vec<Vec<u8>>>,

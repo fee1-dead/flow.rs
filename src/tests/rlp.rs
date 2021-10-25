@@ -1,4 +1,4 @@
-use crate::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
+use crate::transaction::{rlp_encode_transaction_payload, rlp_encode_transaction_envelope};
 
 use super::fixtures::Test;
 

@@ -1,7 +1,9 @@
 use std::error::Error;
 
 use cadence_json::ValueRef;
-use flow_sdk::{client::TonicHyperFlowClient, ExecuteScriptAtLatestBlockRequest};
+
+use flow_sdk::prelude::TonicHyperFlowClient;
+use flow_sdk::access::ExecuteScriptAtLatestBlockRequest;
 
 const SIMPLE_SCRIPT: &str = "
     pub fun main(a: Int): Int {

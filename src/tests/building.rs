@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::client::TonicHyperFlowClient;
 use crate::sign::{One, SignMethod};
-use crate::TransactionHeaderBuilder;
+use crate::transaction::TransactionHeaderBuilder;
 use cadence_json::ValueRef;
 
 use secp256k1::SecretKey;
@@ -34,7 +34,7 @@ async fn building_transaction_headers() -> Result<(), Box<dyn Error + Send + Syn
 
     // Make a dummy account to ensure that we can sign the header.
     let mut acc = unsafe {
-        crate::access::Account::<_, _>::new_unchecked(
+        crate::account::Account::<_, _>::new_unchecked(
             client.into_inner(),
             Default::default(),
             SignMethod::One(One {
