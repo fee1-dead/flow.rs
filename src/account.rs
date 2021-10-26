@@ -191,7 +191,7 @@ where
             address,
             signer,
             method,
-            &header.script,
+            &header.script.as_ref(),
             &header.arguments,
             reference_block_id,
             sequence_number,
@@ -297,7 +297,7 @@ where
         })
     }
 
-    pub async fn new_multisign<'a, Keys>(
+    pub async fn new_multisign<'a>(
         client: Client,
         address: &'a [u8],
         primary_index: usize,
@@ -329,9 +329,10 @@ where
 
         let signer = Signer::new();
         let mut primary_key_idx = usize::MAX;
+        let mut total_weight = 0;
         let mut found_keys = Vec::new();
 
-        let mut add_key = |key_index: usize, key_id| {
+        let mut add_key = |key_index: usize, key_id, weight| {
             if key_index == primary_index {
                 primary_key_idx = found_keys.len();
             }
@@ -340,6 +341,8 @@ where
                 key_id,
                 key: secret_keys[key_index].clone(),
             });
+
+            total_weight += weight;
         };
 
         if secret_keys.len() > 10 {
@@ -357,7 +360,7 @@ where
 
             for key in keys.into_inner() {
                 if let Some(key_index) = public_keys_to_find.remove(&*key.public_key) {
-                    add_key(key_index, key.index);
+                    add_key(key_index, key.index, key.weight);
                 }
             }
 
@@ -380,13 +383,17 @@ where
                     .find(|(_, pubkey)| *pubkey == &*key.public_key)
                 {
                     keys_found += 1;
-                    add_key(index, key.index);
+                    add_key(index, key.index, key.weight);
                 }
             }
 
             if keys_found != public_keys_to_find.len() {
                 return Err(Error::NoMatchingKeyFound);
             }
+        }
+
+        if total_weight < 1000 {
+            return Err(Error::NotEnoughWeight);
         }
 
         Ok(Self {
@@ -424,6 +431,23 @@ where
             _pd: PhantomData,
         }
     }
+
+    /// Queries the sequence number for the primary key from the network.
+    pub async fn primary_key_sequence_number<'a>(&'a mut self) -> Result<u32, Box<dyn StdError + Send + Sync>>
+    where
+        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+    {
+        let address = &*self.address;
+        let public_key = self.signer.serialize_public_key(&self.primary_public_key());
+
+        let acc = self.client.account_at_latest_block(address).await.map_err(Into::into)?;
+        for key in acc.keys.into_inner() {
+            if key.public_key == public_key {
+                return Ok(key.sequence_number);
+            }
+        }
+        unreachable!();
+    } 
 
     /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
     /// and using the latest sealed block as a reference.
@@ -502,7 +526,7 @@ where
             PhantomData,
         );
         let transaction = TransactionE {
-            script: transaction.script.as_ref(),
+            script: transaction.script.as_ref().as_ref(),
             arguments: SliceHelper::new_ref(transaction.arguments.as_ref()),
             reference_block_id,
             gas_limit,

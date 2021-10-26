@@ -13,6 +13,15 @@ pub trait Party<H: FlowHasher> {
     fn envelope(&self) -> H;
 }
 
+pub struct PartyBuilder {
+    script: Option<Box<str>>,
+    arguments: Option<Box<[Box<[u8]>]>>,
+    reference_block: Option<Box<[u8]>>,
+    gas_limit: u64,
+    proposer_address: Option<Box<[u8]>>,
+    
+}
+
 /// A basic signing party. Contains all the information needed to make signatures.
 #[derive(Clone)]
 pub struct SigningParty {
@@ -141,6 +150,11 @@ impl SigningParty {
 
     pub fn authorizers(&self) -> &[Box<[u8]>] {
         &self.authorizers
+    }
+
+    pub fn into_prehashed<H: FlowHasher>(self) -> PreHashedParty<H> {
+        let payload = self.payload();
+        PreHashedParty { party: self, payload, }
     }
 }
 

@@ -8,10 +8,12 @@ use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
-    codegen::{http::uri::PathAndQuery, Body},
     transport::Channel,
     Request,
 };
+
+use http::uri::PathAndQuery;
+use http_body::Body;
 
 use crate::access::*;
 use crate::transaction::TransactionE;
@@ -123,6 +125,11 @@ impl<Inner> FlowClient<Inner> {
     #[inline]
     pub fn into_inner(self) -> Inner {
         self.inner
+    }
+
+    #[inline]
+    pub fn as_mut(&mut self) -> &mut Inner {
+        &mut self.inner
     }
 
     /// Sends a request over the client.

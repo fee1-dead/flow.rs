@@ -6,10 +6,9 @@ edition = "2021"
 [dependencies]
 otopr = "0.3.0" # protobuf library
 # prost-types = "0.8.0" # protobuf well-known types for prost
-tonic = "0.5.2" # gRPC library
-tiny-keccak = { version = "2.0.2", features = ["sha3"], optional = true }
-sha2 = { version = "0.9.8", optional = true }
-secp256k1 = { version = "0.20.3", optional = true }
+tonic = { version = "0.5.2", default_features = false, features = ["transport"] } # gRPC library
+http = "0.2.5"
+http-body = "0.4.3"
 rlp = "0.5.1"
 bytes = "1.1.0"
 thiserror = "1.0.30"
@@ -19,6 +18,9 @@ serde = "1.0.130"
 hex = "0.4.3"
 futures-timer = "3.0.2"
 futures-util = "0.3.17"
+tiny-keccak = { version = "2.0.2", features = ["sha3"], optional = true }
+sha2 = { version = "0.9.8", optional = true }
+secp256k1 = { version = "0.20.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] } # async runtime for examples

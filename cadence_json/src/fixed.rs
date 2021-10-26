@@ -8,6 +8,7 @@ use std::{
 /// ```
 /// # use cadence_json::UFix64;
 /// assert_eq!("0.00100000".parse::<UFix64>().unwrap(), UFix64::from_raw(100000));
+/// assert_eq!("1000".parse::<UFix64>().unwrap(), UFix64::from_raw(100000000000));
 /// ```
 #[derive(
     SerializeDisplay, DeserializeFromStr, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default,

@@ -80,18 +80,18 @@ This example depicts ways to get the latest block as well as any other block by 
 ```rust
 use std::error::Error;
 
-use flow_sdk::{entities::Block, client::TonicHyperFlowClient};
+use flow_sdk::client::TonicHyperFlowClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::testnet()?;
     client.ping().await?;
 
-    let latest_block: Block = client.latest_block(true).await?.0;
+    let latest_block = client.latest_block(true).await?;
 
-    let block_by_id = client.block_by_id(&latest_block.id).await?.0;
+    let block_by_id = client.block_by_id(&latest_block.id).await?;
 
-    let block_by_height = client.block_by_height(latest_block.height).await?.0;
+    let block_by_height = client.block_by_height(latest_block.height).await?;
 
     assert_eq!(latest_block, block_by_id);
     assert_eq!(latest_block, block_by_height);
@@ -177,11 +177,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let mut net = TonicHyperFlowClient::mainnet()?;
 
-    let account = net.account_at_latest_block(&address.data).await?.account;
+    let account = net.account_at_latest_block(&address.data).await?;
 
-    let latest_block_height = net.latest_block_header(true).await?.0.height;
+    let latest_block_height = net.latest_block_header(true).await?.height;
 
-    let account1 = net.account_at_block_height(&address.data, latest_block_height).await?.account;
+    let account1 = net.account_at_block_height(&address.data, latest_block_height).await?;
 
     println!("{:#?}", account);
 
@@ -248,12 +248,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client.ping().await?;
 
     // traverse the blocks until we find collection guarantees
-    let mut latest_block: Block = client.latest_block(true).await?.0;
+    let mut latest_block: Block = client.latest_block(true).await?;
 
     let collection_guarrantee = loop {
         if latest_block.collection_guarantees.is_empty() {
             // Go to the next block
-            latest_block = client.block_by_id(&latest_block.parent_id).await?.0;
+            latest_block = client.block_by_id(&latest_block.parent_id).await?;
         } else {
             break latest_block.collection_guarantees.pop().unwrap();
         }
@@ -261,11 +261,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let collection = client
         .collection_by_id(&collection_guarrantee.collection_id)
-        .await?
-        .collection;
+        .await?;
 
     for transaction_id in collection.transactions.iter() {
-        let txn = client.transaction_by_id(transaction_id).await?.transaction;
+        let txn = client.transaction_by_id(transaction_id).await?;
         println!("{:#?}", txn);
         for argument in txn.parse_arguments() {
             println!("Found a cadence argument in the wild: {:#?}", argument?);
@@ -484,7 +483,7 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 ```rust
 use std::error::Error;
 
-use cadence_json::ValueRef;
+use cadence_json::{BigInt, ValueRef};
 use flow_sdk::{access::ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
 
 const SIMPLE_SCRIPT: &str = "
@@ -522,7 +521,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = client.send(ExecuteScriptAtLatestBlockRequest {
         script: SIMPLE_SCRIPT,
-        arguments: [ValueRef::Int(cadence_json::BigInt::from(32))],
+        arguments: [ValueRef::Int(BigInt::from(32))],
     }).await?.parse()?;
 
     println!("{:#?}", ret);
@@ -663,15 +662,48 @@ Before trying the examples below, we recommend that you read through the [transa
 After you have successfully [built a transaction](#build-transactions) the next step in the process is to sign it. Flow transactions have envelope and payload signatures, and you should learn about each in the [signature documentation](https://docs.onflow.org/concepts/accounts-and-keys/#anatomy-of-a-transaction).
 
 Quick example of building a transaction:
-```
-// TODO short example to build transaction
+```rust
+use std::error::Error;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+use crate::prelude::*;
+
+const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+let client = TonicHyperFlowClient::testnet()?;
+    
+let secp256k1 = Secp256k1::signing_only();
+let secret_key_raw = hex::decode(MY_SECRET_KEY).unwrap();
+let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
+let public_key = PublicKey::from_secret_key(&secp256k1, &secret_key);
+
+let txn = CreateAccountTransaction {
+    public_keys: &[
+        public_key
+    ],
+};
+let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 ```
 
-Signatures can be generated more securely using keys stored in a hardware device such as an [HSM](https://en.wikipedia.org/wiki/Hardware_security_module). The `crypto.Signer` interface is intended to be flexible enough to support a variety of signer implementations and is not limited to in-memory implementations.
+Signatures can be generated more securely using keys stored in a hardware device such as an [HSM](https://en.wikipedia.org/wiki/Hardware_security_module). The `FlowSigner` interface is intended to be flexible enough to support a variety of signer implementations and is not limited to in-memory implementations.
 
 Simple signature example:
 ```
-// TODO signature example
+/* Using variables from above */
+
+use cadence_json::AddressOwned;
+
+const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
+
+let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+
+let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
+
+let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
+let sequence_number = account.primary_key_sequence_number().await?;
+
+account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1000);
 ```
 
 Flow supports great flexibility when it comes to transaction signing, we can define multiple authorizers (multi-sig transactions) and have different payer account than proposer. We will explore advanced signing scenarios bellow.
@@ -682,13 +714,19 @@ Flow supports great flexibility when it comes to transaction signing, we can def
 - Only the envelope must be signed.
 - Proposal key must have full signing weight.
 
-| Account | Key ID | Weight |
-| ------- | ------ | ------ |
-| `0x01`  | 1      | 1.0    |
+|        Account        | Key ID | Weight |
+| --------------------- | ------ | ------ |
+| `0x41c60c9bacab2a3d`  | 1      | 1.0    |
+
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-single-signature)**
 ```
-// TODO example
+let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
+
+let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
+let sequence_number = account.primary_key_sequence_number().await?;
+
+account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1000);
 ```
 
 
@@ -698,14 +736,46 @@ Flow supports great flexibility when it comes to transaction signing, we can def
 - Only the envelope must be signed.
 - Each key has weight 0.5, so two signatures are required.
 
-| Account | Key ID | Weight |
-| ------- | ------ | ------ |
-| `0x01`  | 1      | 0.5    |
-| `0x01`  | 2      | 0.5    |
+|        Account        | Key ID | Weight |
+| --------------------- | ------ | ------ |
+| `0x750859bbbd3fe597`  | 1      | 0.5    |
+| `0x750859bbbd3fe597`  | 2      | 0.5    |
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-multiple-signatures)**
-```
-// TODO example
+```rust
+const MULTISIG_1_ADDRESS: &str = "0x750859bbbd3fe597";
+const MULTISIG_1_SK_1: &str = "db8b853c24795cba465b7d70a7ebeb8eed06f1c18307e58885dd54db478f17fd";
+const MULTISIG_1_SK_2: &str = "ec4917f95c5d59a7b3967ba67f0a43e2bbf619f3119837429ec6efe05d11ed12";
+
+async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet()?;
+    
+    let secp256k1 = Secp256k1::signing_only();
+    let sk1 = hex::decode(MULTISIG_1_SK_1).unwrap();
+    let sk2 = hex::decode(MULTISIG_1_SK_2).unwrap();
+    let sk1 = SecretKey::from_slice(&sk1).unwrap();
+    let sk2 = SecretKey::from_slice(&sk2).unwrap();
+
+    let pk1 = PublicKey::from_secret_key(&secp256k1, &sk1);
+
+    let txn = CreateAccountTransaction {
+        public_keys: &[
+            pk1
+        ],
+    };
+    let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
+
+    let address: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
+
+    let mut account = Account::<_, _>::new_multisign(client.into_inner(), &address.data, 0, &[sk1, sk2]).await?;
+
+    let latest_block = account.client().latest_block_header(Seal::Sealed).await?.id;
+    let sequence_number = account.primary_key_sequence_number().await?;
+
+    account.sign_transaction_header(&txn, latest_block, sequence_number as u64, 1000);
+
+    Ok(())
+}
 ```
 
 ### [Multiple parties](https://docs.onflow.org/concepts/transaction-signing/#multiple-parties)

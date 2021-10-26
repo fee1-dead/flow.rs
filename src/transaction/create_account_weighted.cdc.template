@@ -1,0 +1,17 @@
+transaction(publicKeys: {{ String: UFix64 }}) {{ // TODO Use [UInt8] once it is hashable
+	prepare(signer: AuthAccount) {{
+        let acct = AuthAccount(payer: signer)
+        for publicKey in publicKeys.keys {{
+            let key = PublicKey(
+                publicKey: publicKey.decodeHex(),
+                signatureAlgorithm: SignatureAlgorithm.{}
+            )
+            
+            acct.keys.add(
+                publicKey: key,
+                hashAlgorithm: HashAlgorithm.{},
+                weight: publicKeys[publicKey]!
+            )
+        }}
+	}}
+}}
