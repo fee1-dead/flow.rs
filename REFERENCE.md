@@ -689,7 +689,7 @@ let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 Signatures can be generated more securely using keys stored in a hardware device such as an [HSM](https://en.wikipedia.org/wiki/Hardware_security_module). The `FlowSigner` interface is intended to be flexible enough to support a variety of signer implementations and is not limited to in-memory implementations.
 
 Simple signature example:
-```
+```rust
 /* Using variables from above */
 
 use cadence_json::AddressOwned;
@@ -743,6 +743,14 @@ account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-multiple-signatures)**
 ```rust
+use std::error::Error;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+use cadence_json::AddressOwned;
+
+use flow_sdk::prelude::*;
+
 const MULTISIG_1_ADDRESS: &str = "0x750859bbbd3fe597";
 const MULTISIG_1_SK_1: &str = "db8b853c24795cba465b7d70a7ebeb8eed06f1c18307e58885dd54db478f17fd";
 const MULTISIG_1_SK_2: &str = "ec4917f95c5d59a7b3967ba67f0a43e2bbf619f3119837429ec6efe05d11ed12";
@@ -792,8 +800,63 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
 | `0x02`  | 3      | 1.0    |
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#multiple-parties)**
-```
-// TODO example
+```rust
+use std::error::Error;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+use cadence_json::AddressOwned;
+
+use flow_sdk::prelude::*;
+use flow_sdk::access::SendTransactionRequest;
+
+const ONEKEY_1_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const ONEKEY_1_SK: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+const ONEKEY_2_ADDRESS: &str = "0x6abc82b79b9a5573";
+const ONEKEY_2_SK: &str = "10d5ba77219d1074c8fd7b2a8990e0873e70183e2388300eeb4d332495f5d636";
+
+async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet()?;
+    let client2 = client.clone();
+
+    let secp256k1 = Secp256k1::signing_only();
+    let sk1 = hex::decode(ONEKEY_1_SK).unwrap();
+    let sk1 = SecretKey::from_slice(&sk1).unwrap();
+    let sk2 = hex::decode(ONEKEY_2_SK).unwrap();
+    let sk2 = SecretKey::from_slice(&sk2).unwrap();
+    let pk = PublicKey::from_secret_key(&secp256k1, &sk1);
+    let address1: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
+    let address2: AddressOwned = ONEKEY_2_ADDRESS.parse().unwrap();
+
+    let txn = CreateAccountTransaction { public_keys: &[pk] };
+    let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
+
+    let mut account1 = Account::<_, _>::new(client, &address1.data, sk1).await?;
+    let account2 = Account::<_, _>::new(client2, &address2.data, sk2).await?;
+
+    let mut party = txn
+        .into_party_builder()
+        .authorizer_account(&account1)
+        .proposer_account(&mut account1)
+        .await?
+        .payer_account(&account2)
+        .latest_block_as_reference(account1.client())
+        .await?
+        .build_prehashed::<DefaultHasher>();
+
+    account1.sign_party(&mut party);
+
+    let txn = account2.sign_party_as_payer(party);
+
+    println!("{:?}", txn);
+
+    account1.client().send(SendTransactionRequest {
+        transaction: txn,
+    }).await?;
+
+    Ok(())
+}
 ```
 
 ### [Multiple parties, two authorizers](https://docs.onflow.org/concepts/transaction-signing/#multiple-parties)

@@ -3,10 +3,10 @@ use std::{borrow::Cow, collections::HashMap};
 use cadence_json::{EntryRef, UFix64, ValueRef};
 use serde::Serialize;
 
-use crate::multi::SigningParty;
-use crate::client::GrpcClient;
-use crate::algorithms::*;
 use crate::access::{BlockHeaderResponse, GetLatestBlockHeaderRequest};
+use crate::algorithms::*;
+use crate::client::GrpcClient;
+use crate::multi::{PartyBuilder, SigningParty};
 use crate::protobuf::Seal;
 
 /// A `TransactionHeader` is a template plus arguments.
@@ -21,6 +21,15 @@ pub struct TransactionHeader<Arguments> {
 }
 
 impl<Arguments> TransactionHeader<Arguments> {
+    pub fn into_party_builder(self) -> PartyBuilder
+    where
+        Arguments: IntoIterator<Item = Box<[u8]>>,
+    {
+        PartyBuilder::new()
+            .script(self.script.into_owned())
+            .arguments_raw(self.arguments)
+    }
+
     pub async fn into_party<C>(
         self,
         client: &mut C,
@@ -36,7 +45,11 @@ impl<Arguments> TransactionHeader<Arguments> {
         Arguments: Into<Box<[Box<[u8]>]>>,
     {
         let arguments = self.arguments.into();
-        let reference_id = client.send(GetLatestBlockHeaderRequest { seal: Seal::Sealed  }).await?.0.id;
+        let reference_id = client
+            .send(GetLatestBlockHeaderRequest { seal: Seal::Sealed })
+            .await?
+            .0
+            .id;
         let proposer_address = proposer_address.into();
         let payer = payer.into();
         let authorizers = authorizers.into_iter().map(Into::into).collect();
@@ -230,14 +243,27 @@ impl<PubKey> CreateAccountTransaction<'_, PubKey> {
 }
 
 impl<PubKey> CreateAccountWeightedTransaction<'_, PubKey> {
-    pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(&self, signer: &S) -> TransactionHeader<[Box<[u8]>; 1]> {
+    pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(
+        &self,
+        signer: &S,
+    ) -> TransactionHeader<[Box<[u8]>; 1]> {
         let script = format!(
             include_str!("create_account_weighted.cdc.template"),
             S::Algorithm::NAME,
             H::Algorithm::NAME
         );
-        let entries: Vec<_> = self.public_key.iter().map(|(key, seqnum)| (hex::encode(signer.serialize_public_key(key)), seqnum)).collect();
-        let dict_entries: Vec<_> = entries.iter().map(|(key, seqnum)| EntryRef { key: ValueRef::String(key), value: ValueRef::UFix64(**seqnum) }).collect();
+        let entries: Vec<_> = self
+            .public_key
+            .iter()
+            .map(|(key, seqnum)| (hex::encode(signer.serialize_public_key(key)), seqnum))
+            .collect();
+        let dict_entries: Vec<_> = entries
+            .iter()
+            .map(|(key, seqnum)| EntryRef {
+                key: ValueRef::String(key),
+                value: ValueRef::UFix64(**seqnum),
+            })
+            .collect();
         let dict = ValueRef::Dictionary(&dict_entries);
 
         header_array(script.into(), [dict])

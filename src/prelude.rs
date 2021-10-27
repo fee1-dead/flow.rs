@@ -3,6 +3,6 @@ pub use crate::algorithms::{DefaultHasher, DefaultSigner};
 pub use crate::client::TonicHyperFlowClient;
 pub use crate::protobuf::Seal;
 pub use crate::transaction::{
-    AddContractTransaction, CreateAccountTransaction, RemoveContractTransaction,
-    UpdateContractTransaction, TransactionHeaderBuilder,
+    AddContractTransaction, CreateAccountTransaction, CreateAccountWeightedTransaction, RemoveContractTransaction,
+    TransactionHeaderBuilder, UpdateContractTransaction,
 };

@@ -278,3 +278,18 @@ impl TonicHyperFlowClient {
         Self::connect_static("http://access.devnet.nodes.onflow.org:9000")
     }
 }
+
+impl<Inner, I, O> GrpcClient<I, O> for FlowClient<Inner>
+where
+    Inner: GrpcClient<I, O>,
+{
+    type Error = Inner::Error;
+
+    #[inline]
+    fn send<'a>(
+        &'a mut self,
+        input: I,
+    ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>> {
+        self.inner.send(input)
+    }
+}

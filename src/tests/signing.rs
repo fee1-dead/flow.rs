@@ -4,7 +4,8 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use cadence_json::AddressOwned;
 
-use crate::{prelude::*, transaction::CreateAccountWeightedTransaction};
+use crate::prelude::*;
+use crate::access::SendTransactionRequest;
 
 const ONEKEY_1_ADDRESS: &str = "0x41c60c9bacab2a3d";
 const ONEKEY_1_SK: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
@@ -23,16 +24,14 @@ const MULTISIG_2_SK_2: &str = "145f3687501494168f85457f8e7fcd02b8251a5ca10cfe9b7
 #[tokio::test]
 async fn signing_transactions_one_one() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = TonicHyperFlowClient::testnet()?;
-    
+
     let secp256k1 = Secp256k1::signing_only();
     let secret_key_raw = hex::decode(ONEKEY_1_SK).unwrap();
     let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
     let public_key = PublicKey::from_secret_key(&secp256k1, &secret_key);
 
     let txn = CreateAccountTransaction {
-        public_keys: &[
-            public_key
-        ],
+        public_keys: &[public_key],
     };
     let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 
@@ -51,7 +50,7 @@ async fn signing_transactions_one_one() -> Result<(), Box<dyn Error + Send + Syn
 #[tokio::test]
 async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = TonicHyperFlowClient::testnet()?;
-    
+
     let secp256k1 = Secp256k1::signing_only();
     let sk1 = hex::decode(MULTISIG_1_SK_1).unwrap();
     let sk2 = hex::decode(MULTISIG_1_SK_2).unwrap();
@@ -61,15 +60,14 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
     let pk1 = PublicKey::from_secret_key(&secp256k1, &sk1);
 
     let txn = CreateAccountTransaction {
-        public_keys: &[
-            pk1
-        ],
+        public_keys: &[pk1],
     };
     let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 
     let address: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
 
-    let mut account = Account::<_, _>::new_multisign(client.into_inner(), &address.data, 0, &[sk1, sk2]).await?;
+    let mut account =
+        Account::<_, _>::new_multisign(client.into_inner(), &address.data, 0, &[sk1, sk2]).await?;
 
     let latest_block = account.client().latest_block_header(Seal::Sealed).await?.id;
     let sequence_number = account.primary_key_sequence_number().await?;
@@ -79,10 +77,11 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
     Ok(())
 }
 
+#[tokio::test]
 async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet()?;
     let client2 = client.clone();
-    
+
     let secp256k1 = Secp256k1::signing_only();
     let sk1 = hex::decode(ONEKEY_1_SK).unwrap();
     let sk1 = SecretKey::from_slice(&sk1).unwrap();
@@ -92,34 +91,41 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
     let address1: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
     let address2: AddressOwned = ONEKEY_2_ADDRESS.parse().unwrap();
 
-    let txn = CreateAccountTransaction {
-        public_keys: &[
-            pk
-        ],
-    };
+    let txn = CreateAccountTransaction { public_keys: &[pk] };
     let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 
+    let mut account1 = Account::<_, _>::new(client, &address1.data, sk1).await?;
+    let account2 = Account::<_, _>::new(client2, &address2.data, sk2).await?;
 
-    // let party = txn.into_party(client.as_mut(), 1000, &address1.data, proposal_key_id, proposal_key_sequence_number, payer, authorizers).await;
+    let mut party = txn
+        .into_party_builder()
+        .authorizer_account(&account1)
+        .proposer_account(&mut account1)
+        .await?
+        .payer_account(&account2)
+        .latest_block_as_reference(account1.client())
+        .await?
+        .build_prehashed::<DefaultHasher>();
 
+    account1.sign_party(&mut party);
 
+    let txn = account2.sign_party_as_payer(party);
 
-    let mut account1 = Account::<_, _>::new(client.into_inner(), &address1.data, sk1).await?;
-    let mut account2 = Account::<_, _>::new(client2.into_inner(), &address2.data, sk2).await?;
+    println!("{:?}", txn);
 
-    let latest_block = account1.client().latest_block_header(Seal::Sealed).await?.id;
-    let sequence_number = account1.primary_key_sequence_number().await?;
-
+    if false {
+        account1.client().send(SendTransactionRequest {
+            transaction: txn,
+        }).await?;
+    }
 
     Ok(())
 }
 
-
-
 // #[tokio::test]
 async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = TonicHyperFlowClient::testnet()?;
-    
+
     let secp256k1 = Secp256k1::signing_only();
     let my_secret_key = SecretKey::from_slice(&hex::decode(ONEKEY_1_SK).unwrap()).unwrap();
     let sk1 = hex::decode(MULTISIG_2_SK_1).unwrap();
@@ -129,18 +135,15 @@ async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let pk1 = PublicKey::from_secret_key(&secp256k1, &sk1);
     let pk2 = PublicKey::from_secret_key(&secp256k1, &sk2);
 
-
     let txn = CreateAccountWeightedTransaction {
-        public_key: &[
-            (pk1, "500".parse().unwrap()),
-            (pk2, "500".parse().unwrap()),
-        ],
+        public_key: &[(pk1, "500".parse().unwrap()), (pk2, "500".parse().unwrap())],
     };
     let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 
     let address: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
 
-    let mut account = Account::<_, _>::new(client.into_inner(), &address.data, my_secret_key).await?;
+    let mut account =
+        Account::<_, _>::new(client.into_inner(), &address.data, my_secret_key).await?;
 
     let res = account.send_transaction_header(&txn).await?;
 

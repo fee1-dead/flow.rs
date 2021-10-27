@@ -3,6 +3,7 @@ use std::iter::empty;
 use std::slice;
 use std::{error::Error as StdError, marker::PhantomData};
 
+use crate::multi::{Party, PartyTransaction};
 use crate::protobuf::Seal;
 use crate::sign::{KeyIdIter, MkSigIter, Multi, One, SignIter, SignMethod};
 
@@ -89,6 +90,7 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
             .to_public_key(self.sign_method.primary_secret_key())
     }
 
+    #[inline]
     pub fn primary_key_id(&self) -> u32 {
         self.sign_method.primary_key_id()
     }
@@ -110,6 +112,37 @@ where
     /// Creates a signature using this account's public key(s), consuming a populated hasher.
     pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
         Self::sign_(hasher, self.signer(), &self.sign_method)
+    }
+
+    pub fn sign_party<P: Party<Hasher>>(&self, party: &mut P)
+    where
+        Signer::Signature: Signature<Serialized = [u8; 64]>,
+    {
+        let signatures = self.sign(party.payload());
+        let key_ids = self.sign_method.key_ids();
+        for (sig, key_id) in signatures.zip(key_ids) {
+            party.add_payload_signature(self.address.clone(), key_id, sig.serialize())
+        }
+    }
+
+    pub fn sign_party_as_payer<P: Party<Hasher>>(
+        &self,
+        party: P,
+    ) -> PartyTransaction<Box<[u8]>, [u8; 64]>
+    where
+        Signer::Signature: Signature<Serialized = [u8; 64]>,
+    {
+        assert_eq!(&*self.address, party.payer());
+        let signatures = self.sign(party.payload());
+        let key_ids = self.sign_method.key_ids();
+
+        party.into_transaction_with_envelope_signatures(signatures.zip(key_ids).map(
+            |(sig, key_id)| SignatureE {
+                address: self.address.clone(),
+                key_id,
+                signature: sig.serialize(),
+            },
+        ))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -433,21 +466,27 @@ where
     }
 
     /// Queries the sequence number for the primary key from the network.
-    pub async fn primary_key_sequence_number<'a>(&'a mut self) -> Result<u32, Box<dyn StdError + Send + Sync>>
+    pub async fn primary_key_sequence_number<'a>(
+        &'a mut self,
+    ) -> Result<u32, Box<dyn StdError + Send + Sync>>
     where
         Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
     {
         let address = &*self.address;
         let public_key = self.signer.serialize_public_key(&self.primary_public_key());
 
-        let acc = self.client.account_at_latest_block(address).await.map_err(Into::into)?;
+        let acc = self
+            .client
+            .account_at_latest_block(address)
+            .await
+            .map_err(Into::into)?;
         for key in acc.keys.into_inner() {
             if key.public_key == public_key {
                 return Ok(key.sequence_number);
             }
         }
         unreachable!();
-    } 
+    }
 
     /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
     /// and using the latest sealed block as a reference.
@@ -508,7 +547,7 @@ where
             .await
             .map_err(|e| e.into())?;
 
-        let reference_block_id = latest_block.id.as_slice();
+        let reference_block_id = &*latest_block.id;
         let gas_limit = 1000;
         let sig = Self::sign_transaction_header_(
             self.primary_key_id(),

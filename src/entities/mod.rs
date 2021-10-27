@@ -17,8 +17,8 @@ use otopr::Repeated;
 
 #[derive(DecodableMessage, Default, Debug, PartialEq, Eq)]
 pub struct BlockHeader {
-    pub id: Vec<u8>,
-    pub parent_id: Vec<u8>,
+    pub id: Box<[u8]>,
+    pub parent_id: Box<[u8]>,
     pub height: u64,
     pub timestamp: Timestamp,
 }

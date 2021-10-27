@@ -29,7 +29,7 @@ pub enum TransactionStatus {
     Expired = 5,
 }
 
-#[derive(EncodableMessage, Clone, Copy, PartialEq, Eq)]
+#[derive(EncodableMessage, Clone, Copy, Debug, PartialEq, Eq)]
 #[otopr(encode_where_clause(
     where
         Address: AsRef<[u8]>,
@@ -48,7 +48,7 @@ pub struct ProposalKeyD {
     pub sequence_number: u32,
 }
 
-#[derive(EncodableMessage, Clone, Copy, PartialEq, Eq)]
+#[derive(EncodableMessage, Clone, Copy, Debug, PartialEq, Eq)]
 #[otopr(encode_where_clause(
     where
         Address: AsRef<[u8]>,
@@ -69,7 +69,7 @@ pub struct SignatureD {
     pub signature: Vec<u8>,
 }
 
-#[derive(EncodableMessage, Clone, PartialEq, Eq)]
+#[derive(EncodableMessage, Clone, Debug, PartialEq, Eq)]
 #[otopr(encode_extra_type_params(
     PayloadSignatureAddress,
     PayloadSignature,
