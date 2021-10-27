@@ -30,6 +30,7 @@ impl<Arguments> TransactionHeader<Arguments> {
             .arguments_raw(self.arguments)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn into_party<C>(
         self,
         client: &mut C,
@@ -56,7 +57,7 @@ impl<Arguments> TransactionHeader<Arguments> {
         Ok(SigningParty::new(
             self.script.into_owned().into_boxed_str(),
             arguments,
-            reference_id.into(),
+            reference_id,
             gas_limit,
             proposer_address,
             proposal_key_id,
@@ -97,7 +98,7 @@ pub struct TransactionHeaderBuilder {
 /// let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&argument);
 ///
 /// assert_eq!(header.build(), TransactionHeader {
-///     script: SCRIPT.as_bytes().into(),
+///     script: SCRIPT.into(),
 ///     arguments: vec![serde_json::to_vec(&argument).unwrap().into_boxed_slice()]
 /// })
 /// ```

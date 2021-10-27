@@ -128,7 +128,7 @@ impl<Inner> FlowClient<Inner> {
     }
 
     #[inline]
-    pub fn as_mut(&mut self) -> &mut Inner {
+    pub fn inner_mut(&mut self) -> &mut Inner {
         &mut self.inner
     }
 
