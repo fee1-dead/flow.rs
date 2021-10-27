@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             hex::encode(&events.block_id)
         );
         for event in events.events.iter() {
-            let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
+            let val = event.parse_payload()?;
 
             println!("  - {:#?}", val);
         }

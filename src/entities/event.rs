@@ -1,3 +1,4 @@
+use cadence_json::ValueOwned;
 use otopr::DecodableMessage;
 
 #[derive(DecodableMessage, Default, Debug)]
@@ -10,7 +11,10 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn parse_payload(&self) -> serde_json::Result<cadence_json::ValueOwned> {
-        serde_json::from_slice(&self.payload)
+    pub fn parse_payload(&self) -> serde_json::Result<cadence_json::CompositeOwned> {
+        match serde_json::from_slice(&self.payload)? {
+            ValueOwned::Event(composite) => Ok(composite),
+            _ => panic!("Invalid payload for Event"),
+        }
     }
 }

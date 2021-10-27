@@ -225,6 +225,15 @@ pub enum ValueOwned {
     Capability(CapabilityOwned),
 }
 
+impl ValueOwned {
+    pub fn address(self) -> AddressOwned {
+        match self {
+            Self::Address(addr) => addr,
+            _ => panic!("Expected Address, found {}", self.ty()),
+        }
+    }
+}
+
 macro_rules! ty {
     (pub enum Type {
         Void,

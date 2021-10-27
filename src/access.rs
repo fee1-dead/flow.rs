@@ -153,7 +153,7 @@ impl SendTransactionResponse {
             &self.id,
             client,
             Duration::from_secs(2),
-            Duration::from_secs(15),
+            Duration::from_secs(60),
         )
     }
 }

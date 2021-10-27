@@ -667,7 +667,7 @@ use std::error::Error;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
-use crate::prelude::*;
+use flow_sdk::prelude::*;
 
 const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
 
@@ -720,7 +720,7 @@ Flow supports great flexibility when it comes to transaction signing, we can def
 
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-single-signature)**
-```
+```rust
 let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
 
 let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
@@ -807,8 +807,8 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use cadence_json::AddressOwned;
 
-use flow_sdk::prelude::*;
 use flow_sdk::access::SendTransactionRequest;
+use flow_sdk::prelude::*;
 
 const ONEKEY_1_ADDRESS: &str = "0x41c60c9bacab2a3d";
 const ONEKEY_1_SK: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
@@ -875,6 +875,21 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#multiple-parties-two-authorizers)**
 ```rust
+use std::error::Error;
+
+use secp256k1::SecretKey;
+
+use cadence_json::AddressOwned;
+
+use flow_sdk::access::SendTransactionRequest;
+use flow_sdk::prelude::*;
+
+const ONEKEY_1_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const ONEKEY_1_SK: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+const ONEKEY_2_ADDRESS: &str = "0x6abc82b79b9a5573";
+const ONEKEY_2_SK: &str = "10d5ba77219d1074c8fd7b2a8990e0873e70183e2388300eeb4d332495f5d636";
+
 #[tokio::test]
 async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Error + Send + Sync>> {
     const SCRIPT: &str = "
@@ -939,8 +954,73 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
 | `0x02`  | 4      | 0.5    |
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
-```
-// TODO example
+```rust
+use std::error::Error;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+use cadence_json::AddressOwned;
+
+use crate::access::SendTransactionRequest;
+use crate::prelude::*;
+
+const MULTISIG_1_ADDRESS: &str = "0x750859bbbd3fe597";
+const MULTISIG_1_SK_1: &str = "db8b853c24795cba465b7d70a7ebeb8eed06f1c18307e58885dd54db478f17fd";
+const MULTISIG_1_SK_2: &str = "ec4917f95c5d59a7b3967ba67f0a43e2bbf619f3119837429ec6efe05d11ed12";
+
+const MULTISIG_2_ADDRESS: &str = "0x214e531d64c8151a";
+const MULTISIG_2_SK_1: &str = "fdf68c79fb7234b15b3cad54e2d6f424e831c7c09dadd277f8cbe27b74a30dcb";
+const MULTISIG_2_SK_2: &str = "145f3687501494168f85457f8e7fcd02b8251a5ca10cfe9b73395a7f9aaaee85";
+
+async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet()?;
+    let client2 = client.clone();
+
+    let secp = Secp256k1::signing_only();
+    let sk1_1 = hex::decode(MULTISIG_1_SK_1).unwrap();
+    let sk1_1 = SecretKey::from_slice(&sk1_1).unwrap();
+    let sk1_2 = hex::decode(MULTISIG_1_SK_2).unwrap();
+    let sk1_2 = SecretKey::from_slice(&sk1_2).unwrap();
+    let sk2_1 = hex::decode(MULTISIG_2_SK_1).unwrap();
+    let sk2_1 = SecretKey::from_slice(&sk2_1).unwrap();
+    let sk2_2 = hex::decode(MULTISIG_2_SK_2).unwrap();
+    let sk2_2 = SecretKey::from_slice(&sk2_2).unwrap();
+    let pk = PublicKey::from_secret_key(&secp, &sk1_1);
+    let address1: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
+    let address2: AddressOwned = MULTISIG_2_ADDRESS.parse().unwrap();
+
+    let txn = CreateAccountTransaction { public_keys: &[pk] };
+
+    let txn = txn.to_header::<_, DefaultHasher>(&secp);
+
+    let mut account1 =
+        Account::<_, _>::new_multisign(client, &address1.data, 0, &[sk1_1, sk1_2]).await?;
+    let account2 =
+        Account::<_, _>::new_multisign(client2, &address2.data, 0, &[sk2_1, sk2_2]).await?;
+
+    let mut party = txn
+        .into_party_builder()
+        .authorizer_account(&account1)
+        .proposer_account(&mut account1)
+        .await?
+        .payer_account(&account2)
+        .latest_block_as_reference(account1.client())
+        .await?
+        .build_prehashed::<DefaultHasher>();
+
+    account1.sign_party(&mut party);
+
+    let txn = account2.sign_party_as_payer(party);
+
+    println!("{:?}", txn);
+
+    account1
+        .client()
+        .send(SendTransactionRequest { transaction: txn })
+        .await?;
+
+    Ok(())
+}
 ```
 
 
@@ -951,8 +1031,34 @@ After a transaction has been [built](#build-transactions) and [signed](#sign-tra
 
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example here
-```
-// TODO send transaction example
+```rust
+use flow_sdk::access::SendTransactionRequest;
+use flow_sdk::prelude::*;
+use flow_sdk::transaction::TransactionHeader;
+use flow_sdk::multi::PartyTransaction;
+
+let mut account: Account<_, _> = /* login to the account here */;
+
+let txn_header: TransactionHeader<_> = /* Build one from TransactionHeaderBuilder or use one of the templates */;
+
+let txn_from_party: PartyTransaction<_, _> = /* Make a party, let people sign it, and call `sign_party_as_payer` */;
+
+// do this if you only have a header and you just want to send this with one account.
+let res = account.send_transaction_header(&txn_header).await?;
+
+// do this when you have a party and multiple accounts need to sign it.
+let res2 = account.client().send(SendTransactionRequest {
+    transaction: txn_from_party,
+}).await?;
+
+// We can use `finalize` to wait until the transaction has been sealed.
+if let Some(txn_result) = res.finalize(account.client()).await? {
+    // Do stuff with the result here.
+} else {
+    // Timeout has reached.
+    // You can customize delay between retries and timeout by constructing `Finalize` yourself:
+    // `Finalize::new(&res.id, account.client(), /* delay */, /* timeout */)`
+}
 ```
 
 
@@ -980,16 +1086,78 @@ An account key contains the following data:
 
 Account creation happens inside a transaction, which means that somebody must pay to submit that transaction to the network. We'll call this person the account creator. Make sure you have read [sending a transaction section](#send-transactions) first. 
 
-```
-// TODO create account example
+```rust
+use std::error::Error;
+
+use cadence_json::{AddressOwned, ValueOwned};
+use flow_sdk::prelude::*;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let secp = Secp256k1::signing_only();
+    let secret_key = hex::decode(MY_SECRET_KEY).unwrap();
+    let secret_key = SecretKey::from_slice(&mut rng).unwrap();
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+    let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+    let net = TonicHyperFlowClient::testnet()?;
+
+    let mut account = Account::<_, _>::new(net, &address.data, secret_key).await?;
+
+    let create_account = CreateAccountTransaction {
+        public_keys: &[public_key],
+    };
+
+    let create_account_header = create_account.to_header::<_, tiny_keccak::Sha3>(account.signer());
+    let res = account
+        .send_transaction_header(&create_account_header)
+        .await?;
+
+    println!(
+        "Just made {} to create another account :p",
+        hex::encode(&res.id)
+    );
+
+    Ok(())
+}
+
 ```
 
 After the account creation transaction has been submitted you can retrieve the new account address by [getting the transaction result](#get-transactions). 
 
 The new account address will be emitted in a system-level `flow.AccountCreated` event.
 
-```
-// TODO get new account address
+```rust
+    // Continuing the example above...
+    let response = res.finalize(account.client()).await?;
+
+    match response {
+        Some(res) => {
+            for ev in res.events.iter() {
+                if ev.ty == "flow.AccountCreated" {
+                    let payload = ev.parse_payload()?;
+
+                    let addr = payload
+                        .fields
+                        .into_iter()
+                        .find(|field| field.name == "address")
+                        .map(|field| field.value)
+                        .unwrap();
+                    if let ValueOwned::Address(addr) = addr {
+                        println!("Created account's address is: {}", addr);
+                    }
+                }
+            }
+        }
+        None => {
+            panic!("The transaction did not get sealed within timeout... Perhaps the network is malfunctioning?")
+        }
+    }
 ```
 
 ### Generate Keys
@@ -997,10 +1165,30 @@ The new account address will be emitted in a system-level `flow.AccountCreated` 
 
 Flow uses [ECDSA](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) signatures to control access to user accounts. Each key pair can be used in combination with the `SHA2-256` or `SHA3-256` hashing algorithms.
 
-Here's how to generate an ECDSA private key for the P-256 (secp256r1) curve.
+Here's how to generate an ECDSA private key for the secp256k1 curve used by Bitcoin and Ethereum.
 
 ```
-// TODO generate key example
+use secp256k1::{rand::rngs::EntropyRng, PublicKey, Secp256k1, SecretKey};
+
+fn main() {
+    let secp = Secp256k1::signing_only();
+
+    // `EntropyRng` is a secure random number generator.
+    let mut rng = EntropyRng::new();
+    let secret_key = SecretKey::new(&mut rng);
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+    println!("Secret key: {}", hex::encode(secret_key.as_ref()));
+
+    // https://bitcoin.stackexchange.com/a/3043
+    //
+    // Flow faucet only accepts hex encoded public key of length 128
+    // which means the leading byte of 0x04 must be discarded.
+    println!(
+        "Public key: {}",
+        hex::encode(&public_key.serialize_uncompressed()[1..])
+    )
+}
 ```
 
-The example above uses an ECDSA key pair on the P-256 (secp256r1) elliptic curve. Flow also supports the secp256k1 curve used by Bitcoin and Ethereum. Read more about [supported algorithms here](https://docs.onflow.org/concepts/accounts-and-keys/#supported-signature--hash-algorithms).
+The example above uses an ECDSA key pair on the secp256k1 elliptic curve. Flow also supports the P-256 (secp256r1) curve. Read more about [supported algorithms here](https://docs.onflow.org/concepts/accounts-and-keys/#supported-signature--hash-algorithms).

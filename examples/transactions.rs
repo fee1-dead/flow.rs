@@ -18,7 +18,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // First, generate a keypair for us to use.
     let secp = Secp256k1::signing_only();
-    let mut rng = secp256k1::rand::thread_rng();
+
+    // `EntropyRng` is a secure random number generator.
+    let mut rng = secp256k1::rand::rngs::EntropyRng::new();
     let secret_key = SecretKey::new(&mut rng);
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
@@ -64,16 +66,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             for ev in res.events.iter() {
                 if ev.ty == "flow.AccountCreated" {
                     let payload = ev.parse_payload()?;
-                    if let ValueOwned::Event(composite) = payload {
-                        let addr = composite
-                            .fields
-                            .into_iter()
-                            .find(|field| field.name == "address")
-                            .map(|field| field.value)
-                            .unwrap();
-                        if let ValueOwned::Address(addr) = addr {
-                            println!("Created account's address is: {}", addr);
-                        }
+
+                    let addr = payload
+                        .fields
+                        .into_iter()
+                        .find(|field| field.name == "address")
+                        .map(|field| field.value)
+                        .unwrap();
+                    if let ValueOwned::Address(addr) = addr {
+                        println!("Created account's address is: {}", addr);
                     }
                 }
             }

@@ -4,8 +4,8 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use cadence_json::AddressOwned;
 
-use crate::prelude::*;
 use crate::access::SendTransactionRequest;
+use crate::prelude::*;
 
 const ONEKEY_1_ADDRESS: &str = "0x41c60c9bacab2a3d";
 const ONEKEY_1_SK: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
@@ -114,9 +114,10 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
     println!("{:?}", txn);
 
     if false {
-        account1.client().send(SendTransactionRequest {
-            transaction: txn,
-        }).await?;
+        account1
+            .client()
+            .send(SendTransactionRequest { transaction: txn })
+            .await?;
     }
 
     Ok(())
@@ -140,7 +141,9 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
     let address1: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
     let address2: AddressOwned = ONEKEY_2_ADDRESS.parse().unwrap();
 
-    let txn = TransactionHeaderBuilder::new().script_static(SCRIPT).build();
+    let txn = TransactionHeaderBuilder::new()
+        .script_static(SCRIPT)
+        .build();
 
     let mut account1 = Account::<_, _>::new(client, &address1.data, sk1).await?;
     let account2 = Account::<_, _>::new(client2, &address2.data, sk2).await?;
@@ -162,14 +165,69 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
     println!("{:?}", txn);
 
     if false {
-        account1.client().send(SendTransactionRequest {
-            transaction: txn,
-        }).await?;
+        account1
+            .client()
+            .send(SendTransactionRequest { transaction: txn })
+            .await?;
     }
 
     Ok(())
 }
-// #[tokio::test]
+
+#[tokio::test]
+async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet()?;
+    let client2 = client.clone();
+
+    let secp = Secp256k1::signing_only();
+    let sk1_1 = hex::decode(MULTISIG_1_SK_1).unwrap();
+    let sk1_1 = SecretKey::from_slice(&sk1_1).unwrap();
+    let sk1_2 = hex::decode(MULTISIG_1_SK_2).unwrap();
+    let sk1_2 = SecretKey::from_slice(&sk1_2).unwrap();
+    let sk2_1 = hex::decode(MULTISIG_2_SK_1).unwrap();
+    let sk2_1 = SecretKey::from_slice(&sk2_1).unwrap();
+    let sk2_2 = hex::decode(MULTISIG_2_SK_2).unwrap();
+    let sk2_2 = SecretKey::from_slice(&sk2_2).unwrap();
+    let pk = PublicKey::from_secret_key(&secp, &sk1_1);
+    let address1: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
+    let address2: AddressOwned = MULTISIG_2_ADDRESS.parse().unwrap();
+
+    let txn = CreateAccountTransaction { public_keys: &[pk] };
+
+    let txn = txn.to_header::<_, DefaultHasher>(&secp);
+
+    let mut account1 =
+        Account::<_, _>::new_multisign(client, &address1.data, 0, &[sk1_1, sk1_2]).await?;
+    let account2 =
+        Account::<_, _>::new_multisign(client2, &address2.data, 0, &[sk2_1, sk2_2]).await?;
+
+    let mut party = txn
+        .into_party_builder()
+        .authorizer_account(&account1)
+        .proposer_account(&mut account1)
+        .await?
+        .payer_account(&account2)
+        .latest_block_as_reference(account1.client())
+        .await?
+        .build_prehashed::<DefaultHasher>();
+
+    account1.sign_party(&mut party);
+
+    let txn = account2.sign_party_as_payer(party);
+
+    println!("{:?}", txn);
+
+    if false {
+        account1
+            .client()
+            .send(SendTransactionRequest { transaction: txn })
+            .await?;
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = TonicHyperFlowClient::testnet()?;
 

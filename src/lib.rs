@@ -5,7 +5,6 @@ pub mod codec;
 
 pub mod protobuf;
 
-// re-exported in entities
 pub mod transaction;
 
 pub mod entities;
