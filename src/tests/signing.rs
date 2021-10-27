@@ -122,6 +122,53 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
     Ok(())
 }
 
+#[tokio::test]
+async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Error + Send + Sync>> {
+    const SCRIPT: &str = "
+    transaction {
+        prepare(acct1: AuthAccount, acct2: AuthAccount) {
+            log([acct1, acct2])
+        }
+    }";
+    let client = TonicHyperFlowClient::testnet()?;
+    let client2 = client.clone();
+
+    let sk1 = hex::decode(ONEKEY_1_SK).unwrap();
+    let sk1 = SecretKey::from_slice(&sk1).unwrap();
+    let sk2 = hex::decode(ONEKEY_2_SK).unwrap();
+    let sk2 = SecretKey::from_slice(&sk2).unwrap();
+    let address1: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
+    let address2: AddressOwned = ONEKEY_2_ADDRESS.parse().unwrap();
+
+    let txn = TransactionHeaderBuilder::new().script_static(SCRIPT).build();
+
+    let mut account1 = Account::<_, _>::new(client, &address1.data, sk1).await?;
+    let account2 = Account::<_, _>::new(client2, &address2.data, sk2).await?;
+
+    let mut party = txn
+        .into_party_builder()
+        .authorizer_accounts([&account1, &account2])
+        .proposer_account(&mut account1)
+        .await?
+        .payer_account(&account2)
+        .latest_block_as_reference(account1.client())
+        .await?
+        .build_prehashed::<DefaultHasher>();
+
+    account1.sign_party(&mut party);
+
+    let txn = account2.sign_party_as_payer(party);
+
+    println!("{:?}", txn);
+
+    if false {
+        account1.client().send(SendTransactionRequest {
+            transaction: txn,
+        }).await?;
+    }
+
+    Ok(())
+}
 // #[tokio::test]
 async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = TonicHyperFlowClient::testnet()?;
