@@ -1,4 +1,5 @@
 //! Common logic for signing transactions.
+#![deny(missing_docs)]
 
 use std::iter::{FusedIterator, Map, Zip};
 use std::slice;
@@ -13,14 +14,17 @@ pub struct Multi<SecretKey> {
     pub(crate) keys: Box<[One<SecretKey>]>,
 }
 
+/// A single key that can sign a transaction for the flow network.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct One<SecretKey> {
     pub(crate) key_id: u32,
     pub(crate) key: SecretKey,
 }
 
+/// An Iterator over key id numbers.
 pub type KeyIdIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> u32>;
 
+/// An Iterator over secret keys.
 pub type KeyIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> &'a T>;
 
 fn key_id<T>(one: &One<T>) -> u32 {
@@ -37,17 +41,16 @@ impl<SecretKey> Multi<SecretKey> {
         &self.keys[self.primary_key_idx].key
     }
 
+    /// Returns the primary key id used when proposing.
     pub fn primary_key_id(&self) -> u32 {
         self.keys[self.primary_key_idx].key_id
     }
 
-    pub fn keys_and_key_ids(&self) -> (KeyIter<SecretKey>, KeyIdIter<SecretKey>) {
-        (self.keys(), self.key_ids())
-    }
-
+    /// Returns an iterator over the id number of keys.
     pub fn key_ids(&self) -> KeyIdIter<SecretKey> {
         self.keys.iter().map(key_id)
     }
+
     /// Returns an iterator over the secret keys.
     pub fn keys(&self) -> KeyIter<SecretKey> {
         self.keys.iter().map(key)
@@ -57,7 +60,9 @@ impl<SecretKey> Multi<SecretKey> {
 /// How to sign? This describes whether to sign using only one secret key or with multiple keys (multisign).
 #[derive(Clone)]
 pub enum SignMethod<SecretKey> {
+    /// Use just one key for signing.
     One(One<SecretKey>),
+    /// Use multiple keys for signing.
     Multi(Multi<SecretKey>),
 }
 
@@ -70,6 +75,7 @@ impl<SecretKey> SignMethod<SecretKey> {
         }
     }
 
+    /// Returns the primary key id number used when proposing a transaction.
     pub fn primary_key_id(&self) -> u32 {
         match self {
             Self::One(one) => one.key_id,
@@ -77,6 +83,7 @@ impl<SecretKey> SignMethod<SecretKey> {
         }
     }
 
+    /// Returns an iterator over the id numbers of keys.
     pub fn key_ids(&self) -> KeyIdIter<SecretKey> {
         let keys = match self {
             Self::One(one) => unsafe { std::slice::from_raw_parts(one, 1) },
@@ -98,6 +105,7 @@ impl<'a, KeyIdIter: Iterator<Item = u32>, SigIter: Iterator> MkSigIter<'a, KeyId
 where
     SigIter::Item: Signature,
 {
+    /// Creates a new `MkSigIter` from the address, key ids, and signatures.
     pub fn new(address: &'a [u8], key_ids: KeyIdIter, signatures: SigIter) -> Self {
         Self {
             address,
