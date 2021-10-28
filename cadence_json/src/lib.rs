@@ -83,7 +83,10 @@ pub struct CompositeOwned {
 
 impl CompositeOwned {
     pub fn find_field<'a>(&'a self, name: &str) -> Option<&'a ValueOwned> {
-        self.fields.iter().find(|f| f.name == name).map(|f| &f.value)
+        self.fields
+            .iter()
+            .find(|f| f.name == name)
+            .map(|f| &f.value)
     }
 }
 

@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::str::SplitWhitespace;
 use std::{error::Error, future::Future, pin::Pin};
-use std::collections::HashMap;
 
 use crate::ExampleAccount;
 
@@ -75,7 +75,8 @@ lazy_static::lazy_static! {
     };
 }
 
-pub type ExampleReturnTy<'a> = Pin<Box<dyn Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + 'a>>;
+pub type ExampleReturnTy<'a> =
+    Pin<Box<dyn Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + 'a>>;
 
 #[derive(Clone, Copy)]
 pub struct Example {
@@ -84,4 +85,3 @@ pub struct Example {
     pub arguments: &'static str,
     pub description: &'static str,
 }
-

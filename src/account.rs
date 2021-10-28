@@ -86,7 +86,10 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
     }
 
     #[inline]
-    pub fn client_cloned(&self) -> FlowClient<Cl> where Cl: Clone {
+    pub fn client_cloned(&self) -> FlowClient<Cl>
+    where
+        Cl: Clone,
+    {
         self.client.clone()
     }
 

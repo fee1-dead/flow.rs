@@ -93,10 +93,12 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let emulator = cfg.networks.remove("emulator").unwrap();
 
-    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
     let _enter = rt.enter();
 
-    
     let client = TonicHyperFlowClient::connect_shared(format!("http://{}", emulator))?;
 
     rt.block_on(main_inner(cfg, client))?;
@@ -104,8 +106,10 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 
-async fn main_inner(mut cfg: FlowConfig, client: TonicHyperFlowClient) -> Result<(), Box<dyn Error + Send + Sync>> {
-
+async fn main_inner(
+    mut cfg: FlowConfig,
+    client: TonicHyperFlowClient,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let acc = cfg.accounts.remove("emulator-account").unwrap();
 
     let addr = hex::decode(acc.address).unwrap();
@@ -135,7 +139,7 @@ async fn main_inner(mut cfg: FlowConfig, client: TonicHyperFlowClient) -> Result
                     Some("help") => match args.next() {
                         Some(cmd) => help_command(cmd),
                         None => show_help(),
-                    }
+                    },
                     Some("list") => {
                         let mut table = comfy_table::Table::new();
                         table.set_header(["Example Name", "Arguments", "Description"]);
@@ -145,19 +149,20 @@ async fn main_inner(mut cfg: FlowConfig, client: TonicHyperFlowClient) -> Result
                         println!("{}", table);
                     }
                     Some("run") => match args.next() {
-                        Some(example) => {
-                            match examples::EXAMPLES_BY_NAME.get(example) {
-                                Some(example) => {
-                                    println!("Running example {}...", example.name);
-                                    if let Err(e) =  (example.f)(&mut account, &mut args).await {
-                                        println!("Error while running example: {}", e);
-                                    }
+                        Some(example) => match examples::EXAMPLES_BY_NAME.get(example) {
+                            Some(example) => {
+                                println!("Running example {}...", example.name);
+                                if let Err(e) = (example.f)(&mut account, &mut args).await {
+                                    println!("Error while running example: {}", e);
                                 }
-                                None => println!(r#"Example "{}" not found, type "list" to list available examples."#, example)
                             }
-                        }
+                            None => println!(
+                                r#"Example "{}" not found, type "list" to list available examples."#,
+                                example
+                            ),
+                        },
                         None => help_command("run"),
-                    }
+                    },
                     Some("exit") => break,
                     Some(_) => show_help(),
                     None => {}
@@ -180,20 +185,25 @@ async fn main_inner(mut cfg: FlowConfig, client: TonicHyperFlowClient) -> Result
 }
 
 fn show_help() {
-    println!("\
+    println!(
+        "\
 Usage:
     help              displays this message
     help COMMAND_NAME shows help about a specific command
     run EXAMPLE_NAME  runs the specified example
     exit              stops the program\
-");
+"
+    );
 }
 
 fn help_command(command_name: &str) {
-    println!("{}", match command_name {
-        "help" => "help help help",
-        "run" => "Usage: run COMMAND_NAME  runs the specified example",
-        "exit" => "Z-Z or :q or :wq or even :q!",
-        _ => "Invalid command name. Type \"help\" to get a list of available commands.",
-    })
+    println!(
+        "{}",
+        match command_name {
+            "help" => "help help help",
+            "run" => "Usage: run COMMAND_NAME  runs the specified example",
+            "exit" => "Z-Z or :q or :wq or even :q!",
+            _ => "Invalid command name. Type \"help\" to get a list of available commands.",
+        }
+    )
 }
