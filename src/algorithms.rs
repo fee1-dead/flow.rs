@@ -1,4 +1,13 @@
-use secp256k1::SignOnly;
+
+#[cfg(feature = "secp256k1-sign")]
+pub mod secp256k1 {
+    pub use secp256k1::*;
+}
+
+#[cfg(feature = "sha3-hash")]
+pub mod sha3 {
+    pub use tiny_keccak::*;
+}
 
 macro_rules! algorithms {
     ($($algo:ident {$($name:ident = ($code:expr, $algoname:expr)),+$(,)?})+) => {
@@ -141,7 +150,7 @@ impl SecretKey for secp256k1::SecretKey {
 pub type DefaultHasher = tiny_keccak::Sha3;
 
 #[cfg(feature = "secp256k1-sign")]
-pub type DefaultSigner = secp256k1::Secp256k1<SignOnly>;
+pub type DefaultSigner = secp256k1::Secp256k1<secp256k1::SignOnly>;
 
 #[cfg(not(any(feature = "sha3-hash")))]
 pub type DefaultHasher = NoDefaultHasherAvailable;

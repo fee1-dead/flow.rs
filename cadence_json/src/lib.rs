@@ -81,6 +81,12 @@ pub struct CompositeOwned {
     pub fields: Vec<CompositeFieldOwned>,
 }
 
+impl CompositeOwned {
+    pub fn find_field<'a>(&'a self, name: &str) -> Option<&'a ValueOwned> {
+        self.fields.iter().find(|f| f.name == name).map(|f| &f.value)
+    }
+}
+
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct EntryRef<'a> {
     pub key: ValueRef<'a>,
@@ -226,10 +232,16 @@ pub enum ValueOwned {
 }
 
 impl ValueOwned {
-    pub fn address(self) -> AddressOwned {
+    pub fn expect_address(&self) -> &AddressOwned {
         match self {
             Self::Address(addr) => addr,
             _ => panic!("Expected Address, found {}", self.ty()),
+        }
+    }
+    pub fn as_address(&self) -> Option<&AddressOwned> {
+        match self {
+            Self::Address(addr) => Some(addr),
+            _ => None,
         }
     }
 }

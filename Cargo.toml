@@ -46,7 +46,7 @@ sha3-hash = ["tiny-keccak"]
 secp256k1-sign = ["secp256k1"]
 
 [workspace]
-members = ["cadence_json"]
+members = ["cadence_json", "flow-examples"]
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "docsrs"]

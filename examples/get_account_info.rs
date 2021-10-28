@@ -3,7 +3,7 @@ use std::{
     io::{stdin, BufRead},
 };
 
-use cadence_json::AddressOwned;
+use ::cadence_json::AddressOwned;
 use flow_sdk::prelude::*;
 
 #[tokio::main]

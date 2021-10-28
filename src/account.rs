@@ -55,6 +55,9 @@ pub enum Error {
     Custom(#[from] Box<dyn StdError + Send + Sync>),
 }
 
+/// An account that uses the default signing and hashing algorithms.
+pub type DefaultAccount<Client, SecretKey> = Account<Client, SecretKey>;
+
 #[derive(Clone)]
 pub struct Account<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
     // The address of this account.
@@ -80,6 +83,11 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
     #[inline]
     pub fn client(&mut self) -> &mut FlowClient<Cl> {
         &mut self.client
+    }
+
+    #[inline]
+    pub fn client_cloned(&self) -> FlowClient<Cl> where Cl: Clone {
+        self.client.clone()
     }
 
     pub fn primary_public_key(&self) -> Sn::PublicKey

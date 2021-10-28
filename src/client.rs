@@ -1,6 +1,6 @@
 //! ## Flow gRPC connections
 //!
-//!
+//! This module contains the `Client` types for gRPC connections.
 
 use std::{error::Error, future::Future, pin::Pin};
 
@@ -24,6 +24,8 @@ use crate::{
 };
 
 /// A gRPC client trait.
+///
+/// Implementors should be generic over the input and output types.
 pub trait GrpcClient<I, O> {
     type Error: Into<Box<dyn Error + Send + Sync>>;
     fn send<'a>(
@@ -32,15 +34,24 @@ pub trait GrpcClient<I, O> {
     ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>>;
 }
 
+/// A gRPC client wrapper. Has utility functions for sending requests.
 #[derive(Default, Debug, Clone, Copy)]
 pub struct FlowClient<T> {
     inner: T,
 }
+pub type TonicClient<Service> = Grpc<Service>;
 
-pub type TonicFlowClient<Service> = FlowClient<Grpc<Service>>;
+/// A tonic gRPC client.
+pub type TonicFlowClient<Service> = FlowClient<TonicClient<Service>>;
 
-pub type TonicHyperFlowClient = TonicFlowClient<Channel>;
+pub type TonicHyperClient = TonicClient<Channel>;
 
+/// A tonic gRPC client that uses the `hyper` crate for HTTP transport.
+pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
+
+/// The return type of sending a request over the gRPC connection.
+///
+/// This is a future that resolves to a result which contains either the output or an error.
 pub type GrpcSendResult<'a, Output> =
     Pin<Box<dyn Future<Output = Result<Output, Box<dyn Error + Send + Sync>>> + 'a>>;
 
@@ -127,6 +138,7 @@ impl<Inner> FlowClient<Inner> {
         self.inner
     }
 
+    /// Gets the inner client as a mutable reference.
     #[inline]
     pub fn inner_mut(&mut self) -> &mut Inner {
         &mut self.inner
@@ -145,16 +157,22 @@ impl<Inner> FlowClient<Inner> {
     }
 
     define_requests! {
-        /// Shortcut for `self.send(PingRequest {})`.
+        /// Sends a ping over the network.
         pub async fn ping() PingRequest => PingResponse {
             PingRequest {}
         }
+
+        /// Retrieves events with the specified type within the specified range.
         pub async fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
             GetEventsForHeightRangeRequest { r#type, start_height, end_height }
         }
+
+        /// Executes Cadence script at the latest block and returns the result.
         pub async fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
+
+        /// Sends a transaction over the network.
         pub async fn send_transaction<(
             Script,
             Arguments,
@@ -189,60 +207,79 @@ impl<Inner> FlowClient<Inner> {
     }
 
     remapping_requests! {
+        /// Retrieves a transaction by its ID.
         pub async fn transaction_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResponse {
             GetTransactionRequest { id };
             remap = |txn_response| -> TransactionD {
                 txn_response.transaction
             }
         }
+
+        /// Retrieves information about an account at the latest block.
         pub async fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
             GetAccountAtLatestBlockRequest { id: address };
             remap = |acc_response| -> Account {
                 acc_response.account
             }
         }
+
+        /// Retrieves information about an account at the specified block height.
         pub async fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
             GetAccountAtBlockHeightRequest { id: address, block_height };
             remap = |acc_response| -> Account {
                 acc_response.account
             }
         }
+
+        /// Retrieves header information of the latest block.
         pub async fn latest_block_header(seal: Seal) GetLatestBlockHeaderRequest => BlockHeaderResponse {
             GetLatestBlockHeaderRequest { seal };
             remap = |header_response| -> BlockHeader {
                 header_response.0
             }
         }
+
+        /// Retrieves header information of a block specified by its height.
         pub async fn block_header_by_height(height: u64) GetBlockHeaderByHeightRequest => BlockHeaderResponse {
             GetBlockHeaderByHeightRequest { height };
             remap = |header_response| -> BlockHeader {
                 header_response.0
             }
         }
+
+        /// Retrieves header information of a block specified by its ID.
         pub async fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
             GetBlockHeaderByIdRequest { id };
             remap = |header_response| -> BlockHeader {
                 header_response.0
             }
         }
+
+        /// Retrieves full information of the latest block.
         pub async fn latest_block(seal: Seal) GetLatestBlockRequest => BlockResponse {
             GetLatestBlockRequest { seal };
             remap = |block_response| -> Block {
                 block_response.0
             }
         }
+
+        /// Retrieves full information of a block specified by its height.
         pub async fn block_by_height(height: u64) GetBlockByHeightRequest => BlockResponse {
             GetBlockByHeightRequest { height };
             remap = |block_response| -> Block {
                 block_response.0
             }
         }
+
+        /// Retrieves full information of a block specified by its ID.
         pub async fn block_by_id<('a)>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
             GetBlockByIdRequest { id };
             remap = |block_response| -> Block {
                 block_response.0
             }
         }
+
+        /// Retrieves information of a collection specified by its ID.
         pub async fn collection_by_id<('a)>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
             GetCollectionByIdRequest { id };
             remap = |collection_response| -> Collection {
@@ -260,6 +297,7 @@ impl TonicHyperFlowClient {
         })
     }
 
+    /// Connects to a shared endpoint. Does not connect until we try to send a request.
     pub fn connect_shared(
         endpoint: impl Into<bytes::Bytes>,
     ) -> Result<Self, Box<dyn Error + Send + Sync>> {
