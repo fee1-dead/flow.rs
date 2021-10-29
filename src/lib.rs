@@ -1,3 +1,14 @@
+//! ## Flow.rs
+//!
+//! This crate contains various ways to interact with the Flow blockchain through its access API.
+//!
+//! Start by connecting to the [`testnet()`] or the [`mainnet()`], or [login to an account] by
+//! providing the address and secret key.
+//!
+//! [`testnet()`]: crate::client::TonicHyperFlowClient::testnet()
+//! [`mainnet()`]: crate::client::TonicHyperFlowClient::mainnet()
+//! [login to an account]: crate::account::Account::new()
+
 pub mod access;
 
 pub mod client;

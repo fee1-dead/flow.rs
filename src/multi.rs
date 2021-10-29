@@ -108,7 +108,7 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
     ) -> PartyTransaction<SigAddr, Sig>;
 }
 
-/// A builder that makes it easy to create new [`SignedParty`] instances.
+/// A builder that makes it easy to create new [`SigningParty`] instances.
 #[derive(Clone)]
 pub struct PartyBuilder {
     script: Option<Box<str>>,

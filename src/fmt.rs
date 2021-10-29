@@ -28,7 +28,7 @@ impl fmt::Debug for Hex<'_> {
     }
 }
 
-struct Addrs<'a>(&'a [Vec<u8>]);
+struct Addrs<'a>(&'a [Box<[u8]>]);
 
 impl fmt::Debug for Addrs<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -106,7 +106,7 @@ impl fmt::Debug for SignatureD {
 
 impl fmt::Debug for TransactionD {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct Arguments<'a>(&'a [Vec<u8>]);
+        struct Arguments<'a>(&'a [Box<[u8]>]);
         impl fmt::Debug for Arguments<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 f.debug_list()

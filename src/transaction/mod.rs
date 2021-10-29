@@ -64,9 +64,9 @@ pub struct SignatureE<Address, Signature> {
 
 #[derive(DecodableMessage, Default)]
 pub struct SignatureD {
-    pub address: Vec<u8>,
+    pub address: Box<[u8]>,
     pub key_id: u32,
-    pub signature: Vec<u8>,
+    pub signature: Box<[u8]>,
 }
 
 #[derive(EncodableMessage, Clone, Debug, PartialEq, Eq)]
@@ -131,13 +131,13 @@ pub struct TransactionE<
 
 #[derive(DecodableMessage, Default)]
 pub struct TransactionD {
-    pub script: Vec<u8>,
-    pub arguments: Repeated<Vec<Vec<u8>>>,
-    pub reference_block_id: Vec<u8>,
+    pub script: Box<[u8]>,
+    pub arguments: Repeated<Vec<Box<[u8]>>>,
+    pub reference_block_id: Box<[u8]>,
     pub gas_limit: u64,
     pub proposal_key: ProposalKeyD,
-    pub payer: Vec<u8>,
-    pub authorizers: Repeated<Vec<Vec<u8>>>,
+    pub payer: Box<[u8]>,
+    pub authorizers: Repeated<Vec<Box<[u8]>>>,
     pub payload_signatures: Repeated<Vec<SignatureD>>,
     pub envelope_signatures: Repeated<Vec<SignatureD>>,
 }
@@ -151,7 +151,7 @@ impl TransactionD {
     }
 
     /// Returns an iterator parsing the underlying arguments.
-    pub fn parse_arguments(&self) -> ParseArguments<slice::Iter<Vec<u8>>> {
+    pub fn parse_arguments(&self) -> ParseArguments<slice::Iter<Box<[u8]>>> {
         ParseArguments::new(self.arguments.iter())
     }
 }

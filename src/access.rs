@@ -1,84 +1,90 @@
+//! Access API type definitions
+//! 
+//! This modules contains definitions for requests and responses of the access API.
+
+#![deny(missing_docs)]
+
 use std::time::Duration;
 
 use crate::client::{FlowClient, GrpcClient};
 use crate::entities::*;
 use crate::protobuf::*;
-use crate::requests::FlowRequest;
 use crate::transaction::*;
 use otopr::wire_types::*;
 use otopr::*;
 
-macro_rules! access_api {
-    (rpc $servName:ident$(<$($generics:ident),+>)?(noseal $reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
-        impl$(<$($generics),+>)? FlowRequest<$resTy> for $reqTy $(where $($tt)*)? {
-            const PATH: &'static str = concat!("/flow.access.AccessAPI/", stringify!($servName));
-        }
-    };
-    (rpc $servName:ident$(<$($generics:ident),+>)?($reqTy:ty) returns ($resTy:ty) $(where($($tt:tt)*))?) => {
-        access_api!(rpc $servName$(<$($generics),+>)?(noseal $reqTy) returns ($resTy) $(where($($tt)*))?);
-
-        impl$(<$($generics),+>)? crate::requests::private::Sealed for $reqTy $(where $($tt)*)? {}
-    };
-    ($(rpc $servName:ident$(<$($generics:ident),+$(,)?>)?($($tt:tt)*) returns ($resTy:ty) $(where($($tts:tt)*))?;)+) => {
-        $(
-            access_api!(rpc $servName$(<$($generics),+>)?($($tt)*) returns ($resTy) $(where($($tts)*))?);
-        )+
-    };
-}
-
+/// Ping.
 #[derive(EncodableMessage)]
 pub struct PingRequest;
 
+/// Pong.
 #[derive(DecodableMessage, Default)]
 pub struct PingResponse;
 
+/// A block header.
 #[derive(DecodableMessage, Default)]
 pub struct BlockHeaderResponse(pub BlockHeader);
 
+/// Gets the latest block's header.
 #[derive(EncodableMessage)]
 pub struct GetLatestBlockHeaderRequest {
+    /// Whether the response should be sealed.
     pub seal: Seal,
 }
 
+/// Gets a block's header by id.
 #[derive(EncodableMessage)]
 pub struct GetBlockHeaderByIdRequest<'a> {
+    /// id of the block.
     #[otopr(1)]
     pub id: &'a [u8],
 }
 
+/// Gets a block's header by its height.
 #[derive(EncodableMessage)]
 pub struct GetBlockHeaderByHeightRequest {
+    /// height of the block.
     #[otopr(1)]
     pub height: u64,
 }
 
+/// Full information about a block.
 #[derive(DecodableMessage, Default)]
 pub struct BlockResponse(pub Block);
 
+/// Gets full information about the latest block.
 #[derive(EncodableMessage)]
 pub struct GetLatestBlockRequest {
+    /// Whether to get latest "sealed" block or any latest block.
     pub seal: Seal,
 }
 
+/// Gets full information about a block by its id.
 #[derive(EncodableMessage)]
 pub struct GetBlockByIdRequest<'a> {
+    /// id of the block.
     #[otopr(1)]
     pub id: &'a [u8],
 }
 
+/// Gets full information about a block by its height.
 #[derive(EncodableMessage)]
 pub struct GetBlockByHeightRequest {
-    #[otopr(1)]
+    /// height of the block.
     pub height: u64,
 }
 
+/// Gets information about a collection by its id.
 #[derive(EncodableMessage)]
 pub struct GetCollectionByIdRequest<'a> {
+    /// id of the collection.
     pub id: &'a [u8],
 }
 
+/// A collection.
 #[derive(DecodableMessage, Default)]
 pub struct CollectionResponse {
+    /// The collection.
     pub collection: Collection,
 }
 
@@ -114,6 +120,7 @@ pub struct CollectionResponse {
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
 ))]
+/// Sends a transaction over the network.
 pub struct SendTransactionRequest<
     Script,
     Arguments,
@@ -124,6 +131,7 @@ pub struct SendTransactionRequest<
     PayloadSignatures,
     EnvelopeSignatures,
 > {
+    /// The transaction to be sent.
     pub transaction: TransactionE<
         Script,
         Arguments,
@@ -136,8 +144,10 @@ pub struct SendTransactionRequest<
     >,
 }
 
+/// The id of the transaction on the network.
 #[derive(DecodableMessage, Default)]
 pub struct SendTransactionResponse {
+    /// The id of the transaction.
     pub id: Vec<u8>,
 }
 
@@ -145,6 +155,10 @@ impl SendTransactionResponse {
     /// Returns a future that periodically queries the transaction response until the transaction is sealed or expired.
     ///
     /// The default delay is 2 seconds between requests, and the default timeout is 15 seconds.
+    ///
+    /// To customize the delay and the timeout, refer to [`Finalize`]'s documentation.
+    ///
+    /// [`Finalize`]: crate::transaction::Finalize
     pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>>(
         &'a self,
         client: &'a mut FlowClient<C>,
@@ -158,38 +172,55 @@ impl SendTransactionResponse {
     }
 }
 
+/// Gets a transaction's details by its id.
 #[derive(EncodableMessage)]
 pub struct GetTransactionRequest<'a> {
+    /// the id of the transaction.
     pub id: &'a [u8],
 }
 
+/// The full details of a transaction.
 #[derive(DecodableMessage, Default)]
 pub struct TransactionResponse {
+    /// The transaction.
     pub transaction: TransactionD,
 }
 
+/// The results of a transaction.
 #[derive(DecodableMessage, Default)]
 pub struct TransactionResultResponse {
+    /// The status of the transaction.
     pub status: TransactionStatus,
+    /// The status code of the transaction.
     pub status_code: u32,
+    /// The error message, if any.
     pub error_message: String,
+    /// The events of the transaction.
     pub events: Repeated<Vec<Event>>,
-    pub block_id: Vec<u8>,
+    /// The block ID of the transaction.
+    pub block_id: Box<[u8]>,
 }
 
+/// Retrieves information of an account at the latest block.
 #[derive(EncodableMessage)]
 pub struct GetAccountAtLatestBlockRequest<'a> {
-    pub id: &'a [u8],
+    /// The raw bytes of the address of the account.
+    pub address: &'a [u8],
 }
 
+/// Retrieves information of an account at the specific block height.
 #[derive(EncodableMessage)]
 pub struct GetAccountAtBlockHeightRequest<'a> {
-    pub id: &'a [u8],
+    /// The raw bytes of the address of the account.
+    pub address: &'a [u8],
+    /// The block height.
     pub block_height: u64,
 }
 
+/// An account.
 #[derive(DecodableMessage, Default)]
 pub struct AccountResponse {
+    /// The account.
     pub account: Account,
 }
 
@@ -211,142 +242,126 @@ fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Cl
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
         for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
 ))]
+/// Executes a script (maybe with arguments) at the latest block.
 pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// The script.
     pub script: Script,
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    /// The arguments. A collection of [`ValueRef`]s.
+    ///
+    /// [`ValueRef`]: cadence_json::ValueRef
     pub arguments: Arguments,
 }
 
+/// Executes a script (maybe with arguments) at a block specified by its block ID.
 #[derive(EncodableMessage)]
 pub struct ExecuteScriptAtBlockIdRequest<'a> {
+    /// id of the block.
     pub block_id: &'a [u8],
+    /// The script.
     pub script: &'a [u8],
+    /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
     pub arguments: RepSlice<'a, &'a [u8]>,
 }
 
+/// Executes a script (maybe with arguments) at a block specified by its height.
 #[derive(EncodableMessage)]
 pub struct ExecuteScriptAtBlockHeightRequest<'a> {
+    /// height of the block.
     pub block_height: u64,
+    /// The script.
     pub script: &'a [u8],
+    /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
     pub arguments: RepSlice<'a, &'a [u8]>,
 }
 
+/// The return value of the script.
 #[derive(DecodableMessage, Default)]
 pub struct ExecuteScriptResponse {
+    /// The return value. Use [`ExecuteScriptResponse::parse()`] to parse it.
     pub value: Box<[u8]>,
 }
 
 impl ExecuteScriptResponse {
+    /// Parses the value.
     pub fn parse(&self) -> serde_json::Result<cadence_json::ValueOwned> {
         serde_json::from_slice(&self.value)
     }
 }
 
+/// Search for events in a height range.
 #[derive(EncodableMessage)]
 pub struct GetEventsForHeightRangeRequest<'a> {
-    pub r#type: &'a str,
+    /// The type of the event we are looking for.
+    pub ty: &'a str,
+    /// The start of the height range.
     pub start_height: u64,
+    /// The end of the height range.
     pub end_height: u64,
 }
 
+/// Search for events in a collection of blocks specified by its block id.
 #[derive(EncodableMessage)]
 pub struct GetEventsForBlockIdsRequest<'a> {
-    pub r#type: &'a str,
+    /// The type of the event we are looking for.
+    pub ty: &'a str,
+    /// The IDs of the blocks.
     pub block_ids: RepSlice<'a, &'a [u8]>,
 }
 
+/// Search results for events in a single block.
 #[derive(DecodableMessage, Default)]
 pub struct EventsResult {
-    pub block_id: Vec<u8>,
+    /// The ID of the block.
+    pub block_id: Box<[u8]>,
+    /// The height of the block.
     pub block_height: u64,
+    /// The events that occured on this block.
     pub events: Repeated<Vec<Event>>,
+    /// The timestamp of the block.
     pub block_timestamp: Timestamp,
 }
 
+/// Search results for events in multiple blocks.
 #[derive(DecodableMessage, Default)]
 pub struct EventsResponse {
+    /// The results.
     pub results: Repeated<Vec<EventsResult>>,
 }
 
+/// Get network parameters.
 #[derive(EncodableMessage)]
 pub struct GetNetworkParametersRequest;
 
+/// The network parameters.
 #[derive(DecodableMessage, Default)]
 pub struct GetNetworkParametersResponse {
+    /// The chain ID.
     pub chain_id: String,
 }
 
+/// Get the latest protocol state snapshot.
 #[derive(EncodableMessage)]
 pub struct GetLatestProtocolStateSnapshotRequest;
 
+/// A protocol state snapshot.
 #[derive(DecodableMessage, Default)]
 pub struct ProtocolStateSnapshotResponse {
-    pub serialized_snapshot: Vec<u8>,
+    /// The serialized snapshop.
+    pub serialized_snapshot: Box<[u8]>,
 }
 
+/// Get execution result for a block ID.
 #[derive(EncodableMessage)]
 pub struct GetExecutionResultForBlockIdRequest<'a> {
+    /// ID of the block.
     pub block_id: &'a [u8],
 }
 
+/// An execution result.
 #[derive(DecodableMessage, Default)]
 pub struct ExecutionResultForBlockIdResponse {
+    /// The execution result.
     pub execution_result: ExecutionResult,
-}
-
-access_api! {
-    rpc Ping(PingRequest) returns (PingResponse);
-    rpc GetLatestBlockHeader(GetLatestBlockHeaderRequest)
-        returns (BlockHeaderResponse);
-    rpc GetBlockHeaderByID(GetBlockHeaderByIdRequest<'_>)
-        returns (BlockHeaderResponse);
-    rpc GetBlockHeaderByHeight(GetBlockHeaderByHeightRequest)
-        returns (BlockHeaderResponse);
-    rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockResponse);
-    rpc GetBlockByID(GetBlockByIdRequest<'_>) returns (BlockResponse);
-    rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
-    rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
-    rpc SendTransaction<
-        Script,
-        Arguments,
-        ReferenceBlockId,
-        ProposalKeyAddress,
-        Payer,
-        Authorizers,
-        PayloadSignatures,
-        EnvelopeSignatures,
-    >(SendTransactionRequest<
-        Script,
-        Arguments,
-        ReferenceBlockId,
-        ProposalKeyAddress,
-        Payer,
-        Authorizers,
-        PayloadSignatures,
-        EnvelopeSignatures,
-    >) returns (SendTransactionResponse);
-    rpc GetTransaction(GetTransactionRequest<'_>) returns (TransactionResponse);
-    rpc GetTransactionResult(noseal GetTransactionRequest<'_>)
-        returns (TransactionResultResponse);
-    rpc GetAccountAtLatestBlock(GetAccountAtLatestBlockRequest<'_>)
-        returns (AccountResponse);
-    rpc GetAccountAtBlockHeight(GetAccountAtBlockHeightRequest<'_>)
-        returns (AccountResponse);
-    rpc ExecuteScriptAtLatestBlock<Script, Arguments>(ExecuteScriptAtLatestBlockRequest<Script, Arguments>)
-        returns (ExecuteScriptResponse);
-    rpc ExecuteScriptAtBlockID(ExecuteScriptAtBlockIdRequest<'_>)
-        returns (ExecuteScriptResponse);
-    rpc ExecuteScriptAtBlockHeight(ExecuteScriptAtBlockHeightRequest<'_>)
-        returns (ExecuteScriptResponse);
-    rpc GetEventsForHeightRange(GetEventsForHeightRangeRequest<'_>)
-        returns (EventsResponse);
-    rpc GetEventsForBlockIDs(GetEventsForBlockIdsRequest<'_>)
-        returns (EventsResponse);
-    rpc GetNetworkParameters(GetNetworkParametersRequest)
-        returns (GetNetworkParametersResponse);
-    rpc GetLatestProtocolStateSnapshot(GetLatestProtocolStateSnapshotRequest)
-        returns (ProtocolStateSnapshotResponse);
-    rpc GetExecutionResultForBlockID(GetExecutionResultForBlockIdRequest<'_>)
-        returns (ExecutionResultForBlockIdResponse);
 }

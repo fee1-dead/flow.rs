@@ -172,8 +172,8 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves events with the specified type within the specified range.
-        pub async fn events_for_height_range<('a)>(r#type: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
-            GetEventsForHeightRangeRequest { r#type, start_height, end_height }
+        pub async fn events_for_height_range<('a)>(ty: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
+            GetEventsForHeightRangeRequest { ty, start_height, end_height }
         }
 
         /// Executes Cadence script at the latest block and returns the result.
@@ -226,7 +226,7 @@ impl<Inner> FlowClient<Inner> {
 
         /// Retrieves information about an account at the latest block.
         pub async fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
-            GetAccountAtLatestBlockRequest { id: address };
+            GetAccountAtLatestBlockRequest { address: address };
             remap = |acc_response| -> Account {
                 acc_response.account
             }
@@ -234,7 +234,7 @@ impl<Inner> FlowClient<Inner> {
 
         /// Retrieves information about an account at the specified block height.
         pub async fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
-            GetAccountAtBlockHeightRequest { id: address, block_height };
+            GetAccountAtBlockHeightRequest { address: address, block_height };
             remap = |acc_response| -> Account {
                 acc_response.account
             }

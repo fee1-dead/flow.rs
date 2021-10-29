@@ -1,8 +1,11 @@
 use otopr::{encoding::Encodable, DecodableMessage};
 
+/// A protobuf timestamp.
 #[derive(Clone, Copy, Default, DecodableMessage, Debug, PartialEq, Eq, Hash)]
 pub struct Timestamp {
+    /// The seconds component of the timestamp.
     pub seconds: i64,
+    /// The nanoseconds component of the timestamp.
     pub nanos: i32,
 }
 
@@ -11,6 +14,7 @@ pub struct Timestamp {
 pub enum Seal {
     /// Sealed: An entity was successful and permanently recorded on the blockchain.
     Sealed,
+    /// The entity is not yet sealed.
     NotSealed,
 }
 
