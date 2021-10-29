@@ -22,7 +22,7 @@ a C library by Pieter Wuille that is used in many bitcoin projects.
 sha3 hashing is provided by the [`tiny-keccak`] crate, which claims to have [better performance] than
 another crate by `RustCrypto`.
 
-[rustup]: rustup.rs
+[rustup]: https://rustup.rs
 [examples/]: ./examples/
 [libsecp256k1]: https://github.com/bitcoin-core/secp256k1/
 [`tiny-keccak`]: https://github.com/debris/tiny-keccak
