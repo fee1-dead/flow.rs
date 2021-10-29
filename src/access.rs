@@ -308,10 +308,6 @@ access_api! {
     rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
     rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
     rpc SendTransaction<
-        PayloadSignatureAddress,
-        PayloadSignature,
-        EnvelopeSignatureAddress,
-        EnvelopeSignature,
         Script,
         Arguments,
         ReferenceBlockId,
@@ -329,30 +325,7 @@ access_api! {
         Authorizers,
         PayloadSignatures,
         EnvelopeSignatures,
-    >) returns (SendTransactionResponse) where (
-        Script: AsRef<[u8]>,
-        ReferenceBlockId: AsRef<[u8]>,
-        Payer: AsRef<[u8]>,
-        ProposalKeyAddress: AsRef<[u8]>,
-        PayloadSignatureAddress: AsRef<[u8]>,
-        PayloadSignature: AsRef<[u8]>,
-        EnvelopeSignatureAddress: AsRef<[u8]>,
-        EnvelopeSignature: AsRef<[u8]>,
-        Arguments: HasItem,
-        <Arguments as HasItem>::Item: AsRef<[u8]>,
-        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
-        Authorizers: HasItem,
-        <Authorizers as HasItem>::Item: AsRef<[u8]>,
-        for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
-        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
-        PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
-        for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
-        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
-        EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
-        for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
-        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
-    );
+    >) returns (SendTransactionResponse);
     rpc GetTransaction(GetTransactionRequest<'_>) returns (TransactionResponse);
     rpc GetTransactionResult(noseal GetTransactionRequest<'_>)
         returns (TransactionResultResponse);

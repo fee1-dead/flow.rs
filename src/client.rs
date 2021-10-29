@@ -1,6 +1,11 @@
 //! ## Flow gRPC connections
 //!
 //! This module contains the `Client` types for gRPC connections.
+//! 
+//! If you wish to customize and build your own client, implement [`GrpcClient`]
+//! for your client for input and output types you want to support. If you can
+//! support all types, consider using the [`FlowRequest`](crate::requests::FlowRequest)
+//! trait to generalize implementations.
 
 use std::{error::Error, future::Future, pin::Pin};
 
@@ -38,15 +43,18 @@ pub trait GrpcClient<I, O> {
 pub struct FlowClient<T> {
     inner: T,
 }
+
+/// A client that uses the `tonic` gRPC dispatcher which wraps some inner gRPC service.
 pub type TonicClient<Service> = Grpc<Service>;
 
 /// A tonic gRPC client.
 pub type TonicFlowClient<Service> = FlowClient<TonicClient<Service>>;
 
+/// A tonic gRPC client that uses the `hyper` crate for HTTP transport.
 #[cfg(feature = "tonic-transport")]
 pub type TonicHyperClient = TonicClient<tonic::transport::Channel>;
 
-/// A tonic gRPC client that uses the `hyper` crate for HTTP transport.
+/// A flow client that uses `TonicHyperClient` as gRPC client.
 #[cfg(feature = "tonic-transport")]
 pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
 
@@ -107,8 +115,8 @@ macro_rules! remapping_requests {
         $($(#[$meta])*
         $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) ->
             futures_util::future::Map<
-                Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>,
-                fn(Result<$output, Inner::Error>) -> Result<$remappedty, Inner::Error>,
+                Pin<Box<dyn Future<Output = Result< $output, Inner::Error> > + 'grpc>>,
+                fn(Result< $output, Inner::Error >) -> Result< $remappedty, Inner::Error >,
             >
             where
                 Inner: GrpcClient< $input, $output >,
@@ -117,7 +125,7 @@ macro_rules! remapping_requests {
             fn remap_ok($paramName: $output) -> $remappedty {
                 $remap
             }
-            fn remap<E>(res: Result<$output, E>) -> Result<$remappedty, E> {
+            fn remap<E>(res: Result< $output, E >) -> Result< $remappedty, E > {
                 res.map(remap_ok)
             }
             use futures_util::FutureExt;
