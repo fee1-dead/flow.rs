@@ -29,7 +29,7 @@ use crate::{
 
 /// A gRPC client trait.
 ///
-/// Implementors should be generic over the input and output types.
+/// Implementors should be generic over the input and output types, but it is not required.
 pub trait GrpcClient<I, O> {
     type Error: Into<Box<dyn Error + Send + Sync>>;
     fn send<'a>(
