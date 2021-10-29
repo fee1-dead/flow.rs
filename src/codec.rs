@@ -1,4 +1,4 @@
-//! [`tonic::Codec`] implementation for otopr.
+//! [`tonic::codec::Codec`] implementation for otopr.
 
 use std::marker::PhantomData;
 
