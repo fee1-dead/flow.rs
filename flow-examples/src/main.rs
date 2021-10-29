@@ -14,7 +14,7 @@ use rustyline::error::ReadlineError;
 
 mod examples;
 
-pub type ExampleAccount = DefaultAccount<TonicHyperClient, algo::secp256k1::SecretKey>;
+pub type ExampleAccount = DefaultAccount<TonicHyperFlowClient, algo::secp256k1::SecretKey>;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct AccountKeyConfig {

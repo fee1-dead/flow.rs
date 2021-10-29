@@ -2,6 +2,9 @@
 name = "flow-sdk"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Library for developing on the Flow blockchain network"
+repository = "https://github.com/fee1-dead/flow.rs"
 
 [dependencies]
 otopr = "0.3.2" # protobuf library
