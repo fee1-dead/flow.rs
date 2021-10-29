@@ -302,7 +302,7 @@ where
         let public_key = signer.to_public_key(&secret_key);
         let serialized = signer.serialize_public_key(&public_key);
 
-        for key in keys.into_inner() {
+        for key in keys {
             if key.public_key == serialized {
                 account_key = Some(key);
             }
@@ -402,7 +402,7 @@ where
                 })
                 .collect();
 
-            for key in keys.into_inner() {
+            for key in keys {
                 if let Some(key_index) = public_keys_to_find.remove(&*key.public_key) {
                     add_key(key_index, key.index, key.weight);
                 }
@@ -420,7 +420,7 @@ where
                 .map(|pk| signer.serialize_public_key(&pk))
                 .collect();
 
-            for key in keys.into_inner() {
+            for key in keys {
                 if let Some((index, _)) = public_keys_to_find
                     .iter()
                     .enumerate()
@@ -491,7 +491,7 @@ where
             .account_at_latest_block(address)
             .await
             .map_err(Into::into)?;
-        for key in acc.keys.into_inner() {
+        for key in acc.keys {
             if key.public_key == public_key {
                 return Ok(key.sequence_number);
             }
@@ -546,7 +546,6 @@ where
         let pub_key = self.signer.serialize_public_key(&pub_key);
         let key = acc
             .keys
-            .into_inner()
             .into_iter()
             .find(|key| key.public_key == pub_key)
             .unwrap();

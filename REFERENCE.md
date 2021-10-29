@@ -698,7 +698,7 @@ const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
 
 let address: AddressOwned = MY_ADDRESS.parse().unwrap();
 
-let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
+let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
 
 let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
 let sequence_number = account.primary_key_sequence_number().await?;
@@ -721,7 +721,7 @@ Flow supports great flexibility when it comes to transaction signing, we can def
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-single-signature)**
 ```rust
-let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
+let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
 
 let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
 let sequence_number = account.primary_key_sequence_number().await?;
@@ -775,7 +775,7 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
 
     let address: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
 
-    let mut account = Account::<_, _>::new_multisign(client.into_inner(), &address.data, 0, &[sk1, sk2]).await?;
+    let mut account = Account::<_, _>::new_multisign(client, &address.data, 0, &[sk1, sk2]).await?;
 
     let latest_block = account.client().latest_block_header(Seal::Sealed).await?.id;
     let sequence_number = account.primary_key_sequence_number().await?;

@@ -37,7 +37,7 @@ async fn signing_transactions_one_one() -> Result<(), Box<dyn Error + Send + Syn
 
     let address: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
 
-    let mut account = Account::<_, _>::new(client.into_inner(), &address.data, secret_key).await?;
+    let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
 
     let latest_block = account.client().latest_block_header(Seal::Sealed).await?.id;
     let sequence_number = account.primary_key_sequence_number().await?;
@@ -67,7 +67,7 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
     let address: AddressOwned = MULTISIG_1_ADDRESS.parse().unwrap();
 
     let mut account =
-        Account::<_, _>::new_multisign(client.into_inner(), &address.data, 0, &[sk1, sk2]).await?;
+        Account::<_, _>::new_multisign(client, &address.data, 0, &[sk1, sk2]).await?;
 
     let latest_block = account.client().latest_block_header(Seal::Sealed).await?.id;
     let sequence_number = account.primary_key_sequence_number().await?;
@@ -248,7 +248,7 @@ async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = ONEKEY_1_ADDRESS.parse().unwrap();
 
     let mut account =
-        Account::<_, _>::new(client.into_inner(), &address.data, my_secret_key).await?;
+        Account::<_, _>::new(client, &address.data, my_secret_key).await?;
 
     let res = account.send_transaction_header(&txn).await?;
 
@@ -256,7 +256,7 @@ async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let fin = res.finalize(account.client()).await?.unwrap();
 
-    for event in fin.events.into_inner() {
+    for event in fin.events {
         if event.ty == "flow.AccountCreated" {
             println!("{:?}", event.parse_payload().unwrap());
         }

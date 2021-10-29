@@ -124,7 +124,7 @@ async fn main_inner(
 
     //println!("{}", hex::encode(public_key.serialize_uncompressed()));
 
-    let mut account = DefaultAccount::new(client.into_inner(), &addr, secret_key).await?;
+    let mut account = DefaultAccount::new(client, &addr, secret_key).await?;
 
     println!("Successfully logged in to the service account!");
     println!("type \"help\" for help");

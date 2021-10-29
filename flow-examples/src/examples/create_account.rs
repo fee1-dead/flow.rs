@@ -20,7 +20,7 @@ crate::example! {
 
         let res = txn.finalize(account.client()).await?.unwrap();
 
-        for event in res.events.into_inner() {
+        for event in res.events {
             if event.ty == "flow.AccountCreated" {
                 let payload = event.parse_payload()?;
                 let address = payload.find_field("address").unwrap().expect_address();

@@ -35,7 +35,7 @@ async fn building_transaction_headers() -> Result<(), Box<dyn Error + Send + Syn
     // Make a dummy account to ensure that we can sign the header.
     let mut acc = unsafe {
         crate::account::Account::<_, _>::new_unchecked(
-            client.into_inner(),
+            client,
             Default::default(),
             SignMethod::One(One {
                 key_id: 1,

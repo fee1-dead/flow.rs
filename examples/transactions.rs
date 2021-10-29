@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let net = TonicHyperFlowClient::testnet()?;
 
-    let mut account = Account::<_, _>::new(net.into_inner(), &address.data, secret_key).await?;
+    let mut account = Account::<_, _>::new(net, &address.data, secret_key).await?;
 
     let create_account = CreateAccountTransaction {
         public_keys: &[public_key],
