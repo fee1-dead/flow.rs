@@ -1,14 +1,13 @@
-#![deny(missing_docs)]
 //! ## Multi-party signing
 //!
 //! This module contains various definitions that make multi-party signing easier.
-//! 
+//!
 //! [`PartyBuilder`] makes it easy to build a transaction for signing with different rules.
 //!
 //! [`SigningParty`] is the simplest party. It computes a hash every time you want to sign it.
-//! 
+//!
 //! [`PreHashedParty`] computes and stores the payload hash so it does not need to be recomputed.
-//! 
+//!
 //! Both party types implement the common interface, the [`Party`] trait.
 
 use std::error::Error;
@@ -26,8 +25,8 @@ use crate::algorithms::FlowSigner;
 use crate::client::GrpcClient;
 use crate::prelude::Account;
 use crate::protobuf::Seal;
-use crate::transaction::rlp_encode_transaction_envelope;
-use crate::transaction::rlp_encode_transaction_payload;
+use crate::transaction::rlp::rlp_encode_transaction_envelope;
+use crate::transaction::rlp::rlp_encode_transaction_payload;
 use crate::transaction::ProposalKeyE;
 use crate::transaction::SignatureE;
 use crate::transaction::TransactionE;
@@ -42,7 +41,7 @@ mod private {
 
 /// After envelope signatures are fed to a party, it turns into a transaction.
 ///
-/// This is the exact type a party will turn in to. 
+/// This is the exact type a party will turn in to.
 pub type PartyTransaction<SigAddr, Sig> = TransactionE<
     Box<[u8]>,
     Vec<Box<[u8]>>,
@@ -56,7 +55,7 @@ pub type PartyTransaction<SigAddr, Sig> = TransactionE<
 
 /// The `Party` trait. You can get information about the transaction you are signing and sign it by
 /// accepting some type that implements this trait.
-/// 
+///
 /// This is `Sealed`, which means no foreign types may implement it, and it is not **Object safe**,
 /// so no one can create bad behaving trait objects which can make this trait insecure.
 pub trait Party<H: FlowHasher>: Sized + private::Sealed {
@@ -487,7 +486,7 @@ impl SigningParty {
 ///
 /// The party only supports one type of hashing algorithm,
 /// which means that all entities involved must use the same algorithm.
-/// 
+///
 /// Note that this can be a bit less secure than using [`SigningParty`].
 /// A malicious attacker may modify the payload using unsafe pointer operations.
 #[derive(Clone)]

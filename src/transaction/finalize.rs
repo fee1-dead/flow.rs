@@ -22,6 +22,7 @@ pub struct Finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResu
 }
 
 impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Finalize<'a, C> {
+    /// Creates a new instance of [`Finalize`] with the transaction's id, the client, the delay, and the timeout.
     pub fn new(
         tx_id: &'a [u8],
         client: &'a mut FlowClient<C>,

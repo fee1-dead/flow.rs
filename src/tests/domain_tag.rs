@@ -16,4 +16,8 @@ impl Test for DTagTest {
     }
 }
 
-crate::test_fixtures!(DTagTest, "domain-tag-encoding.json", test_domain_tag_encoding);
+crate::test_fixtures!(
+    DTagTest,
+    "domain-tag-encoding.json",
+    test_domain_tag_encoding
+);

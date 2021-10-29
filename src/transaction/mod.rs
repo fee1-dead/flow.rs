@@ -1,10 +1,17 @@
-mod rlp;
-use std::{marker::PhantomData, slice};
+//! Transactions on the flow blockchain.
+//!
+//! A transaction represents a unit of computation that is submitted to the Flow network.
 
-pub use self::rlp::*;
+use cadence_json::ValueOwned;
+use std::slice;
+
+use otopr::encoding::EncodeAsRef;
+use otopr::*;
+use wire_types::*;
+
+pub mod rlp;
 
 mod signing;
-use cadence_json::ValueOwned;
 pub use signing::*;
 
 mod template;
@@ -13,19 +20,26 @@ pub use template::*;
 mod finalize;
 pub use finalize::*;
 
-use otopr::encoding::EncodeAsRef;
-use otopr::*;
-use wire_types::*;
-
-pub type RepSlice<'a, T> = Repeated<&'a [T]>;
-
+/// Status of a transaction.
 #[derive(Enumeration, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransactionStatus {
+    /// The transaction status is not known.
     Unknown = 0,
+
+    /// The transaction has been received by a collector but not yet finalized in a block.
     Pending = 1,
+
+    /// The consensus nodes have finalized the block that the transaction is included in.
     Finalized = 2,
+
+    /// The execution nodes have produced a result for the transaction.
     Executed = 3,
+
+    /// The verification nodes have verified the transaction (the block in which the transaction is)
+    /// and the seal is included in the latest block.
     Sealed = 4,
+
+    /// The transaction was submitted past its expiration block height.
     Expired = 5,
 }
 
@@ -34,18 +48,30 @@ pub enum TransactionStatus {
     where
         Address: AsRef<[u8]>,
 ))]
+/// The proposal key is used to specify a sequence number for the transaction.
+///
+/// Use this type when sending to the network.
 pub struct ProposalKeyE<Address> {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// Address of proposer account
     pub address: Address,
+    /// ID of proposal key on the proposal account
     pub key_id: u32,
+    /// [Sequence number](https://docs.onflow.org/concepts/accounts-and-keys#sequence-numbers) for the proposal key
     pub sequence_number: u64,
 }
 
 #[derive(DecodableMessage, Default)]
+/// The proposal key is used to specify a sequence number for the transaction.
+///
+/// This type is used when decoding messages from the network.
 pub struct ProposalKeyD {
-    pub address: Vec<u8>,
+    /// Address of proposer account
+    pub address: Box<[u8]>,
+    /// ID of proposal key on the proposal account
     pub key_id: u32,
-    pub sequence_number: u32,
+    /// [Sequence number](https://docs.onflow.org/concepts/accounts-and-keys#sequence-numbers) for the proposal key
+    pub sequence_number: u64,
 }
 
 #[derive(EncodableMessage, Clone, Copy, Debug, PartialEq, Eq)]
@@ -54,18 +80,34 @@ pub struct ProposalKeyD {
         Address: AsRef<[u8]>,
         Signature: AsRef<[u8]>,
 ))]
+/// Signature of a transaction.
+///
+/// Use this type when sending this over the network.
 pub struct SignatureE<Address, Signature> {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// Address of the account that signed.
     pub address: Address,
+
+    /// The key id number of the key of the account that signed.
     pub key_id: u32,
+
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// The signature.
     pub signature: Signature,
 }
 
+/// Signature of a transaction.
+///
+/// This type is used when decoding messages from a network.
 #[derive(DecodableMessage, Default)]
 pub struct SignatureD {
+    /// Address of the account that signed.
     pub address: Box<[u8]>,
+
+    /// The key id number of the key of the account that signed.
     pub key_id: u32,
+
+    /// The signature.
     pub signature: Box<[u8]>,
 }
 
@@ -101,6 +143,9 @@ pub struct SignatureD {
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
 ))]
+/// A transaction represents a unit of computation that is submitted to the Flow network.
+///
+/// Use this type when sending it over the network.
 pub struct TransactionE<
     Script,
     Arguments,
@@ -112,33 +157,70 @@ pub struct TransactionE<
     EnvelopeSignatures,
 > {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// Raw source code for a Cadence script, encoded as UTF-8 bytes
     pub script: Script,
+
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(|it| it.map(EncodeAsRef::new))))]
+    /// Arguments passed to the Cadence script, encoded as JSON-Cadence bytes
     pub arguments: Arguments,
+
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// Block ID used to determine transaction expiry
     pub reference_block_id: ReferenceBlockId,
+
+    /// The gas limit.
     pub gas_limit: u64,
+
+    /// Account key used to propose the transaction
     pub proposal_key: ProposalKeyE<ProposalKeyAddress>,
+
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    /// Address of the payer account
     pub payer: Payer,
+
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Authorizers>>::from(&x).map(|it| it.map(AsRef::as_ref))))]
+    /// Addresses of the transaction authorizers
     pub authorizers: Authorizers,
+
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&PayloadSignatures>>::from(&x)))]
+    /// Signatures from all payload signer accounts
     pub payload_signatures: PayloadSignatures,
+
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&EnvelopeSignatures>>::from(&x)))]
+    /// Signatures from all envelope signer accounts
     pub envelope_signatures: EnvelopeSignatures,
 }
 
 #[derive(DecodableMessage, Default)]
+/// A transaction represents a unit of computation that is submitted to the Flow network.
+///
+/// This type is used when decoding messages from the network.
 pub struct TransactionD {
+    /// Raw source code for a Cadence script, encoded as UTF-8 bytes
     pub script: Box<[u8]>,
+
+    /// Arguments passed to the Cadence script, encoded as JSON-Cadence bytes
     pub arguments: Repeated<Vec<Box<[u8]>>>,
+
+    /// Block ID used to determine transaction expiry
     pub reference_block_id: Box<[u8]>,
+
+    /// The gas limit.
     pub gas_limit: u64,
+
+    /// Account key used to propose the transaction
     pub proposal_key: ProposalKeyD,
+
+    /// Address of the payer account
     pub payer: Box<[u8]>,
+
+    /// Addresses of the transaction authorizers
     pub authorizers: Repeated<Vec<Box<[u8]>>>,
+
+    /// Signatures from all payload signer accounts
     pub payload_signatures: Repeated<Vec<SignatureD>>,
+
+    /// Signatures from all envelope signer accounts
     pub envelope_signatures: Repeated<Vec<SignatureD>>,
 }
 
@@ -156,21 +238,23 @@ impl TransactionD {
     }
 }
 
-pub struct ParseArguments<'a, I>(I, PhantomData<&'a ()>);
+/// An iterator that parses arguments from bytes.
+#[derive(Clone, Copy, Default, Debug, Hash)]
+pub struct ParseArguments<I>(I);
 
-impl<I: Iterator> ParseArguments<'_, I> {
+impl<'a, I: Iterator<Item = &'a Bytes>, Bytes: AsRef<[u8]> + 'a> ParseArguments<I> {
+    /// Creates a new instance of `ParseArguments`.
     pub fn new(iter: I) -> Self {
-        Self(iter, PhantomData)
+        Self(iter)
     }
 
+    /// Retrieves the inner iterator.
     pub fn into_inner(self) -> I {
         self.0
     }
 }
 
-impl<'a, I: Iterator<Item = &'a Bytes>, Bytes: AsRef<[u8]> + 'a> Iterator
-    for ParseArguments<'a, I>
-{
+impl<'a, I: Iterator<Item = &'a Bytes>, Bytes: AsRef<[u8]> + 'a> Iterator for ParseArguments<I> {
     type Item = serde_json::Result<ValueOwned>;
 
     fn size_hint(&self) -> (usize, Option<usize>) {

@@ -1,3 +1,5 @@
+//! A trait to generalize requests and responses of the Access API.
+
 use crate::access::*;
 
 mod private {

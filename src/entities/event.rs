@@ -2,7 +2,7 @@ use cadence_json::ValueOwned;
 use otopr::DecodableMessage;
 
 /// An event is emitted as the result of a transaction execution.
-/// 
+///
 /// Events are either user-defined events originating from a Cadence smart contract,
 /// or built-in Flow system events.
 #[derive(DecodableMessage, Default, Debug)]

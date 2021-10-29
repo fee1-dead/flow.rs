@@ -1,3 +1,5 @@
+//! [`tonic::Codec`] implementation for otopr.
+
 use std::marker::PhantomData;
 
 use otopr::decoding::{DecodableMessage, Deserializer};
@@ -21,6 +23,7 @@ impl PreEncode {
     }
 }
 
+/// The otopr codec.
 pub struct OtoprCodec<U>(PhantomData<U>);
 
 impl<U> Default for OtoprCodec<U> {
@@ -50,7 +53,10 @@ where
     }
 }
 
+/// The encoder of the otopr codec.
 pub struct PEnc;
+
+/// The decoder of the otopr codec.
 pub struct PDec<T>(PhantomData<T>);
 
 unsafe impl<T> Sync for PDec<T> {}

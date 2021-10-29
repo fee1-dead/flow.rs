@@ -1,7 +1,7 @@
 use otopr::{DecodableMessage, Repeated};
 
 /// A collection is a batch of transactions that have been included in a block.
-/// 
+///
 /// Collections are used to improve consensus throughput by increasing the number of transactions per block.
 #[derive(DecodableMessage, Default)]
 pub struct Collection {

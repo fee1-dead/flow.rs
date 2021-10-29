@@ -1,7 +1,7 @@
 //! ## Flow gRPC connections
 //!
 //! This module contains the `Client` types for gRPC connections.
-//! 
+//!
 //! If you wish to customize and build your own client, implement [`GrpcClient`]
 //! for your client for input and output types you want to support. If you can
 //! support all types, consider using the [`FlowRequest`](crate::requests::FlowRequest)
@@ -31,7 +31,11 @@ use crate::{
 ///
 /// Implementors should be generic over the input and output types, but it is not required.
 pub trait GrpcClient<I, O> {
+    /// The error type of the client.
     type Error: Into<Box<dyn Error + Send + Sync>>;
+
+    /// Sends a request with the client.
+    /// Returns a future that evaluates a Result, potentially containing the output.
     fn send<'a>(
         &'a mut self,
         input: I,

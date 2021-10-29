@@ -1,24 +1,41 @@
+//! The hashing and signing algorithms.
+
 #[cfg(feature = "secp256k1-sign")]
+/// Re-exports items from the `secp256k1` crate.
 pub mod secp256k1 {
     pub use secp256k1::*;
 }
 
 #[cfg(feature = "sha3-hash")]
+/// Re-exports items from the `tiny_keccak` crate.
 pub mod sha3 {
     pub use tiny_keccak::*;
 }
 
 macro_rules! algorithms {
-    ($($algo:ident {$($name:ident = ($code:expr, $algoname:expr)),+$(,)?})+) => {
+    ($(
+        $(#[$algometa:meta])*
+        $algo:ident {
+            $(
+                $(#[$meta:meta])*
+                $name:ident = ($code:expr, $algoname:expr)
+            ),+$(,)?
+        }
+    )+) => {
         mod private {
             pub trait Sealed {}
         }
         $(
+            $(#[$algometa])*
             pub trait $algo: private::Sealed {
+                /// The code of the algorithm.
                 const CODE: u32;
+
+                /// The name of the algorithm.
                 const NAME: &'static str;
             }
             $(
+                $(#[$meta])*
                 pub struct $name;
                 impl private::Sealed for $name {}
                 impl $algo for $name {
@@ -31,32 +48,61 @@ macro_rules! algorithms {
 }
 
 algorithms! {
+    /// A hashing algorithm.
     HashAlgorithm {
+        /// SHA2 256 bit hashing.
         Sha2 = (1, "SHA2_256"),
+
+        /// SHA3 256 bit hashing.
         Sha3 = (3, "SHA3_256"),
     }
+
+    /// A signature algorithm.
     SignatureAlgorithm {
+        /// P256 / secp256r1 curve.
         P256 = (2, "ECDSA_P256"),
+
+        /// secp256k1 curve.
         Secp256k1 = (3, "ECDSA_secp256k1"),
     }
 }
 
+/// A signature.
 pub trait Signature {
+    /// Serialized form of the signature
     type Serialized: AsRef<[u8]> + Clone;
+
+    /// Serializes the signature.
     fn serialize(&self) -> Self::Serialized;
 }
 
+/// A hasher.
 pub trait FlowHasher {
+    /// The algorithm of this hasher.
     type Algorithm: HashAlgorithm;
+
+    /// Creates a new hasher.
     fn new() -> Self;
+
+    /// Updates the hasher with bytes.
     fn update<B: AsRef<[u8]> + ?Sized>(&mut self, bytes: &B);
+
+    /// Finalize the hasher, returns the 256 bit hash.
     fn finalize(self) -> [u8; 32];
 }
 
+/// A signature signer.
 pub trait FlowSigner {
+    /// The algorithm of this signer.
     type Algorithm: SignatureAlgorithm;
+
+    /// The secret key used by this signer.
     type SecretKey: Clone;
+
+    /// The public key used by this signer.
     type PublicKey: Copy;
+
+    /// The signature type produced by this signer.
     type Signature: Signature;
 
     /// Creates a new signer.
@@ -66,14 +112,20 @@ pub trait FlowSigner {
     fn sign(&self, hasher: impl FlowHasher, secret_key: &Self::SecretKey) -> Self::Signature {
         self.sign_populated(hasher.finalize(), secret_key)
     }
+
+    /// Signs a 256 bit hashed data with the secret key.
     fn sign_populated(&self, hashed: [u8; 32], secret_key: &Self::SecretKey) -> Self::Signature;
+
     /// Converts a secret key to its public counterpart.
     fn to_public_key(&self, secret_key: &Self::SecretKey) -> Self::PublicKey;
+
     /// Serializes a public key. Excluding the leading 0x04.
     fn serialize_public_key(&self, public_key: &Self::PublicKey) -> [u8; 64];
 }
 
+/// A secret key.
 pub trait SecretKey {
+    /// The signer associated to this secret key.
     type Signer: FlowSigner<SecretKey = Self>;
 }
 
@@ -146,16 +198,22 @@ impl SecretKey for secp256k1::SecretKey {
 }
 
 #[cfg(feature = "sha3-hash")]
-pub type DefaultHasher = tiny_keccak::Sha3;
+type DefaultHasherNoDoc = tiny_keccak::Sha3;
 
 #[cfg(feature = "secp256k1-sign")]
-pub type DefaultSigner = secp256k1::Secp256k1<secp256k1::SignOnly>;
+type DefaultSignerNoDoc = secp256k1::Secp256k1<secp256k1::SignOnly>;
 
 #[cfg(not(any(feature = "sha3-hash")))]
-pub type DefaultHasher = NoDefaultHasherAvailable;
+type DefaultHasherNoDoc = NoDefaultHasherAvailable;
 
 #[cfg(not(any(feature = "sha3-hash")))]
-pub type DefaultSigner = NoDefaultSignerAvailable;
+type DefaultSignerNoDoc = NoDefaultSignerAvailable;
+
+/// The default hasher, the exact type depends on the feature flags enabled.
+pub type DefaultHasher = DefaultHasherNoDoc;
+
+/// The default signer, the exact type depends on the feature flags enabled.
+pub type DefaultSigner = DefaultSignerNoDoc;
 
 #[cfg(not(any(feature = "sha3-hash")))]
 #[doc(hidden)]

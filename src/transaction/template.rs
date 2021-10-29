@@ -3,11 +3,8 @@ use std::{borrow::Cow, collections::HashMap};
 use cadence_json::{EntryRef, UFix64, ValueRef};
 use serde::Serialize;
 
-use crate::access::{BlockHeaderResponse, GetLatestBlockHeaderRequest};
 use crate::algorithms::*;
-use crate::client::GrpcClient;
-use crate::multi::{PartyBuilder, SigningParty};
-use crate::protobuf::Seal;
+use crate::multi::PartyBuilder;
 
 /// A `TransactionHeader` is a template plus arguments.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,6 +18,8 @@ pub struct TransactionHeader<Arguments> {
 }
 
 impl<Arguments> TransactionHeader<Arguments> {
+    /// Creates a [`PartyBuilder`] and feeds it the transaction header's
+    /// script and arguments.
     pub fn into_party_builder(self) -> PartyBuilder
     where
         Arguments: IntoIterator<Item = Box<[u8]>>,
@@ -29,45 +28,9 @@ impl<Arguments> TransactionHeader<Arguments> {
             .script(self.script.into_owned())
             .arguments_raw(self.arguments)
     }
-
-    #[allow(clippy::too_many_arguments)]
-    pub async fn into_party<C>(
-        self,
-        client: &mut C,
-        gas_limit: u64,
-        proposer_address: impl Into<Box<[u8]>>,
-        proposal_key_id: u64,
-        proposal_key_sequence_number: u64,
-        payer: impl Into<Box<[u8]>>,
-        authorizers: impl IntoIterator<Item = impl Into<Box<[u8]>>>,
-    ) -> Result<SigningParty, C::Error>
-    where
-        C: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
-        Arguments: Into<Box<[Box<[u8]>]>>,
-    {
-        let arguments = self.arguments.into();
-        let reference_id = client
-            .send(GetLatestBlockHeaderRequest { seal: Seal::Sealed })
-            .await?
-            .0
-            .id;
-        let proposer_address = proposer_address.into();
-        let payer = payer.into();
-        let authorizers = authorizers.into_iter().map(Into::into).collect();
-        Ok(SigningParty::new(
-            self.script.into_owned().into_boxed_str(),
-            arguments,
-            reference_id,
-            gas_limit,
-            proposer_address,
-            proposal_key_id,
-            proposal_key_sequence_number,
-            payer,
-            authorizers,
-        ))
-    }
 }
 
+/// A builder for [`TransactionHeader`]s.
 #[derive(Default)]
 pub struct TransactionHeaderBuilder {
     script: Option<Cow<'static, str>>,
@@ -103,6 +66,7 @@ pub struct TransactionHeaderBuilder {
 /// })
 /// ```
 impl TransactionHeaderBuilder {
+    /// Creates a new builder for [`TransactionHeader`]s.
     #[inline]
     pub const fn new() -> Self {
         Self {
@@ -111,12 +75,14 @@ impl TransactionHeaderBuilder {
         }
     }
 
+    /// Sets the script of the transaction.
     #[inline]
     pub fn script_static<B: ?Sized + AsRef<str>>(mut self, script: &'static B) -> Self {
         self.script = Some(Cow::Borrowed(script.as_ref()));
         self
     }
 
+    /// Sets the script of the transaction.
     #[inline]
     pub fn script_owned(mut self, script: String) -> Self {
         self.script = Some(Cow::Owned(script));
@@ -130,6 +96,7 @@ impl TransactionHeaderBuilder {
         self
     }
 
+    /// Adds an argument to the transaction header.
     #[inline]
     pub fn argument<'a>(mut self, val: impl AsRef<ValueRef<'a>>) -> Self {
         self.arguments
@@ -137,6 +104,7 @@ impl TransactionHeaderBuilder {
         self
     }
 
+    /// Adds arguments to the transaction header.
     #[inline]
     pub fn arguments<I>(mut self, args: I) -> Self
     where
@@ -152,6 +120,7 @@ impl TransactionHeaderBuilder {
         self
     }
 
+    /// Builds a transaction header, assuming the script was set.
     #[inline]
     pub fn build(self) -> TransactionHeader<Vec<Box<[u8]>>> {
         TransactionHeader {
@@ -160,6 +129,7 @@ impl TransactionHeaderBuilder {
         }
     }
 
+    /// Builds a transaction header, returning Err(self) if the script was not set.
     #[inline]
     pub fn build_checked(self) -> Result<TransactionHeader<Vec<Box<[u8]>>>, Self> {
         match self.script {
@@ -175,30 +145,49 @@ impl TransactionHeaderBuilder {
 /// A simple transaction to create an account with full weight keys.
 #[derive(Clone, Copy)]
 pub struct CreateAccountTransaction<'a, PubKey> {
+    /// The public keys of the new account. The keys will have full signing weight.
     pub public_keys: &'a [PubKey],
 }
 
+/// A transaction to create an account with weighed keys.
 #[derive(Clone, Copy)]
 pub struct CreateAccountWeightedTransaction<'a, PubKey> {
+    /// The public keys and their weight of the new account.
     pub public_key: &'a [(PubKey, UFix64)],
 }
 
+/// Adds a contract to an account.
 pub struct AddContractTransaction<'a, Name: AsRef<str>, Script: AsRef<str>> {
+    /// The name of the contract.
     pub name: Name,
+
+    /// The script of the contract.
     pub script: Script,
+
+    /// The extra arguments passed to the contract's initialization.
     pub extra_args: HashMap<String, ValueRef<'a>>,
 }
 
+/// Updates a contract of an account by name.
 pub struct UpdateContractTransaction<Name: AsRef<str>, Script: AsRef<str>> {
+    /// The name of the contract to be updated.
     pub name: Name,
+
+    /// The updated script of the contract.
     pub script: Script,
 }
 
+/// Remove a contract of an account by name.
 pub struct RemoveContractTransaction<Name: AsRef<str>> {
+    /// The name of the contract to be removed.
     pub name: Name,
 }
 
 impl<PubKey> CreateAccountTransaction<'_, PubKey> {
+    /// Turns this transaction template into a [`TransactionHeader`].
+    ///
+    /// Requires the signer to serialize the public keys,
+    /// and the hasher type argument to obtain the hashing algorithm.
     pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(
         &self,
         signer: &S,
@@ -244,6 +233,10 @@ impl<PubKey> CreateAccountTransaction<'_, PubKey> {
 }
 
 impl<PubKey> CreateAccountWeightedTransaction<'_, PubKey> {
+    /// Turns this transaction template into a [`TransactionHeader`].
+    ///
+    /// Requires the signer to serialize the public keys,
+    /// and the hasher type argument to obtain the hashing algorithm.
     pub fn to_header<S: FlowSigner<PublicKey = PubKey>, H: FlowHasher>(
         &self,
         signer: &S,
@@ -272,6 +265,7 @@ impl<PubKey> CreateAccountWeightedTransaction<'_, PubKey> {
 }
 
 impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Script> {
+    /// Turns this transaction template into a [`TransactionHeader`].
     pub fn to_header(&self) -> TransactionHeader<Vec<Box<[u8]>>> {
         // Extra args passed to the transaction.
         // name: type, name: type, ...
@@ -319,6 +313,7 @@ impl<Name: AsRef<str>, Script: AsRef<str>> AddContractTransaction<'_, Name, Scri
 }
 
 impl<Name: AsRef<str>, Script: AsRef<str>> UpdateContractTransaction<Name, Script> {
+    /// Turns this transaction template into a [`TransactionHeader`].
     pub fn to_header(&self) -> TransactionHeader<[Box<[u8]>; 2]> {
         header_array(
             include_str!("update_contract.cdc").into(),
@@ -331,6 +326,7 @@ impl<Name: AsRef<str>, Script: AsRef<str>> UpdateContractTransaction<Name, Scrip
 }
 
 impl<Name: AsRef<str>> RemoveContractTransaction<Name> {
+    /// Turns this transaction template into a [`TransactionHeader`].
     pub fn to_header(&self) -> TransactionHeader<[Box<[u8]>; 1]> {
         header_array(
             include_str!("remove_contract.cdc").into(),

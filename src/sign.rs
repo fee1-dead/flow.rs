@@ -1,5 +1,4 @@
 //! Common logic for signing transactions.
-#![deny(missing_docs)]
 
 use std::iter::{FusedIterator, Map, Zip};
 use std::slice;

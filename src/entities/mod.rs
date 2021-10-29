@@ -2,8 +2,6 @@
 //!
 //! This module contains data entities returned or accepted by the Access API.
 
-#![deny(missing_docs)]
-
 mod collection;
 pub use collection::*;
 

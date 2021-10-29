@@ -1,7 +1,7 @@
 use otopr::{DecodableMessage, Map, Repeated};
 
-/// An account is a user's identity on Flow. 
-/// It contains a unique address, a balance, 
+/// An account is a user's identity on Flow.
+/// It contains a unique address, a balance,
 /// a list of public keys and the code that has been deployed to the account.
 ///
 /// The `code` and `contracts` fields contain the raw Cadence source code, encoded as UTF-8 bytes.

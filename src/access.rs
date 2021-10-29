@@ -1,8 +1,6 @@
 //! Access API type definitions
-//! 
+//!
 //! This modules contains definitions for requests and responses of the access API.
-
-#![deny(missing_docs)]
 
 use std::time::Duration;
 
@@ -262,7 +260,7 @@ pub struct ExecuteScriptAtBlockIdRequest<'a> {
     /// The script.
     pub script: &'a [u8],
     /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
-    pub arguments: RepSlice<'a, &'a [u8]>,
+    pub arguments: Repeated<&'a [&'a [u8]]>,
 }
 
 /// Executes a script (maybe with arguments) at a block specified by its height.
@@ -273,7 +271,7 @@ pub struct ExecuteScriptAtBlockHeightRequest<'a> {
     /// The script.
     pub script: &'a [u8],
     /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
-    pub arguments: RepSlice<'a, &'a [u8]>,
+    pub arguments: Repeated<&'a [&'a [u8]]>,
 }
 
 /// The return value of the script.
@@ -307,7 +305,7 @@ pub struct GetEventsForBlockIdsRequest<'a> {
     /// The type of the event we are looking for.
     pub ty: &'a str,
     /// The IDs of the blocks.
-    pub block_ids: RepSlice<'a, &'a [u8]>,
+    pub block_ids: Repeated<&'a [&'a [u8]]>,
 }
 
 /// Search results for events in a single block.

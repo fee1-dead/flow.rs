@@ -8,6 +8,8 @@
 //! [`testnet()`]: crate::client::TonicHyperFlowClient::testnet()
 //! [`mainnet()`]: crate::client::TonicHyperFlowClient::mainnet()
 //! [login to an account]: crate::account::Account::new()
+#![forbid(missing_docs)]
+
 
 pub mod access;
 

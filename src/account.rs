@@ -1,3 +1,7 @@
+//! Mutate the blockchain with your private key(s).
+//!
+//! This module contains ways to log in to an account via secret key(s) and an Access API client.
+
 use std::collections::HashMap;
 use std::iter::empty;
 use std::slice;
@@ -12,9 +16,8 @@ use crate::access::{
     GetLatestBlockHeaderRequest, SendTransactionRequest, SendTransactionResponse,
 };
 use crate::entities::AccountKey;
-use crate::transaction::{
-    rlp_encode_transaction_envelope, ProposalKeyE, SignatureE, TransactionE, TransactionHeader,
-};
+use crate::transaction::rlp::rlp_encode_transaction_envelope;
+use crate::transaction::{ProposalKeyE, SignatureE, TransactionE, TransactionHeader};
 
 use crate::algorithms::{
     DefaultHasher, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature,
@@ -24,6 +27,8 @@ use crate::algorithms::{
 use crate::client::{FlowClient, GrpcClient};
 
 const PADDED_LEN: usize = 32;
+
+/// The transaction domain tag, padded to 32 bytes.
 pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
     padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
@@ -47,15 +52,25 @@ const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
 
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
+/// The errors that could happen when logging in an account.
 pub enum Error {
+    /// There was not any public keys that matched the provided private key.
     #[error("Could not find a matching key for the private key.")]
     NoMatchingKeyFound,
+
+    /// The hashing and signing algorithms provided did not match public information.
     #[error("The hashing and signing algorithms do not match.")]
     AlgoMismatch,
+
+    /// Did not have enough signing weight.
     #[error("The key(s) does not have enough weight.")]
     NotEnoughWeight,
+
+    /// A key provided was revoked.
     #[error("A key was revoked.")]
     KeyRevoked,
+
+    /// An error from the client has occured.
     #[error(transparent)]
     Custom(#[from] Box<dyn StdError + Send + Sync>),
 }
@@ -64,6 +79,10 @@ pub enum Error {
 pub type DefaultAccount<Client, SecretKey> = Account<Client, SecretKey>;
 
 #[derive(Clone)]
+/// An account.
+///
+/// This is your gateway to making transactions, as this holds the secret keys necessary for signing them, as well
+/// as the client, for sending any requests over the network.
 pub struct Account<Client, SecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
     // The address of this account.
     address: Box<[u8]>,
@@ -80,16 +99,19 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
         &self.address
     }
 
+    /// Returns the signer.
     #[inline]
     pub fn signer(&self) -> &Sn {
         &self.signer
     }
 
+    /// Returns the client.
     #[inline]
     pub fn client(&mut self) -> &mut FlowClient<Cl> {
         &mut self.client
     }
 
+    /// Clones the client from this account.
     #[inline]
     pub fn client_cloned(&self) -> FlowClient<Cl>
     where
@@ -98,6 +120,7 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
         self.client.clone()
     }
 
+    /// Returns the primary public key of this account.
     pub fn primary_public_key(&self) -> Sn::PublicKey
     where
         Sn: FlowSigner<SecretKey = Sk>,
@@ -106,6 +129,7 @@ impl<Cl, Sk, Sn, Hs> Account<Cl, Sk, Sn, Hs> {
             .to_public_key(self.sign_method.primary_secret_key())
     }
 
+    /// Returns the primary key id number of this account.
     #[inline]
     pub fn primary_key_id(&self) -> u32 {
         self.sign_method.primary_key_id()
@@ -130,6 +154,7 @@ where
         Self::sign_(hasher, self.signer(), &self.sign_method)
     }
 
+    /// Signs a party, assuming that you have confirmed all the details of the party.
     pub fn sign_party<P: Party<Hasher>>(&self, party: &mut P)
     where
         Signer::Signature: Signature<Serialized = [u8; 64]>,
@@ -141,6 +166,7 @@ where
         }
     }
 
+    /// Signs the party as the payer, thereby converting the party into a transaction, ready to be sent.
     pub fn sign_party_as_payer<P: Party<Hasher>>(
         &self,
         party: P,
@@ -308,7 +334,7 @@ where
         let serialized = signer.serialize_public_key(&public_key);
 
         for key in keys {
-            if key.public_key == serialized {
+            if &*key.public_key == serialized {
                 account_key = Some(key);
             }
         }
@@ -346,6 +372,16 @@ where
         })
     }
 
+    /// Logs in to the account with multiple keys, verifying that the keys and the address matches.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if:
+    ///
+    ///  - the client returns any errors while making requests
+    ///  - the secret keys does not add up to the full weight to be able to sign (weight < 1000)
+    ///  - could not find any public key of the account that matches one of the the secret key supplied.
+    ///  - the algorithms for the signer and the hasher do not match with the public information of a key.
     pub async fn new_multisign<'a>(
         client: Client,
         address: &'a [u8],
@@ -497,7 +533,7 @@ where
             .await
             .map_err(Into::into)?;
         for key in acc.keys {
-            if key.public_key == public_key {
+            if &*key.public_key == public_key {
                 return Ok(key.sequence_number);
             }
         }
@@ -552,7 +588,7 @@ where
         let key = acc
             .keys
             .into_iter()
-            .find(|key| key.public_key == pub_key)
+            .find(|key| &*key.public_key == pub_key)
             .unwrap();
         let sequence_number = key.sequence_number as u64;
 
@@ -606,6 +642,7 @@ where
 pub struct SliceHelper<Item>([Item]);
 
 impl<Item> SliceHelper<Item> {
+    #[doc(hidden)]
     pub fn new_ref(t: &[Item]) -> &Self {
         unsafe { &*(t as *const [Item] as *const Self) }
     }

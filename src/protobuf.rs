@@ -1,3 +1,5 @@
+//! Protobuf objects to decode/encode.
+
 use otopr::{encoding::Encodable, DecodableMessage};
 
 /// A protobuf timestamp.

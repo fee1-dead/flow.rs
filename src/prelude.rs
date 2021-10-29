@@ -13,6 +13,7 @@ pub use crate::transaction::{
     RemoveContractTransaction, TransactionHeaderBuilder, UpdateContractTransaction,
 };
 
+/// Re-exports items from the cadence_json crate.
 pub mod cadence_json {
     pub use cadence_json::*;
 }

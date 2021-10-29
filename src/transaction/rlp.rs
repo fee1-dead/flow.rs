@@ -1,5 +1,8 @@
+//! RLP encoding of transactions.
+
 use rlp::RlpStream;
 
+/// Encodes a transaction's envelope.
 #[allow(clippy::too_many_arguments)]
 pub fn rlp_encode_transaction_envelope(
     s: &mut RlpStream,
@@ -39,6 +42,7 @@ pub fn rlp_encode_transaction_envelope(
     }
 }
 
+/// Encodes a transaction's payload.
 #[allow(clippy::too_many_arguments)]
 pub fn rlp_encode_transaction_payload(
     stream: &mut RlpStream,
