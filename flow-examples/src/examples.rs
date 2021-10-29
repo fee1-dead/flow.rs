@@ -6,13 +6,12 @@ use crate::ExampleAccount;
 
 #[macro_export]
 macro_rules! example {
-    (pub async fn run($($tt:tt)*) -> Result<$accty2:ty, $errty:ty> $block:block) => {
-        async fn run_inner($($tt)*) -> Result<$accty2, $errty> $block
-
-        pub fn run<'a>(account: &'a mut crate::ExampleAccount, args: &'a mut std::str::SplitWhitespace<'_>) -> crate::examples::ExampleReturnTy<'a> {
-            Box::pin(async move {
-                run_inner(account, args).await
-            })
+    ($run_ident: ident) => {
+        pub fn __run<'a>(
+            account: &'a mut crate::ExampleAccount,
+            args: &'a mut std::str::SplitWhitespace<'_>,
+        ) -> crate::examples::ExampleReturnTy<'a> {
+            Box::pin(async move { $run_ident(account, args).await })
         }
     };
 }
@@ -47,7 +46,7 @@ macro_rules! examples {
         pub static EXAMPLES: [Example; EXAMPLES_LEN] = [
             $(
                 Example {
-                    f: $example_name::run,
+                    f: $example_name::__run,
                     name: stringify!($example_name),
                     arguments: concat!("", $($args)?),
                     description: $doc,
@@ -60,9 +59,14 @@ macro_rules! examples {
 examples! {
     /// Creates an account by sending a transaction.
     pub mod create_account;
+
     /// Retrieves information about an account
-    #[arguments = "ADDRESS"]
+    #[arguments = "ADDRESS [BLOCK_HEIGHT]"]
     pub mod get_account_info;
+
+    /// Retrieves information about the latest block or specific block by id/height
+    #[arguments = "[BLOCK_ID/BLOCK_HEIGHT]"]
+    pub mod get_block;
 }
 
 lazy_static::lazy_static! {
