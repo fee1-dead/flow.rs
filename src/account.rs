@@ -334,7 +334,7 @@ where
         let serialized = signer.serialize_public_key(&public_key);
 
         for key in keys {
-            if &*key.public_key == serialized {
+            if *key.public_key == serialized {
                 account_key = Some(key);
             }
         }
@@ -533,7 +533,7 @@ where
             .await
             .map_err(Into::into)?;
         for key in acc.keys {
-            if &*key.public_key == public_key {
+            if *key.public_key == public_key {
                 return Ok(key.sequence_number);
             }
         }
@@ -588,7 +588,7 @@ where
         let key = acc
             .keys
             .into_iter()
-            .find(|key| &*key.public_key == pub_key)
+            .find(|key| *key.public_key == pub_key)
             .unwrap();
         let sequence_number = key.sequence_number as u64;
 

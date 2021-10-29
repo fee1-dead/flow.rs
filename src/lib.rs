@@ -10,7 +10,6 @@
 //! [login to an account]: crate::account::Account::new()
 #![forbid(missing_docs)]
 
-
 pub mod access;
 
 pub mod client;

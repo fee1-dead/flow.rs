@@ -230,7 +230,7 @@ impl<Inner> FlowClient<Inner> {
 
         /// Retrieves information about an account at the latest block.
         pub async fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
-            GetAccountAtLatestBlockRequest { address: address };
+            GetAccountAtLatestBlockRequest { address };
             remap = |acc_response| -> Account {
                 acc_response.account
             }
@@ -238,7 +238,7 @@ impl<Inner> FlowClient<Inner> {
 
         /// Retrieves information about an account at the specified block height.
         pub async fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
-            GetAccountAtBlockHeightRequest { address: address, block_height };
+            GetAccountAtBlockHeightRequest { address, block_height };
             remap = |acc_response| -> Account {
                 acc_response.account
             }
