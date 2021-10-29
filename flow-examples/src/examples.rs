@@ -67,6 +67,14 @@ examples! {
     /// Retrieves information about the latest block or specific block by id/height
     #[arguments = "[BLOCK_ID/BLOCK_HEIGHT]"]
     pub mod get_block;
+
+    /// Retrieves information about a transaction
+    #[arguments = "TRANSACTION_ID"]
+    pub mod get_txn;
+
+    /// Retrieves information about a transaction's result
+    #[arguments = "TRANSACTION_ID"]
+    pub mod get_txn_result;
 }
 
 lazy_static::lazy_static! {

@@ -4,6 +4,7 @@ use std::{collections::HashMap, fmt, ops::Deref};
 
 use cadence_json::AddressRef;
 
+use crate::access::TransactionResultResponse;
 use crate::entities::*;
 use crate::transaction::*;
 
@@ -189,5 +190,36 @@ impl fmt::Debug for CollectionGuarantee {
             .field("collection_id", &Hex(&self.collection_id))
             .field("signatures", &Hexes(&self.signatures))
             .finish()
+    }
+}
+
+impl fmt::Debug for TransactionResultResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TransactionResultResponse")
+            .field("status", &self.status)
+            .field("status_code", &self.status_code)
+            .field("error_message", &self.error_message)
+            .field("events", &self.events)
+            .field("block_id", &Hex(&self.block_id))
+            .finish()
+    }
+}
+
+impl fmt::Debug for Event {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Event");
+
+        dbg.field("ty", &self.ty)
+            .field("transaction_id", &Hex(&self.transaction_id))
+            .field("transaction_index", &self.transaction_index)
+            .field("event_index", &self.event_index);
+
+        if let Ok(v) = self.parse_payload_as_value() {
+            dbg.field("payload", &v);
+        } else {
+            dbg.field("payload", &String::from_utf8_lossy(&self.payload).as_ref());
+        }
+
+        dbg.finish()
     }
 }

@@ -217,6 +217,11 @@ impl<Inner> FlowClient<Inner> {
         {
             SendTransactionRequest { transaction }
         }
+
+        /// Retrieves a transaction's result by its ID.
+        pub async fn transaction_result_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResultResponse {
+            GetTransactionRequest { id }
+        }
     }
 
     remapping_requests! {

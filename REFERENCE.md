@@ -104,34 +104,24 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 Result output:
 ```rust
 OK: Block {
-    id: "1e41b761cfa9ef16ffb61c74d87d503ce34186a185cd376e2d4763554e671f21",
-    parent_id: "904fedf25aa7db120304ef2627de63232c90ee7174fee75553ce5ae31c9e3553",
-    height: 48759415,
+    id: 1ad194977bef2c8ee364daffda73c81efa26f9e03c58f15966e38008115c3739,
+    parent_id: 1cddc076c5976ee2235fe838fa4d0d724a7668186d5f87992b1d497b6f6a3f34,
+    height: 2,
     timestamp: Timestamp {
-        seconds: 1634809690,
-        nanos: 38007528,
+        seconds: 1635524459,
+        nanos: 315510230,
     },
-    collection_guarantees: Repeated(
-        [],
-    ),
-    block_seals: Repeated(
-        [
-            BlockSeal {
-                block_id: "153dd17d10d51a0a7a53ffff8aa29d91c7c0ebfe8ba8e06db6d080f26b99b3eb",
-                execution_receipt_id: "2828d4c14255912a1517b67afcb85cb44335c2c243678d4d5c8598467155c8f6",
-                execution_receipt_signatures: [],
-                result_approval_signatures: [],
-            },
-            BlockSeal {
-                block_id: "4dc848e9d2e26c3f84e8ff3aa2377903695f2b0e47385232c908d46f9a94eba4",
-                execution_receipt_id: "d046feb80d276e02b1bd96992f90b543b86d1cf667a0d3f464d683cd75322dc6",
-                execution_receipt_signatures: [],
-                result_approval_signatures: [],
-            },
-        ],
-    ),
+    collection_guarantees: [
+        CollectionGuarantee {
+            collection_id: 758ba9c5e78c520ccdc9bc849298063a6d1aeccc0dcd7c70b9bc47989cc44588,
+            signatures: [
+                ,
+            ],
+        },
+    ],
+    block_seals: [],
     signatures: [
-        "8296192b30da2fd82bd96af60b93c448be6ee24edd0a4673fe2072d7bed7f0b7dbf6b5f2443bd5b2bfa6742bce5b6f0db7695d407589f35d9da858b879c120bcfbcec56e708e8e82ff91fde58bb646ec59440714c897399d3ba99f54ce2d199a",
+        ,
     ],
 }
 ```
