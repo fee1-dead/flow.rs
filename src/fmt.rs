@@ -7,7 +7,7 @@ use cadence_json::AddressRef;
 use crate::entities::*;
 use crate::transaction::*;
 
-struct Hexes<'a>(&'a Vec<Vec<u8>>);
+struct Hexes<'a>(&'a Vec<Box<[u8]>>);
 
 impl fmt::Debug for Hexes<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -145,7 +145,7 @@ impl fmt::Debug for AccountKey {
 
 impl fmt::Debug for Account {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct Contracts<'a>(&'a HashMap<String, Vec<u8>>);
+        struct Contracts<'a>(&'a HashMap<String, Box<[u8]>>);
 
         impl fmt::Debug for Contracts<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

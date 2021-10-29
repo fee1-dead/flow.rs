@@ -341,7 +341,9 @@ pub struct GetNetworkParametersResponse {
     pub chain_id: String,
 }
 
-/// Get the latest protocol state snapshot.
+/// Retrieves the latest Protocol state snapshot serialized as a byte array.
+///
+/// It is used by Flow nodes joining the network to bootstrap a space-efficient local state.
 #[derive(EncodableMessage)]
 pub struct GetLatestProtocolStateSnapshotRequest;
 
@@ -352,7 +354,9 @@ pub struct ProtocolStateSnapshotResponse {
     pub serialized_snapshot: Box<[u8]>,
 }
 
-/// Get execution result for a block ID.
+/// Retrieves execution result for given block. It is different from Transaction Results,
+/// and contain data about chunks/collection level execution results rather than particular transactions.
+/// Particularly, it contains EventsCollection hash for every chunk which can be used to verify the events for a block.
 #[derive(EncodableMessage)]
 pub struct GetExecutionResultForBlockIdRequest<'a> {
     /// ID of the block.
