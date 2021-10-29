@@ -14,7 +14,7 @@ pub struct Collection {
 
 /// A collection guarantee is a signed attestation that specifies the collection nodes that have guaranteed to
 /// store and respond to queries about a collection.
-#[derive(DecodableMessage, Default, PartialEq, Eq, Debug)]
+#[derive(DecodableMessage, Default, PartialEq, Eq)]
 pub struct CollectionGuarantee {
     /// SHA3-256 hash of the collection contents
     pub collection_id: Box<[u8]>,

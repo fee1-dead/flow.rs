@@ -200,7 +200,7 @@ fn help_command(command_name: &str) {
     println!(
         "{}",
         match command_name {
-            "run"  => "Usage: run COMMAND_NAME  runs the specified example",
+            "run" => "Usage: run COMMAND_NAME  runs the specified example",
             "list" => "Usage: list              lists examples available and their usage",
             "help" => "help help help",
             "exit" => "Z-Z or :q or :wq or even :q!",

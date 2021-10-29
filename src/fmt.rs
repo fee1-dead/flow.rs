@@ -182,3 +182,12 @@ impl fmt::Debug for Collection {
             .finish()
     }
 }
+
+impl fmt::Debug for CollectionGuarantee {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CollectionGuarantee")
+            .field("collection_id", &Hex(&self.collection_id))
+            .field("signatures", &Hexes(&self.signatures))
+            .finish()
+    }
+}
