@@ -19,6 +19,6 @@ pub mod sign;
 pub mod prelude;
 
 #[cfg(test)]
-pub(crate) mod tests;
+pub mod tests;
 
 mod fmt;

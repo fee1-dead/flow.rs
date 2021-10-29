@@ -27,6 +27,11 @@ const PADDED_LEN: usize = 32;
 pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
     padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
+#[cfg(test)]
+pub(crate) fn test_pad(src: &[u8]) -> [u8; 32] {
+    padded(src)
+}
+
 const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
     let mut new_buf = [0; N];
 
