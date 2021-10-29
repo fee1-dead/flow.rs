@@ -1,7 +1,10 @@
 pub use crate::account::Account;
 pub use crate::account::DefaultAccount;
 pub use crate::algorithms::{DefaultHasher, DefaultSigner};
+
+#[cfg(feature = "tonic-transport")]
 pub use crate::client::TonicHyperFlowClient;
+
 pub use crate::protobuf::Seal;
 pub use crate::transaction::{
     AddContractTransaction, CreateAccountTransaction, CreateAccountWeightedTransaction,

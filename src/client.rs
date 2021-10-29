@@ -8,7 +8,6 @@ use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
-    transport::Channel,
     Request,
 };
 
@@ -44,9 +43,11 @@ pub type TonicClient<Service> = Grpc<Service>;
 /// A tonic gRPC client.
 pub type TonicFlowClient<Service> = FlowClient<TonicClient<Service>>;
 
-pub type TonicHyperClient = TonicClient<Channel>;
+#[cfg(feature = "tonic-transport")]
+pub type TonicHyperClient = TonicClient<tonic::transport::Channel>;
 
 /// A tonic gRPC client that uses the `hyper` crate for HTTP transport.
+#[cfg(feature = "tonic-transport")]
 pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
 
 /// The return type of sending a request over the gRPC connection.
@@ -289,11 +290,12 @@ impl<Inner> FlowClient<Inner> {
     }
 }
 
+#[cfg(feature = "tonic-transport")]
 impl TonicHyperFlowClient {
     /// Connects to a static endpoint. Does not connect until we try to send a request.
     pub fn connect_static(endpoint: &'static str) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
-            inner: Grpc::new(Channel::from_static(endpoint).connect_lazy()?),
+            inner: Grpc::new(tonic::transport::Channel::from_static(endpoint).connect_lazy()?),
         })
     }
 
@@ -302,7 +304,7 @@ impl TonicHyperFlowClient {
         endpoint: impl Into<bytes::Bytes>,
     ) -> Result<Self, Box<dyn Error + Send + Sync>> {
         Ok(Self {
-            inner: Grpc::new(Channel::from_shared(endpoint)?.connect_lazy()?),
+            inner: Grpc::new(tonic::transport::Channel::from_shared(endpoint)?.connect_lazy()?),
         })
     }
 

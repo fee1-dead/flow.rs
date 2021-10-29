@@ -8,7 +8,6 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use flow_sdk::algorithms::{self as algo, HashAlgorithm, SignatureAlgorithm};
-use flow_sdk::client::TonicHyperClient;
 use flow_sdk::prelude::*;
 use rustyline::error::ReadlineError;
 
