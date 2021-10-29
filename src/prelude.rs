@@ -1,3 +1,5 @@
+//! Re-exports for commonly used types and functions.
+
 pub use crate::account::Account;
 pub use crate::account::DefaultAccount;
 pub use crate::algorithms::{DefaultHasher, DefaultSigner};

@@ -1,3 +1,16 @@
+#![deny(missing_docs)]
+//! ## Multi-party signing
+//!
+//! This module contains various definitions that make multi-party signing easier.
+//! 
+//! [`PartyBuilder`] makes it easy to build a transaction for signing with different rules.
+//!
+//! [`SigningParty`] is the simplest party. It computes a hash every time you want to sign it.
+//! 
+//! [`PreHashedParty`] computes and stores the payload hash so it does not need to be recomputed.
+//! 
+//! Both party types implement the common interface, the [`Party`] trait.
+
 use std::error::Error;
 
 use cadence_json::ValueRef;
@@ -27,6 +40,9 @@ mod private {
     impl Sealed for super::SigningParty {}
 }
 
+/// After envelope signatures are fed to a party, it turns into a transaction.
+///
+/// This is the exact type a party will turn in to. 
 pub type PartyTransaction<SigAddr, Sig> = TransactionE<
     Box<[u8]>,
     Vec<Box<[u8]>>,
@@ -38,27 +54,43 @@ pub type PartyTransaction<SigAddr, Sig> = TransactionE<
     Vec<SignatureE<SigAddr, Sig>>,
 >;
 
+/// The `Party` trait. You can get information about the transaction you are signing and sign it by
+/// accepting some type that implements this trait.
+/// 
+/// This is `Sealed`, which means no foreign types may implement it, and it is not **Object safe**,
+/// so no one can create bad behaving trait objects which can make this trait insecure.
 pub trait Party<H: FlowHasher>: Sized + private::Sealed {
+    /// Gets the script of the transaction.
     fn script(&self) -> &str;
 
+    /// Gets the arguments of the transaction.
     fn arguments(&self) -> &[Box<[u8]>];
 
+    /// Gets the reference block of the transaction.
     fn reference_block(&self) -> &[u8];
 
+    /// Gets the gas limit of the transaction.
     fn gas_limit(&self) -> u64;
 
+    /// Gets the address of the proposer of the transaction.
     fn proposer_address(&self) -> &[u8];
 
-    fn proposer_key_id(&self) -> u64;
+    /// Gets the key ID number of the proposal key.
+    fn proposal_key_id(&self) -> u64;
 
+    /// Gets the sequence number of the proposal key.
     fn proposer_sequence_number(&self) -> u64;
 
+    /// Gets the address of the payer of the transaction.
     fn payer(&self) -> &[u8];
 
+    /// Gets the addresses of the authorizers of the transaciton.
     fn authorizers(&self) -> &[Box<[u8]>];
 
+    /// Computes the hash of the payload.
     fn payload(&self) -> H;
 
+    /// Adds a payload signature.
     fn add_payload_signature(
         &mut self,
         signer_address: Box<[u8]>,
@@ -66,14 +98,17 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
         signature: [u8; 64],
     );
 
+    /// Computes the hash of the envelope.
     fn envelope(&self) -> H;
 
+    /// Creates [`PartyTransaction`] by feeding this party with envelope signatures.
     fn into_transaction_with_envelope_signatures<SigAddr, Sig>(
         self,
         signatures: impl IntoIterator<Item = SignatureE<SigAddr, Sig>>,
     ) -> PartyTransaction<SigAddr, Sig>;
 }
 
+/// A builder that makes it easy to create new [`SignedParty`] instances.
 #[derive(Clone)]
 pub struct PartyBuilder {
     script: Option<Box<str>>,
@@ -88,6 +123,7 @@ pub struct PartyBuilder {
 }
 
 impl PartyBuilder {
+    /// Creates a new `PartyBuilder` with the default gas limit of `1000`.
     #[inline]
     pub const fn new() -> Self {
         Self {
@@ -103,15 +139,18 @@ impl PartyBuilder {
         }
     }
 
+    /// Sets the script of the transaction.
     pub fn script(mut self, script: impl Into<Box<str>>) -> Self {
         self.script = Some(script.into());
         self
     }
 
+    /// Appends a new argument.
     pub fn argument<'a>(self, argument: impl AsRef<ValueRef<'a>>) -> Self {
         self.argument_raw(serde_json::to_vec(argument.as_ref()).unwrap())
     }
 
+    /// Appends arguments.
     pub fn arguments<'a>(
         self,
         arguments: impl IntoIterator<Item = impl AsRef<ValueRef<'a>>>,
@@ -123,11 +162,13 @@ impl PartyBuilder {
         )
     }
 
+    /// Appends a new UTF-8 encoded argument in Cadence JSON interchange format.
     pub fn argument_raw(mut self, argument: impl Into<Box<[u8]>>) -> Self {
         self.arguments.push(argument.into());
         self
     }
 
+    /// Appends raw UTF-8 encoded arguments in Cadence JSON interchange format.
     pub fn arguments_raw(
         mut self,
         arguments: impl IntoIterator<Item = impl Into<Box<[u8]>>>,
@@ -136,11 +177,13 @@ impl PartyBuilder {
         self
     }
 
+    /// Sets the reference block for this transaction.
     pub fn reference_block(mut self, reference_block: impl Into<Box<[u8]>>) -> Self {
         self.reference_block = Some(reference_block.into());
         self
     }
 
+    /// Uses the latest block as the reference block for this transaction.
     pub async fn latest_block_as_reference<
         C: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
     >(
@@ -157,26 +200,32 @@ impl PartyBuilder {
         Ok(self)
     }
 
+    /// Sets the gas limit of this transation.
     pub fn gas_limit(mut self, limit: u64) -> Self {
         self.gas_limit = limit;
         self
     }
 
+    /// Sets the address of the account that proposes this transaction.
     pub fn proposer_address(mut self, addr: impl Into<Box<[u8]>>) -> Self {
         self.proposer_address = Some(addr.into());
         self
     }
 
+    /// Sets the key id of the proposal key of this transaction.
     pub fn proposal_key_id(mut self, id: u64) -> Self {
         self.proposal_key_id = Some(id);
         self
     }
 
+    /// Sets the sequence number of the proposal key of this transaction.
     pub fn proposal_key_sequence_number(mut self, sequence_number: u64) -> Self {
         self.proposal_key_sequence_number = Some(sequence_number);
         self
     }
 
+    /// Sets the address, key id and the sequence number by querying on the network about
+    /// a logged-in account.
     pub async fn proposer_account<'a, C, Sk, Sign, Hash>(
         mut self,
         acc: &'a mut Account<C, Sk, Sign, Hash>,
@@ -192,21 +241,25 @@ impl PartyBuilder {
         Ok(self)
     }
 
+    /// Sets the address of the account that will pay for this transaction.
     pub fn payer(mut self, address: impl Into<Box<[u8]>>) -> Self {
         self.payer = Some(address.into());
         self
     }
 
+    /// Records the address of the account that will pay for this transaction.
     #[inline]
     pub fn payer_account<C, S, Si, H>(self, acc: &Account<C, S, Si, H>) -> Self {
         self.payer(acc.address())
     }
 
+    /// Appends the address of an account which authorizes this transaction.
     pub fn authorizer(mut self, address: impl Into<Box<[u8]>>) -> Self {
         self.authorizers.push(address.into());
         self
     }
 
+    /// Appends the addresses of accounts that authorizes this transaction.
     pub fn authorizers(
         mut self,
         addresses: impl IntoIterator<Item = impl Into<Box<[u8]>>>,
@@ -216,11 +269,13 @@ impl PartyBuilder {
         self
     }
 
+    /// Appends the address of an account which authorizers this transaction.
     #[inline]
     pub fn authorizer_account<C, S, Si, H>(self, acc: &Account<C, S, Si, H>) -> Self {
         self.authorizer(acc.address())
     }
 
+    /// Appends the addresses of accounts that authorizes this transaction.
     #[inline]
     pub fn authorizer_accounts<'a, C: 'a, S: 'a, Si: 'a, H: 'a>(
         self,
@@ -229,6 +284,7 @@ impl PartyBuilder {
         self.authorizers(acc.into_iter().map(Account::address))
     }
 
+    /// Builds a [`SigningParty`] from this builder, assuming all fields have been set.
     pub fn build(self) -> SigningParty {
         SigningParty {
             script: self.script.unwrap(),
@@ -244,6 +300,7 @@ impl PartyBuilder {
         }
     }
 
+    /// Builds a [`PreHashedParty`] from this builder, assuming all fields have been set.
     #[inline]
     pub fn build_prehashed<H: FlowHasher>(self) -> PreHashedParty<H> {
         self.build().into_prehashed()
@@ -272,16 +329,6 @@ pub struct SigningParty {
     payload_signatures: Vec<SignatureE<Box<[u8]>, [u8; 64]>>,
 }
 
-impl SigningParty {
-    pub fn get_address(&self, index: usize) -> &[u8] {
-        match index {
-            0 => &self.proposer_address,
-            1 => &self.payer,
-            index => &self.authorizers[index - 2],
-        }
-    }
-}
-
 impl<H: FlowHasher> Party<H> for SigningParty {
     fn script(&self) -> &str {
         &self.script
@@ -303,7 +350,7 @@ impl<H: FlowHasher> Party<H> for SigningParty {
         &self.proposer_address
     }
 
-    fn proposer_key_id(&self) -> u64 {
+    fn proposal_key_id(&self) -> u64 {
         self.proposal_key_id
     }
 
@@ -399,6 +446,7 @@ impl<H: FlowHasher> Party<H> for SigningParty {
 }
 
 impl SigningParty {
+    /// Creates a new [`SigningParty`] with all the data associated to a transaction.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         script: Box<str>,
@@ -425,6 +473,7 @@ impl SigningParty {
         }
     }
 
+    /// Computes the payload hash of this party, and turns this into a [`PreHashedParty`].
     pub fn into_prehashed<H: FlowHasher>(self) -> PreHashedParty<H> {
         let payload = self.payload();
         PreHashedParty {
@@ -438,6 +487,9 @@ impl SigningParty {
 ///
 /// The party only supports one type of hashing algorithm,
 /// which means that all entities involved must use the same algorithm.
+/// 
+/// Note that this can be a bit less secure than using [`SigningParty`].
+/// A malicious attacker may modify the payload using unsafe pointer operations.
 #[derive(Clone)]
 pub struct PreHashedParty<H> {
     party: SigningParty,
@@ -445,6 +497,7 @@ pub struct PreHashedParty<H> {
 }
 
 impl<H: FlowHasher> PreHashedParty<H> {
+    /// Creates a new [`PreHashedParty`] with all the data associated to a transaction.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         script: Box<str>,
@@ -516,8 +569,8 @@ impl<H: FlowHasher + Clone> Party<H> for PreHashedParty<H> {
         <SigningParty as Party<H>>::proposer_address(&self.party)
     }
 
-    fn proposer_key_id(&self) -> u64 {
-        <SigningParty as Party<H>>::proposer_key_id(&self.party)
+    fn proposal_key_id(&self) -> u64 {
+        <SigningParty as Party<H>>::proposal_key_id(&self.party)
     }
 
     fn proposer_sequence_number(&self) -> u64 {

@@ -1,3 +1,5 @@
+//! Debug / Display implementations for structures.
+
 use std::{collections::HashMap, fmt, ops::Deref};
 
 use cadence_json::AddressRef;

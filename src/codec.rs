@@ -8,9 +8,11 @@ use tonic::Status;
 
 use bytes::BufMut;
 
+/// A buffer that contains a preencoded message.
 pub struct PreEncode(Box<[u8]>);
 
 impl PreEncode {
+    /// Creates an instance of `PreEncode` by encoding a message.
     pub fn new<T: EncodableMessage>(msg: &T) -> Self {
         let cap = msg.encoded_size();
         let mut buf = Vec::with_capacity(cap);
