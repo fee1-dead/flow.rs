@@ -54,7 +54,7 @@ pub struct PathRef<'a> {
     pub identifier: &'a str,
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct PathOwned {
     pub domain: PathDomain,
     pub identifier: String,
@@ -72,13 +72,13 @@ pub struct CompositeRef<'a> {
     pub fields: &'a [CompositeFieldRef<'a>],
 }
 
-#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CompositeFieldOwned {
     pub name: String,
     pub value: ValueOwned,
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct CompositeOwned {
     pub id: String,
     pub fields: Vec<CompositeFieldOwned>,
@@ -99,13 +99,13 @@ pub struct EntryRef<'a> {
     pub value: ValueRef<'a>,
 }
 
-#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct EntryOwned {
     pub key: ValueOwned,
     pub value: ValueOwned,
 }
 
-#[derive(DeserializeFromStr, Clone, PartialEq, Eq)]
+#[derive(DeserializeFromStr, SerializeDisplay, Clone, PartialEq, Eq)]
 pub struct AddressOwned {
     pub data: Box<[u8]>,
 }
@@ -144,7 +144,7 @@ impl Serialize for AddressRef<'_> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct CapabilityOwned {
     pub path: String,
     pub address: AddressOwned,
