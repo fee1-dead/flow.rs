@@ -17,3 +17,8 @@ pub use crate::transaction::{
 pub mod cadence_json {
     pub use cadence_json::*;
 }
+
+/// Re-exports items from the hex crate.
+pub mod hex {
+    pub use hex::*;
+}

@@ -75,27 +75,20 @@ Query the network for block by id, height or get the latest block.
 
 This example depicts ways to get the latest block as well as any other block by height or ID:
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO link to example
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#get-information-about-a-block)**
 ```rust
 use std::error::Error;
 
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::testnet()?;
     client.ping().await?;
 
-    let latest_block = client.latest_block(true).await?;
+    let latest_block = client.latest_block(Seal::Sealed).await?;
 
-    let block_by_id = client.block_by_id(&latest_block.id).await?;
-
-    let block_by_height = client.block_by_height(latest_block.height).await?;
-
-    assert_eq!(latest_block, block_by_id);
-    assert_eq!(latest_block, block_by_height);
-
-    println!("OK: {:#?}", block);
+    println!("OK: {:#?}", latest_block);
 
     Ok(())
 }
@@ -141,35 +134,21 @@ An account includes the following data:
 #### Examples
 Example depicts ways to get an account at the latest block and at a specific block height:
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#get-information-about-an-account-at-the-latest-block-or-a-specific-block-height)**
+
 ```rust
-use std::{
-    error::Error,
-    io::{stdin, BufRead},
-};
+use std::error::Error;
 
 use cadence_json::AddressOwned;
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let stdin = stdin();
-    let mut stdin = stdin.lock();
-    let mut buf = String::new();
-
-    println!("Enter the account's address:");
-
-    stdin.read_line(&mut buf)?;
-
-    let addr = buf.trim();
-
+async fn run(address: &str) -> Result<(), Box<dyn Error Send + Sync>> {
     let address: AddressOwned = addr.parse()?;
     let mut net = TonicHyperFlowClient::mainnet()?;
 
     let account = net.account_at_latest_block(&address.data).await?;
 
-    let latest_block_height = net.latest_block_header(true).await?.height;
-
+    let latest_block_height = net.latest_block_header(Seal::Sealed).await?.height;
     let account1 = net.account_at_block_height(&address.data, latest_block_height).await?;
 
     println!("{:#?}", account);
@@ -179,11 +158,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    run("0x9e06eebf494e2d78").await
+}
 ```
 Result output:
 ```rust
-Enter the account's address:
-0x9e06eebf494e2d78
 Account {
     address: 0x9e06eebf494e2d78,
     balance: 9411868000,
@@ -225,76 +206,64 @@ Retrieve transactions from the network by providing a transaction ID. After a tr
 |   EXPIRED    |   ✅     |  The transaction reference block is outdated before being executed    |
 
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#get-information-about-a-transaction)**
 ```rust
 use std::error::Error;
 
-use flow_sdk::{client::TonicHyperFlowClient, entities::Block};
+use flow_sdk::prelude::*;
+
+async fn run(tx_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::mainnet()?;
+    client.ping().await?;
+
+    let decoded_tx_id = hex::decode(tx_id)?;
+
+    let txn = client.transaction_by_id(&decoded_tx_id).await?;
+    println!("{:#?}", txn);
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::testnet()?;
-    client.ping().await?;
-
-    // traverse the blocks until we find collection guarantees
-    let mut latest_block: Block = client.latest_block(true).await?;
-
-    let collection_guarrantee = loop {
-        if latest_block.collection_guarantees.is_empty() {
-            // Go to the next block
-            latest_block = client.block_by_id(&latest_block.parent_id).await?;
-        } else {
-            break latest_block.collection_guarantees.pop().unwrap();
-        }
-    };
-
-    let collection = client
-        .collection_by_id(&collection_guarrantee.collection_id)
-        .await?;
-
-    for transaction_id in collection.transactions.iter() {
-        let txn = client.transaction_by_id(transaction_id).await?;
-        println!("{:#?}", txn);
-        for argument in txn.parse_arguments() {
-            println!("Found a cadence argument in the wild: {:#?}", argument?);
-        }
-    }
-
-    Ok(())
+    run("97ff408cbcd6622ac1bf42a185b5cd36a2c6e0f86913649abcd35013581b771c").await
 }
 ```
 Example output:
 ```rust
 Transaction {
-    script: "\nimport NonFungibleToken from 0x631e88ae7f1d7c20\nimport Vouchers from 0xe94a6e229293f196\ntransaction(recipients: [Address], rewards: {Address: [UInt64]}) {\n    let adminCollection: &Vouchers.Collection\n    let recipientCollections: {Address: &{Vouchers.CollectionPublic}}\n    prepare(signer: AuthAccount) {\n        log(\"--voucher send to addresses activated--\")\n        self.recipientCollections = {}\n        // get the recipients public account object\n        for address in recipients {\n            self.recipientCollections[address] = getAccount(address).getCapability(Vouchers.CollectionPublicPath).borrow<&{Vouchers.CollectionPublic}>()\n                ?? panic(\"Could not borrow a reference to the recipient's collection\")\n        }\n\n        // borrow a reference to the signer's NFT collection\n        self.adminCollection = signer.borrow<&Vouchers.Collection>(from: Vouchers.CollectionStoragePath)\n            ?? panic(\"Could not borrow a reference to the signer's collection\")\n    }\n\n    execute {\n        log(\"rewarding recipients\")\n        for address in recipients {\n            log(\"user address: \" + address);\n            if (rewards[address] != nil) {\n                let rewards = rewards[address] as! [UInt64]\n                for reward in rewards {\n                    log(\"-- reward: \" + reward)\n                    self.recipientCollections[address]!.deposit(token: <- self.adminCollection.withdraw(withdrawID: reward))\n                }\n            }\n        }\n    }\n}\n",
-    arguments: [
-        "{\"type\":\"Array\",\"value\":[{\"type\":\"Address\",\"value\":\"0x8c33bf917ab63d5b\"}]}",
-        "{\"type\":\"Dictionary\",\"value\":[]}",
-    ],
-    reference_block_id: 7de3a92f73726037ab554b3b8dd7ab29585c98d88d6d3b61532de1431dc0f4d3,
-    gas_limit: 100,
+    script: "import FungibleToken from 0xf233dcee88fe0abe\nimport DapperUtilityCoin from 0xead892083b3e2c6c\nimport TopShot from 0x0b2a3299cc857e29\nimport Market from 0xc1e4f4f4c4257510\nimport TopShotMarketV3 from 0xc1e4f4f4c4257510\n\n// This transaction purchases a moment from the v3 sale collection\n// The v3 sale collection will also check the v1 collection for for sale moments as part of the purchase\n// If there is no v3 sale collection, the transaction will just purchase it from v1 anyway\n\ntransaction() {\n\n\tlet purchaseTokens: @DapperUtilityCoin.Vault\n\n\tprepare(acct: AuthAccount) {\n\n\t\t// Borrow a provider reference to the buyers vault\n\t\tlet provider = acct.borrow<&DapperUtilityCoin.Vault{FungibleToken.Provider}>(from: /storage/dapperUtilityCoinVault)\n\t\t\t?? panic(\"Could not borrow a reference to the buyers FlowToken Vault\")\n\t\t\n\t\t// withdraw the purchase tokens from the vault\n\t\tself.purchaseTokens <- provider.withdraw(amount: UFix64(8)) as! @DapperUtilityCoin.Vault\n\t\t\n\t}\n\n\texecute {\n\n\t\t// get the accounts for the seller and recipient\n\t\tlet seller = getAccount(0x942e29b7b46ee571)\n\t\tlet recipient = getAccount(0x23eafaf413144b65)\n\n\t\t// Get the reference for the recipient's nft receiver\n\t\tlet receiverRef = recipient.getCapability(/public/MomentCollection)!.borrow<&{TopShot.MomentCollectionPublic}>()\n\t\t\t?? panic(\"Could not borrow a reference to the recipients moment collection\")\n\n\t\tif let marketV3CollectionRef = seller.getCapability(/public/topshotSalev3Collection)\n\t\t\t\t.borrow<&{Market.SalePublic}>() {\n\n\t\t\tlet purchasedToken <- marketV3CollectionRef.purchase(tokenID: 11224606, buyTokens: <-self.purchaseTokens)\n\t\t\treceiverRef.deposit(token: <-purchasedToken)\n\n\t\t} else if let marketV1CollectionRef = seller.getCapability(/public/topshotSaleCollection)\n\t\t\t.borrow<&{Market.SalePublic}>() {\n\t\t\t// purchase the moment\n\t\t\tlet purchasedToken <- marketV1CollectionRef.purchase(tokenID: 11224606, buyTokens: <-self.purchaseTokens)\n\n\t\t\t// deposit the purchased moment into the signer's collection\n\t\t\treceiverRef.deposit(token: <-purchasedToken)\n\n\t\t} else {\n\t\t\tpanic(\"Could not borrow reference to either Sale collection\")\n\t\t}\n\t}\n}",
+    arguments: [],
+    reference_block_id: 6a0d194c0ca06ca77c0e8f3d070ca8caf09dffa6045d5cc40542abb223e8e97b,
+    gas_limit: 9999,
     proposal_key: ProposalKey {
-        address: 0xe94a6e229293f196,
-        key_id: 1,
-        sequence_number: 181,
+        address: 0xead892083b3e2c6c,
+        key_id: 121,
+        sequence_number: 26905,
     },
-    payer: 0xe94a6e229293f196,
+    payer: 0x18eb4ee6b3c026d2,
     authorizers: [
-        0xe94a6e229293f196,
+        0xead892083b3e2c6c,
     ],
-    payload_signatures: [],
+    payload_signatures: [
+        Signature {
+            address: 0xead892083b3e2c6c,
+            key_id: 2,
+            signature: 5c3b07f6a0ec97155c610c87e34ca299e58ee65f5efc68d2e7176158e8cbeb8201073bf1c04b93abd44620b39e720eefae9092cdf6d4fd2769ca64acd8f6f2a0,
+        },
+        Signature {
+            address: 0xead892083b3e2c6c,
+            key_id: 121,
+            signature: 2fc230f1f2b201ce798fd7dbe2c637cc57c78fe35cebd6519d8843eecb6a6e960ed336a79852ee56baf9deae8c56fdb7166be6991f654afd16c9bf1589ffeaca,
+        },
+    ],
     envelope_signatures: [
         Signature {
-            address: 0xe94a6e229293f196,
-            key_id: 1,
-            signature: 2b11cf254a246df78b506c6a3c7dc3c314e192fdf4106521f16b81859cddb4dee8a379662392289d265d560d7f689cb9b168392f2c645de82142eadee85c10ad,
+            address: 0x18eb4ee6b3c026d2,
+            key_id: 0,
+            signature: 2fa8859eebf2fe03c5af69611c49914f99462ce05cf9dcdf7541446624b4ac8b25c6e72cebb6cf8d464fbf7845cc897c426ebabce10fab4ef10c797ec17e77e4,
         },
     ],
 }
-Found a cadence argument in the wild: [
-    0x8c33bf917ab63d5b,
-]
-Found a cadence argument in the wild: {}
 ```
 
 
@@ -320,7 +289,7 @@ Example depicts ways to get events within block range or by block IDs:
 ```rust
 use std::error::Error;
 
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -349,7 +318,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             events.block_height,
             hex::encode(&events.block_id)
         );
-        for event in events.events.iter() {
+        for event in events.events {
             let val: cadence_json::ValueOwned = serde_json::from_slice(&event.payload)?;
 
             println!(" - {:#?}", val);
