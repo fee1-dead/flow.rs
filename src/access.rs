@@ -337,11 +337,21 @@ pub struct GetEventsForHeightRangeRequest<EventTy> {
 
 /// Search for events in a collection of blocks specified by its block id.
 #[derive(EncodableMessage)]
-pub struct GetEventsForBlockIdsRequest<'a> {
+#[otopr(encode_where_clause(
+    where
+        EventTy: AsRef<str>,
+        BlockIds: HasItem,
+        <BlockIds as HasItem>::Item: AsRef<[u8]>,
+        for<'a> &'a BlockIds: IntoIterator<Item = &'a <BlockIds as HasItem>::Item>,
+        for<'a> <&'a BlockIds as IntoIterator>::IntoIter: Clone,
+))]
+pub struct GetEventsForBlockIdsRequest<EventTy, BlockIds> {
     /// The type of the event we are looking for.
-    pub ty: &'a str,
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub ty: EventTy,
     /// The IDs of the blocks.
-    pub block_ids: Repeated<&'a [&'a [u8]]>,
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&BlockIds>>::from(&x).map(|it| it.map(AsRef::as_ref))))]
+    pub block_ids: BlockIds,
 }
 
 /// Search results for events in a single block.

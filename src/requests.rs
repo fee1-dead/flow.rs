@@ -78,7 +78,7 @@ access_api! {
         returns (ExecuteScriptResponse);
     rpc GetEventsForHeightRange<EventTy>(GetEventsForHeightRangeRequest<EventTy>)
         returns (EventsResponse);
-    rpc GetEventsForBlockIDs(GetEventsForBlockIdsRequest<'_>)
+    rpc GetEventsForBlockIDs<EventTy, BlockIds>(GetEventsForBlockIdsRequest<EventTy, BlockIds>)
         returns (EventsResponse);
     rpc GetNetworkParameters(GetNetworkParametersRequest)
         returns (GetNetworkParametersResponse);

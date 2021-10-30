@@ -9,7 +9,7 @@
 
 use std::{error::Error, future::Future, pin::Pin};
 
-use otopr::{decoding::DecodableMessage, encoding::EncodableMessage, Repeated};
+use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
@@ -181,8 +181,8 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves events with the specified type with the specified block ids.
-        pub async fn events_for_blocks_by_ids<('a)>(ty: &'a str, ids: &'a [ &'a [u8] ]) GetEventsForBlockIdsRequest<'a> => EventsResponse {
-            GetEventsForBlockIdsRequest { ty, block_ids: Repeated::new(ids) }
+        pub async fn events_for_blocks_by_ids<(EventTy, BlockIds)>(ty: EventTy, block_ids: BlockIds) GetEventsForBlockIdsRequest<EventTy, BlockIds> => EventsResponse {
+            GetEventsForBlockIdsRequest { ty, block_ids }
         }
 
         /// Executes Cadence script at the latest block and returns the result.
