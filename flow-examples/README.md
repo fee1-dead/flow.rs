@@ -27,3 +27,21 @@ run get_account_info 0x01 1
 ```
 run create_account
 ```
+
+## Get information about a block
+
+```
+run get_block BLOCK_HASH
+```
+
+## Get information about a transaction
+
+```
+run get_txn TX_HASH
+```
+
+## Get result of a transaction
+
+```
+run get_txn_result TX_HASH
+```
