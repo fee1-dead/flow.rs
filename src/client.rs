@@ -9,7 +9,7 @@
 
 use std::{error::Error, future::Future, pin::Pin};
 
-use otopr::{Repeated, decoding::DecodableMessage, encoding::EncodableMessage};
+use otopr::{decoding::DecodableMessage, encoding::EncodableMessage, Repeated};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
