@@ -72,9 +72,9 @@ access_api! {
         returns (AccountResponse);
     rpc ExecuteScriptAtLatestBlock<Script, Arguments>(ExecuteScriptAtLatestBlockRequest<Script, Arguments>)
         returns (ExecuteScriptResponse);
-    rpc ExecuteScriptAtBlockID(ExecuteScriptAtBlockIdRequest<'_>)
+    rpc ExecuteScriptAtBlockID<BlockId, Script, Arguments>(ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments>)
         returns (ExecuteScriptResponse);
-    rpc ExecuteScriptAtBlockHeight(ExecuteScriptAtBlockHeightRequest<'_>)
+    rpc ExecuteScriptAtBlockHeight<Script, Arguments>(ExecuteScriptAtBlockHeightRequest<Script, Arguments>)
         returns (ExecuteScriptResponse);
     rpc GetEventsForHeightRange(GetEventsForHeightRangeRequest<'_>)
         returns (EventsResponse);

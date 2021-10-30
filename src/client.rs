@@ -190,6 +190,16 @@ impl<Inner> FlowClient<Inner> {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
 
+        /// Executes Cadence script at a specific block height and returns the result.
+        pub async fn execute_script_at_block_id<(BlockId, Script, Arguments)>(block_id: BlockId, script: Script, arguments: Arguments) ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> => ExecuteScriptResponse {
+            ExecuteScriptAtBlockIdRequest { block_id, script, arguments }
+        }
+
+        /// Executes Cadence script at a specific block height and returns the result.
+        pub async fn execute_script_at_block_height<(Script, Arguments)>(block_height: u64, script: Script, arguments: Arguments) ExecuteScriptAtBlockHeightRequest<Script, Arguments> => ExecuteScriptResponse {
+            ExecuteScriptAtBlockHeightRequest { block_height, script, arguments }
+        }
+
         /// Sends a transaction over the network.
         pub async fn send_transaction<(
             Script,

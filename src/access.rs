@@ -245,6 +245,7 @@ pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// The script.
     pub script: Script,
+
     #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
     /// The arguments. A collection of [`ValueRef`]s.
     ///
@@ -254,24 +255,54 @@ pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
 
 /// Executes a script (maybe with arguments) at a block specified by its block ID.
 #[derive(EncodableMessage)]
-pub struct ExecuteScriptAtBlockIdRequest<'a> {
+#[otopr(encode_where_clause(
+    where
+        BlockId: AsRef<[u8]>,
+        Script: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: serde::Serialize,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+))]
+pub struct ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// id of the block.
-    pub block_id: &'a [u8],
+    pub block_id: BlockId,
+
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// The script.
-    pub script: &'a [u8],
-    /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
-    pub arguments: Repeated<&'a [&'a [u8]]>,
+    pub script: Script,
+
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    /// The arguments. A collection of [`ValueRef`]s.
+    ///
+    /// [`ValueRef`]: cadence_json::ValueRef
+    pub arguments: Arguments,
 }
 
 /// Executes a script (maybe with arguments) at a block specified by its height.
 #[derive(EncodableMessage)]
-pub struct ExecuteScriptAtBlockHeightRequest<'a> {
+#[otopr(encode_where_clause(
+    where
+        Script: AsRef<[u8]>,
+        Arguments: HasItem,
+        <Arguments as HasItem>::Item: serde::Serialize,
+        for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+))]
+pub struct ExecuteScriptAtBlockHeightRequest<Script, Arguments> {
     /// height of the block.
     pub block_height: u64,
+
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// The script.
-    pub script: &'a [u8],
-    /// The arguments. A collection of UTF-8 encoded Cadence JSON objects.
-    pub arguments: Repeated<&'a [&'a [u8]]>,
+    pub script: Script,
+
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    /// The arguments. A collection of [`ValueRef`]s.
+    ///
+    /// [`ValueRef`]: cadence_json::ValueRef
+    pub arguments: Arguments,
 }
 
 /// The return value of the script.
