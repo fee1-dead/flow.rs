@@ -321,9 +321,14 @@ impl ExecuteScriptResponse {
 
 /// Search for events in a height range.
 #[derive(EncodableMessage)]
-pub struct GetEventsForHeightRangeRequest<'a> {
+#[otopr(encode_where_clause(
+    where
+        EventTy: AsRef<str>,
+))]
+pub struct GetEventsForHeightRangeRequest<EventTy> {
     /// The type of the event we are looking for.
-    pub ty: &'a str,
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub ty: EventTy,
     /// The start of the height range.
     pub start_height: u64,
     /// The end of the height range.

@@ -176,7 +176,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves events with the specified type within the specified range.
-        pub async fn events_for_height_range<('a)>(ty: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
+        pub async fn events_for_height_range<(EventTy)>(ty: EventTy, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<EventTy> => EventsResponse {
             GetEventsForHeightRangeRequest { ty, start_height, end_height }
         }
 

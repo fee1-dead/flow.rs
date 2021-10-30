@@ -76,7 +76,7 @@ access_api! {
         returns (ExecuteScriptResponse);
     rpc ExecuteScriptAtBlockHeight<Script, Arguments>(ExecuteScriptAtBlockHeightRequest<Script, Arguments>)
         returns (ExecuteScriptResponse);
-    rpc GetEventsForHeightRange(GetEventsForHeightRangeRequest<'_>)
+    rpc GetEventsForHeightRange<EventTy>(GetEventsForHeightRangeRequest<EventTy>)
         returns (EventsResponse);
     rpc GetEventsForBlockIDs(GetEventsForBlockIdsRequest<'_>)
         returns (EventsResponse);
