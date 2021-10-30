@@ -15,6 +15,9 @@ pub mod ser;
 
 pub(crate) mod wrapper;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(SerializeDisplay, DeserializeFromStr, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PathDomain {
     Storage,
