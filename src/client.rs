@@ -9,7 +9,7 @@
 
 use std::{error::Error, future::Future, pin::Pin};
 
-use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
+use otopr::{Repeated, decoding::DecodableMessage, encoding::EncodableMessage};
 use tonic::{
     body::BoxBody,
     client::{Grpc, GrpcService},
@@ -178,6 +178,11 @@ impl<Inner> FlowClient<Inner> {
         /// Retrieves events with the specified type within the specified range.
         pub async fn events_for_height_range<('a)>(ty: &'a str, start_height: u64, end_height: u64) GetEventsForHeightRangeRequest<'a> => EventsResponse {
             GetEventsForHeightRangeRequest { ty, start_height, end_height }
+        }
+
+        /// Retrieves events with the specified type with the specified block ids.
+        pub async fn events_for_blocks_by_ids<('a)>(ty: &'a str, ids: &'a [ &'a [u8] ]) GetEventsForBlockIdsRequest<'a> => EventsResponse {
+            GetEventsForBlockIdsRequest { ty, block_ids: Repeated::new(ids) }
         }
 
         /// Executes Cadence script at the latest block and returns the result.
