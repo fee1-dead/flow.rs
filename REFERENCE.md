@@ -38,7 +38,7 @@ flow-sdk = "0.1.0"
 ```
 
 ## Connect
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#impl-1)
 
 The library uses gRPC to communicate with the access nodes and it must be configured with correct access node API URL. 
 
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 After you have established a connection with an access node, you can query the Flow network to retrieve data about blocks, accounts, events and transactions. We will explore how to retrieve each of these entities in the sections below.
 
 ### Get Blocks
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.latest_block)
 
 Query the network for block by id, height or get the latest block.
 
@@ -127,7 +127,7 @@ OK: Block {
 ```
 
 ### Get Account
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.account_at_latest_block)
 
 Retrieve any account from Flow network's latest block or from a specified block height.
 
@@ -1128,19 +1128,11 @@ The new account address will be emitted in a system-level `flow.AccountCreated` 
 
     match response {
         Some(res) => {
-            for ev in res.events.iter() {
-                if ev.ty == "flow.AccountCreated" {
-                    let payload = ev.parse_payload()?;
-
-                    let addr = payload
-                        .fields
-                        .into_iter()
-                        .find(|field| field.name == "address")
-                        .map(|field| field.value)
-                        .unwrap();
-                    if let ValueOwned::Address(addr) = addr {
-                        println!("Created account's address is: {}", addr);
-                    }
+            for event in res.events {
+                if event.ty == "flow.AccountCreated" {
+                    let payload = event.parse_payload()?;
+                    let address = payload.find_field("address").unwrap().expect_address();
+                    println!("Created {}", address);
                 }
             }
         }
