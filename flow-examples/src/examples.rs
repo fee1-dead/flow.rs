@@ -75,6 +75,10 @@ examples! {
     /// Retrieves information about a transaction's result
     #[arguments = "TRANSACTION_ID"]
     pub mod get_txn_result;
+
+    /// Retrieves events within a height range or by block ids
+    #[arguments = "EVENT_TYPE [START_HEIGHT END_HEIGHT or BLOCK_IDS..]"]
+    pub mod get_events;
 }
 
 lazy_static::lazy_static! {
