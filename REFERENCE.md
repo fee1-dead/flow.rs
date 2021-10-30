@@ -18,8 +18,7 @@ SDKs are open source, and you can use them according to the licence.
 
 The library client specifications can be found here:
 
-// TODO specs here
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]()
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/index.html)
 
 
 ## Getting Started
@@ -459,7 +458,7 @@ OK: Collection {
 ```
 
 ### Execute Scripts
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.execute_script_at_latest_block)
 
 Scripts allow you to write arbitrary non-mutating Cadence code on the Flow blockchain and return data. You can learn more about [Cadence and scripts here](https://docs.onflow.org/cadence/language/), but we are now only interested in executing the script code and getting back the data.
 
@@ -595,7 +594,7 @@ A transaction will be rejected if it is submitted past its expiry block. Flow ca
 A transaction expires after `600` blocks are committed on top of the reference block, which takes about 10 minutes at average Mainnet block rates.
 
 ### Build Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/transaction/struct.TransactionHeaderBuilder.html)
 
 Building a transaction involves setting the required properties explained above and producing a transaction object. 
 
@@ -644,7 +643,7 @@ let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&arg
 After you have successfully [built a transaction](#build-transactions) the next step in the process is to sign it.
 
 ### Sign Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO specs here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/account/struct.Account.html#method.sign)
 
 Flow introduces new concepts that allow for more flexibility when creating and signing transactions.
 Before trying the examples below, we recommend that you read through the [transaction signature documentation](https://docs.onflow.org/concepts/accounts-and-keys/).
@@ -1015,7 +1014,7 @@ async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Sen
 
 
 ### Send Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO reference here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/account/struct.Account.html#method.send_transaction_header)
 
 After a transaction has been [built](#build-transactions) and [signed](#sign-transactions), it can be sent to the Flow blockchain where it will be executed. If sending was successful you can then [retrieve the transaction result](#get-transactions).
 
@@ -1053,7 +1052,7 @@ if let Some(txn_result) = res.finalize(account.client()).await? {
 
 
 ### Create Accounts
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO reference here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/transaction/struct.CreateAccountTransaction.html)
 
 On Flow, account creation happens inside a transaction. Because the network allows for a many-to-many relationship between public keys and accounts, it's not possible to derive a new account address from a public key offline. 
 
@@ -1143,7 +1142,7 @@ The new account address will be emitted in a system-level `flow.AccountCreated` 
 ```
 
 ### Generate Keys
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">]() // TODO reference here
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/secp256k1/latest/secp256k1/key/struct.SecretKey.html#method.new)
 
 Flow uses [ECDSA](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) signatures to control access to user accounts. Each key pair can be used in combination with the `SHA2-256` or `SHA3-256` hashing algorithms.
 
