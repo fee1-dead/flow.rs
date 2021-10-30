@@ -1,14 +1,17 @@
 use std::error::Error;
 use std::str::SplitWhitespace;
 
-use flow_sdk::transaction::CreateAccountTransaction;
 use flow_sdk::prelude::*;
+use flow_sdk::transaction::CreateAccountTransaction;
 
 use crate::ExampleAccount;
 
 crate::example!(run);
 
-async fn run(account: &mut ExampleAccount, _: &mut SplitWhitespace<'_>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run(
+    account: &mut ExampleAccount,
+    _: &mut SplitWhitespace<'_>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let signer = flow_sdk::algorithms::secp256k1::Secp256k1::signing_only();
 
     let txn = CreateAccountTransaction {

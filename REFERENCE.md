@@ -442,7 +442,8 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 use std::error::Error;
 
 use cadence_json::{BigInt, ValueRef};
-use flow_sdk::{access::ExecuteScriptAtLatestBlockRequest, client::TonicHyperFlowClient};
+use flow_sdk::access::ExecuteScriptAtLatestBlockRequest;
+use flow_sdk::prelude::*;
 
 const SIMPLE_SCRIPT: &str = "
     pub fun main(a: Int): Int {

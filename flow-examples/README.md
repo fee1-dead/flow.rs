@@ -73,3 +73,58 @@ By a list of block IDs:
 ```
 run get_events flow.AccountCreated 51392d353c878a0d5c23917783ef2d9b7f3f44a16f82e8efff21aa2cd090bc00 8ce36abc134eb81ba092513a299f0b70138a86333adab5291bfe682929fd5e30
 ```
+
+## Execute script on the latest block or a specific block
+
+`my_script.cdc`:
+
+```
+pub struct User {
+    pub var balance: UFix64
+    pub var address: Address
+    pub var name: String
+
+    init(name: String, address: Address, balance: UFix64) {
+        self.name = name
+        self.address = address
+        self.balance = balance
+    }
+}
+
+pub fun main(name: String): User {
+    return User(
+        name: name,
+        address: 0x1,
+        balance: 10.0
+    )
+}
+```
+
+`my_script_arguments.json`:
+
+```json
+[
+    {
+        "type": "String",
+        "value": "John Doe"
+    }
+]
+```
+
+On the latest block:
+
+```
+run run_script my_script.cdc my_script_arguments.json
+```
+
+On a specific block height:
+
+```
+run run_script my_script.cdc my_script_arguments.json 1
+```
+
+On a block by ID:
+
+```
+run run_script my_script.cdc my_script_arguments.json 7bc42fe85d32ca513769a74f97f7e1a7bad6c9407f0d934c2aa645ef9cf613c7
+```

@@ -8,7 +8,10 @@ use crate::*;
 
 crate::example!(run);
 
-async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run(
+    account: &mut ExampleAccount,
+    args: &mut SplitWhitespace<'_>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let addr = match args.next().map(str::parse::<AddressOwned>) {
         Some(Ok(addr)) => addr,
         Some(Err(_)) => bail!("Invalid argument 1: not an address"),
@@ -20,9 +23,12 @@ async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Re
         Some(Err(_)) => bail!("Invalid argument 2: not a number"),
         None => None,
     };
-    
+
     let account = if let Some(height) = height {
-        account.client().account_at_block_height(&addr.data, height).await?
+        account
+            .client()
+            .account_at_block_height(&addr.data, height)
+            .await?
     } else {
         account.client().account_at_latest_block(&addr.data).await?
     };

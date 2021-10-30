@@ -79,6 +79,10 @@ examples! {
     /// Retrieves events within a height range or by block ids
     #[arguments = "EVENT_TYPE [START_HEIGHT END_HEIGHT or BLOCK_IDS..]"]
     pub mod get_events;
+
+    /// Run a script on a specific block or on the latest blockchain state
+    #[arguments = "SCRIPT_FILE [ARGUMENTS_FILE] [BLOCK_ID/BLOCK_HEIGHT]"]
+    pub mod run_script;
 }
 
 lazy_static::lazy_static! {
