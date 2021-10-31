@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 use std::iter::empty;
-use std::slice;
 use std::marker::PhantomData;
+use std::slice;
 
 use crate::error::BoxError;
 use crate::multi::{Party, PartyTransaction};
@@ -478,9 +478,7 @@ where
     }
 
     /// Queries the sequence number for the primary key from the network.
-    pub async fn primary_key_sequence_number<'a>(
-        &'a mut self,
-    ) -> Result<u32, BoxError>
+    pub async fn primary_key_sequence_number<'a>(&'a mut self) -> Result<u32, BoxError>
     where
         Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
     {
@@ -591,7 +589,8 @@ where
             envelope_signatures,
         };
 
-        Ok(self.client
+        Ok(self
+            .client
             .send_transaction(transaction)
             .await
             .map_err(Into::into)?)

@@ -10,8 +10,6 @@
 //!
 //! Both party types implement the common interface, the [`Party`] trait.
 
-use std::error::Error;
-
 use rlp::RlpStream;
 
 use crate::access::AccountResponse;
@@ -150,10 +148,7 @@ impl PartyBuilder {
     }
 
     /// Appends arguments.
-    pub fn arguments<'a>(
-        self,
-        arguments: impl IntoIterator<Item = impl serde::Serialize>,
-    ) -> Self {
+    pub fn arguments<'a>(self, arguments: impl IntoIterator<Item = impl serde::Serialize>) -> Self {
         self.arguments_raw(
             arguments
                 .into_iter()
