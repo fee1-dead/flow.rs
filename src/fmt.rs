@@ -1,28 +1,30 @@
 //! Debug / Display implementations for structures.
 
+use std::marker::PhantomData;
 use std::{collections::HashMap, fmt, ops::Deref};
 
 use cadence_json::AddressRef;
+use otopr::HasItem;
 
 use crate::access::TransactionResultResponse;
 use crate::entities::*;
 use crate::transaction::*;
 
-struct Hexes<'a>(&'a Vec<Box<[u8]>>);
+struct Hexes<H>(H);
 
-impl fmt::Debug for Hexes<'_> {
+impl<H> fmt::Debug for Hexes<H> where H: IntoIterator + Copy, H::Item: AsRef<[u8]> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
-            .entries(self.0.iter().map(Deref::deref).map(Hex))
+            .entries(self.0.into_iter().map(Hex))
             .finish()
     }
 }
 
-struct Hex<'a>(&'a [u8]);
+struct Hex<H>(H);
 
-impl fmt::Debug for Hex<'_> {
+impl<H: AsRef<[u8]>> fmt::Debug for Hex<H> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for &byte in self.0 {
+        for &byte in self.0.as_ref() {
             write!(f, "{:02x}", byte)?;
         }
         Ok(())
@@ -53,7 +55,7 @@ impl fmt::Debug for Block {
             .field("timestamp", &self.timestamp)
             .field("collection_guarantees", &self.collection_guarantees)
             .field("block_seals", &self.block_seals)
-            .field("signatures", &Hexes(&self.signatures))
+            .field("signatures", &Hexes(&*self.signatures))
             .finish()
     }
 }
@@ -65,11 +67,11 @@ impl fmt::Debug for BlockSeal {
             .field("execution_receipt_id", &Hex(&self.execution_receipt_id))
             .field(
                 "execution_receipt_signatures",
-                &Hexes(&self.execution_receipt_signatures),
+                &Hexes(&*self.execution_receipt_signatures),
             )
             .field(
                 "result_approval_signatures",
-                &Hexes(&self.result_approval_signatures),
+                &Hexes(&*self.result_approval_signatures),
             )
             .finish()
     }
@@ -179,7 +181,7 @@ impl fmt::Debug for Collection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Collection")
             .field("id", &Hex(&self.id))
-            .field("transactions", &Hexes(&self.transactions))
+            .field("transactions", &Hexes(&*self.transactions))
             .finish()
     }
 }
@@ -188,7 +190,7 @@ impl fmt::Debug for CollectionGuarantee {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CollectionGuarantee")
             .field("collection_id", &Hex(&self.collection_id))
-            .field("signatures", &Hexes(&self.signatures))
+            .field("signatures", &Hexes(&*self.signatures))
             .finish()
     }
 }
@@ -221,5 +223,98 @@ impl fmt::Debug for Event {
         }
 
         dbg.finish()
+    }
+}
+
+impl<A: AsRef<[u8]>> fmt::Debug for ProposalKeyE<A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProposalKey").field("address", &Hex(self.address.as_ref())).field("key_id", &self.key_id).field("sequence_number", &self.sequence_number).finish()
+    }
+}
+
+impl<A: AsRef<[u8]>, B: AsRef<[u8]>> fmt::Debug for SignatureE<A, B> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Signature").field("address", &Hex(self.address.as_ref())).field("key_id", &self.key_id).field("signature", &Hex(self.signature.as_ref())).finish()
+    }
+}
+
+impl<
+    Script: AsRef<[u8]>,
+    Arguments,
+    ReferenceBlockId: AsRef<[u8]>,
+    ProposalKeyAddress: AsRef<[u8]>,
+    Payer: AsRef<[u8]>,
+    Authorizers,
+    PayloadSignatures,
+    EnvelopeSignatures,
+    PayloadSignatureAddress: AsRef<[u8]>,
+    PayloadSignature: AsRef<[u8]>,
+    EnvelopeSignatureAddress: AsRef<[u8]>,
+    EnvelopeSignature: AsRef<[u8]>,
+> fmt::Debug for TransactionE<
+    Script,
+    Arguments,
+    ReferenceBlockId,
+    ProposalKeyAddress,
+    Payer,
+    Authorizers,
+    PayloadSignatures,
+    EnvelopeSignatures,
+>
+where
+    Arguments: HasItem,
+    <Arguments as HasItem>::Item: AsRef<[u8]>,
+    for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
+    for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+
+    Authorizers: HasItem,
+    <Authorizers as HasItem>::Item: AsRef<[u8]>,
+    for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
+    for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+
+    PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+    for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
+    for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+
+    EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+    for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
+    for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+
+        struct Arguments<I>(I);
+
+        impl<I> fmt::Debug for Arguments<I> where I: IntoIterator + Copy, I::Item: AsRef<[u8]> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let mut f = f.debug_list();
+
+                for e in self.0 {
+                    f.entry(&String::from_utf8_lossy(e.as_ref()).as_ref());
+                }
+
+                f.finish()
+            }
+        }
+
+        struct Signatures<'a, I>(I, PhantomData<&'a ()>);
+
+        impl<'a, I, SigAddr: AsRef<[u8]> + 'a, Sig: AsRef<[u8]> + 'a> fmt::Debug for Signatures<'a, I> where I: IntoIterator<Item = &'a SignatureE<SigAddr, Sig>> + Copy {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.debug_list().entries(self.0).finish()
+            }
+        }
+
+
+        f.debug_struct("Transaction")
+            .field("script", &String::from_utf8_lossy(self.script.as_ref()).as_ref())
+            .field("arguments", &Arguments(&self.arguments))
+            .field("reference_block_id", &Hex(self.reference_block_id.as_ref()))
+            .field("gas_limit", &self.gas_limit)
+            .field("proposal_key", &self.proposal_key)
+            .field("payer", &Hex(self.payer.as_ref()))
+            .field("authorizers", &Hexes(&self.authorizers))
+            .field("payload_signatures", &Signatures(&self.payload_signatures, PhantomData))
+            .field("envelope_signatures", &Signatures(&self.envelope_signatures, PhantomData))
+            .finish()
     }
 }
