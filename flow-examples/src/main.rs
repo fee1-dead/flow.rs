@@ -176,7 +176,7 @@ async fn main_inner(
                 println!("Ctrl-C");
                 break;
             }
-            Err(e) => Err(e)?,
+            Err(e) => return Err(e.into()),
         }
     }
 

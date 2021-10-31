@@ -28,15 +28,15 @@ async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Re
         .with_context(|| format!("While reading script from {}", script_path))?;
 
     let arguments_raw: Option<Vec<u8>> = arguments_path
-        .map(|p| fs::read(p))
+        .map(fs::read)
         .transpose()
-        .with_context(|| format!("Opening arguments file"))?;
+        .with_context(|| format!("Opening {}", arguments_path.unwrap()))?;
 
     let arguments: Vec<ValueOwned> = arguments_raw
         .as_deref()
         .map(serde_json::from_slice)
         .transpose()
-        .with_context(|| format!("Parsing arguments file as Cadence JSON"))?
+        .with_context(|| "Parsing arguments file as Cadence JSON")?
         .unwrap_or_default();
 
     let party = PartyBuilder::new()

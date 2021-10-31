@@ -15,7 +15,7 @@ async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Re
     let events = match args.next() {
         Some(s) if s.len() == 64 => {
             let mut block_ids = vec![];
-            for data in once(s).chain(args).map(|s| hex::decode(s)) {
+            for data in once(s).chain(args).map(hex::decode) {
                 block_ids.push(data?);
             }
             account
