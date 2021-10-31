@@ -3,20 +3,19 @@ use std::str::SplitWhitespace;
 
 use anyhow::*;
 use cadence_json::ValueOwned;
-use flow_sdk::multi::{PartyBuilder, PartyTransaction};
 use flow_sdk::prelude::*;
+use flow_sdk::transaction::TransactionHeader;
 use tokio::sync::Mutex;
 
 use crate::*;
 
 crate::example!(run);
 
-type Txn = PartyTransaction<Box<[u8]>, [u8; 64]>;
+type TxnHeader = TransactionHeader<Vec<Box<[u8]>>>;
 
-pub static BUILT_TXN: Mutex<Option<Txn>> = Mutex::const_new(None);
+pub static BUILT_TXN: Mutex<Option<TxnHeader>> = Mutex::const_new(None);
 
-async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
-    let client = account.client();
+async fn run(_: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
     let script_path = args
         .next()
         .with_context(|| "Expected a path to the script file")?;
@@ -39,27 +38,16 @@ async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Re
         .with_context(|| "Parsing arguments file as Cadence JSON")?
         .unwrap_or_default();
 
-    let party = PartyBuilder::new()
-        .script(script)
-        .arguments(arguments)
-        .latest_block_as_reference(client)
-        .await?
-        .proposer_account(account)
-        .await?
-        .authorizer_account(&*account)
-        .payer_account(&*account)
-        .build();
-
-    let txn = account.sign_party_as_payer(party);
+    let header = TransactionHeaderBuilder::new().script_owned(script).arguments(arguments).build();
 
     let mut built = BUILT_TXN.lock().await;
     if let Some(prev_txn) = built.take() {
         println!("Discarding previously built transaction: {:#?}", prev_txn);
     }
+    println!("Built transaction: {:#?}", header);
 
-    println!("Built transaction: {:#?}", txn);
+    *built = Some(header);
 
-    *built = Some(txn);
 
     Ok(())
 }

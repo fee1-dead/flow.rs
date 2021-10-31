@@ -248,6 +248,37 @@ impl<A: AsRef<[u8]>, B: AsRef<[u8]>> fmt::Debug for SignatureE<A, B> {
     }
 }
 
+struct Arguments<I>(I);
+
+impl<I> fmt::Debug for Arguments<I>
+where
+    I: IntoIterator + Copy,
+    I::Item: AsRef<[u8]>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = f.debug_list();
+
+        for e in self.0 {
+            f.entry(&String::from_utf8_lossy(e.as_ref()).as_ref());
+        }
+
+        f.finish()
+    }
+}
+
+impl<Args> fmt::Debug for TransactionHeader<Args>
+where
+    for<'a> &'a Args: IntoIterator,
+    for<'a> <&'a Args as IntoIterator>::Item: AsRef<[u8]>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TransactionHeader")
+            .field("script", &self.script)
+            .field("arguments", &Arguments(&self.arguments))
+            .finish()
+    }
+}
+
 impl<
         Script: AsRef<[u8]>,
         Arguments,
@@ -294,24 +325,6 @@ where
     for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        struct Arguments<I>(I);
-
-        impl<I> fmt::Debug for Arguments<I>
-        where
-            I: IntoIterator + Copy,
-            I::Item: AsRef<[u8]>,
-        {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let mut f = f.debug_list();
-
-                for e in self.0 {
-                    f.entry(&String::from_utf8_lossy(e.as_ref()).as_ref());
-                }
-
-                f.finish()
-            }
-        }
-
         struct Signatures<'a, I>(I, PhantomData<&'a ()>);
 
         impl<'a, I, SigAddr: AsRef<[u8]> + 'a, Sig: AsRef<[u8]> + 'a> fmt::Debug for Signatures<'a, I>

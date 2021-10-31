@@ -64,6 +64,9 @@ examples! {
     #[arguments = "TXN_SCRIPT_FILE [ARGUMENTS_FILE]"]
     pub mod build_txn;
 
+    /// Sends a transaction after it got built.
+    pub mod send_txn;
+
     /// Retrieves information about a transaction
     #[arguments = "TRANSACTION_ID"]
     pub mod get_txn;

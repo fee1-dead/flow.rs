@@ -7,7 +7,7 @@ use crate::algorithms::*;
 use crate::multi::PartyBuilder;
 
 /// A `TransactionHeader` is a template plus arguments.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct TransactionHeader<Arguments> {
     /// The script, provided by the template.
     pub script: Cow<'static, str>,
