@@ -12,6 +12,12 @@ pub mod sha3 {
     pub use tiny_keccak::*;
 }
 
+#[cfg(feature = "secp256k1-rand")]
+/// Re-exports items from the `rand` crate.
+pub mod rand {
+    pub use rand::*;
+}
+
 macro_rules! algorithms {
     ($(
         $(#[$algometa:meta])*
