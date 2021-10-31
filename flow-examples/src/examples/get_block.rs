@@ -7,10 +7,7 @@ use crate::*;
 
 crate::example!(run);
 
-async fn run(
-    account: &mut ExampleAccount,
-    args: &mut SplitWhitespace<'_>,
-) -> Result<()> {
+async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
     let client = account.client();
     let block = match args.next() {
         Some(arg) if arg.len() == 64 => {

@@ -8,10 +8,7 @@ use crate::*;
 
 crate::example!(run);
 
-async fn run(
-    account: &mut ExampleAccount,
-    args: &mut SplitWhitespace<'_>,
-) -> Result<()> {
+async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
     let addr = match args.next().map(str::parse::<AddressOwned>) {
         Some(Ok(addr)) => addr,
         Some(Err(_)) => bail!("Invalid argument 1: not an address"),

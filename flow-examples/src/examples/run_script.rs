@@ -10,14 +10,13 @@ use crate::*;
 
 crate::example!(run);
 
-async fn run(
-    account: &mut ExampleAccount,
-    args: &mut SplitWhitespace<'_>,
-) -> Result<()> {
+async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
     let client = account.client();
-    let script_path = args.next().with_context(|| "Expected path to script file")?;
-    let script = fs::read(script_path)
-        .with_context(|| format!("IO error while opening {}", script_path))?;
+    let script_path = args
+        .next()
+        .with_context(|| "Expected path to script file")?;
+    let script =
+        fs::read(script_path).with_context(|| format!("IO error while opening {}", script_path))?;
 
     let mut arguments_path = args.next();
     let block = match args.next() {
@@ -38,7 +37,9 @@ async fn run(
         .transpose()
         .with_context(|| format!("Opening arguments file"))?;
 
-    let arguments: Vec<ValueOwned> = arguments_raw.as_deref().map(serde_json::from_slice)
+    let arguments: Vec<ValueOwned> = arguments_raw
+        .as_deref()
+        .map(serde_json::from_slice)
         .transpose()
         .with_context(|| format!("Parsing arguments file as Cadence JSON"))?
         .unwrap_or_default();
@@ -49,15 +50,31 @@ async fn run(
             hex::decode_to_slice(arg, &mut block_id)
                 .with_context(|| "Expected block height or hex encoded block ID")?;
 
-            client.send(ExecuteScriptAtBlockIdRequest { block_id, script, arguments }).await?
+            client
+                .send(ExecuteScriptAtBlockIdRequest {
+                    block_id,
+                    script,
+                    arguments,
+                })
+                .await?
         }
         Some(height) => {
             let block_height = height
                 .parse()
                 .with_context(|| "Expected block height or hex encoded block ID")?;
-            client.send(ExecuteScriptAtBlockHeightRequest { block_height, script, arguments }).await?
+            client
+                .send(ExecuteScriptAtBlockHeightRequest {
+                    block_height,
+                    script,
+                    arguments,
+                })
+                .await?
         }
-        None => client.send(ExecuteScriptAtLatestBlockRequest { script, arguments }).await?,
+        None => {
+            client
+                .send(ExecuteScriptAtLatestBlockRequest { script, arguments })
+                .await?
+        }
     };
 
     println!("Return Value: {:#?}", return_val.parse()?);

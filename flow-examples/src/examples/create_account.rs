@@ -8,10 +8,7 @@ use crate::ExampleAccount;
 
 crate::example!(run);
 
-async fn run(
-    account: &mut ExampleAccount,
-    _: &mut SplitWhitespace<'_>,
-) -> Result<()> {
+async fn run(account: &mut ExampleAccount, _: &mut SplitWhitespace<'_>) -> Result<()> {
     let signer = flow_sdk::algorithms::secp256k1::Secp256k1::signing_only();
 
     let txn = CreateAccountTransaction {

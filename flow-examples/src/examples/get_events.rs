@@ -9,10 +9,7 @@ use crate::*;
 
 crate::example!(run);
 
-async fn run(
-    account: &mut ExampleAccount,
-    args: &mut SplitWhitespace<'_>,
-) -> Result<()> {
+async fn run(account: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<()> {
     const ERR: &str = "Expected START_HEIGHT and END_HEIGHT or hex encoded block ids";
     let event_ty = args.next().with_context(|| "Expected event type")?;
     let events = match args.next() {
