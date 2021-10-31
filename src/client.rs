@@ -80,17 +80,31 @@ pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
 ///
 /// This is a future that resolves to a result which contains either the output or an error.
 pub type GrpcSendResult<'a, Output> =
-    Pin<Box<dyn Future<Output = Result<Output, Box<dyn Error + Send + Sync>>> + 'a>>;
+    Pin<Box<dyn Future<Output = Result<Output, TonicError>> + 'a>>;
+
+/// The errors that could happen when sending a request via tonic.
+#[derive(Debug, thiserror::Error)]
+pub enum TonicError {
+    /// A gRPC status describing the result of an RPC call.
+    #[error(transparent)]
+    Status(#[from] tonic::Status),
+
+    /// Custom error
+    #[error(transparent)]
+    Custom(#[from] Box<dyn Error + Send + Sync>),
+}
 
 impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
     I: FlowRequest<O> + Send + Sync + EncodableMessage,
     O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
     Service: GrpcService<BoxBody> + 'static,
+    Service::Error: Into<Box<dyn Error + Send + Sync>>,
     Service::ResponseBody: Body + Send + Sync + 'static,
     <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    type Error = Box<dyn Error + Send + Sync>;
+    type Error = TonicError;
+
     fn send(&mut self, input: I) -> GrpcSendResult<O> {
         let preenc = PreEncode::new(&input);
         Box::pin(async move {
