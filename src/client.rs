@@ -43,6 +43,20 @@ pub trait GrpcClient<I, O> {
 }
 
 /// A gRPC client wrapper. Has utility functions for sending requests.
+///
+/// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+///
+/// i.e. use this:
+/// 
+/// ```ignore
+/// client.send(ExecuteScriptAtLatestBlockRequest { script, arguments })
+/// ```
+/// 
+/// instead of this when you encounter an error:
+/// 
+/// ```ignore
+/// client.execute_script_at_latest_block(script, arguments);
+/// ```
 #[derive(Default, Debug, Clone, Copy)]
 pub struct FlowClient<T> {
     inner: T,
@@ -95,17 +109,43 @@ where
 
 use crate::{protobuf::*, requests::FlowRequest};
 
+macro_rules! choose {
+    ((), ($($empty:tt)*), ($($non_empty:tt)*)) => {
+        $($empty)*
+    };
+    (($($tt:tt)+), ($($empty:tt)*), ($($non_empty:tt)*)) => {
+        $($non_empty)*
+    };
+}
+
 // Simple requests that constructs a request from parameters.
 macro_rules! define_requests {
-    ($($(#[$meta:meta])* $vis:vis async fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*) $input:ty => $output:ty $(where ($($tts:tt)*))? { $expr:expr })+) => {
-        $($(#[$meta])*
-        $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<$output, Inner::Error>> + 'grpc>>
-            where
-                Inner: GrpcClient< $input, $output >,
-                $($($tts)*)?
-        {
-            self.send($expr)
-        })+
+    ($($(#[$meta:meta])* $vis:vis async fn $fn_name:ident$(<($($ttss:tt)*)>)?($($tt:tt)*) $input:ty $(=> $output:ty)? $(where ($($tts:tt)*))? { $expr:expr })+) => {
+        $(
+            choose! {
+                ($($output)?),
+                ( // If no return ty
+                    $(#[$meta])*
+                    $vis fn $fn_name<'grpc, O, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result<O, Inner::Error>> + 'grpc>>
+                        where
+                            Inner: GrpcClient< $input, O >,
+                            $($($tts)*)?
+                    {
+                        self.send($expr)
+                    }
+                ),
+                ( // has return ty
+                    $(#[$meta])*
+                    $vis fn $fn_name<'grpc, $($($ttss)*)?>(&'grpc mut self,$($tt)*) -> Pin<Box<dyn Future<Output = Result< $($output)? , Inner::Error>> + 'grpc>>
+                        where
+                            Inner: GrpcClient< $input, $($output)? >,
+                            $($($tts)*)?
+                    {
+                        self.send($expr)
+                    }
+                )
+            }
+        )+
     }
 }
 
