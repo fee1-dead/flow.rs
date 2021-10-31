@@ -128,3 +128,69 @@ On a block by ID:
 ```
 run run_script my_script.cdc my_script_arguments.json 7bc42fe85d32ca513769a74f97f7e1a7bad6c9407f0d934c2aa645ef9cf613c7
 ```
+
+## Build a transaction
+
+`transaction.cdc`:
+
+```
+transaction(greeting: String) {
+
+  let guest: Address
+
+  prepare(authorizer: AuthAccount) {
+    self.guest = authorizer.address
+  }
+
+  execute {
+    log(greeting.concat(",").concat(guest.toString()))
+  }
+}
+```
+
+`transaction_multi.cdc`:
+
+```
+transaction {
+    prepare(acct1: AuthAccount, acct2: AuthAccount) {
+        log([acct1, acct2])
+    }
+}
+```
+
+`arguments.json`:
+
+```json
+[
+    {
+        "type": "String",
+        "value": "Hello"
+    }
+]
+```
+
+### Build a simple transaction
+
+```
+run build_txn transaction.cdc arguments.json
+```
+
+### Build a transaction with two authorizers
+
+```
+run build_txn_multi transaction_multi.cdc
+```
+
+## Sending transactions
+
+### Send a previously built, simple transaction
+
+```
+run send_txn
+```
+
+### Send a previously built, transaction with two authorizers
+
+```
+run send_txn_multi
+```
