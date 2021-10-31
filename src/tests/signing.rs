@@ -240,7 +240,7 @@ async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
     let pk2 = PublicKey::from_secret_key(&secp256k1, &sk2);
 
     let txn = CreateAccountWeightedTransaction {
-        public_key: &[(pk1, "500".parse().unwrap()), (pk2, "500".parse().unwrap())],
+        public_keys: &[(pk1, "500".parse().unwrap()), (pk2, "500".parse().unwrap())],
     };
     let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
 

@@ -159,7 +159,7 @@ pub struct CreateAccountTransaction<'a, PubKey> {
 #[derive(Clone, Copy)]
 pub struct CreateAccountWeightedTransaction<'a, PubKey> {
     /// The public keys and their weight of the new account.
-    pub public_key: &'a [(PubKey, UFix64)],
+    pub public_keys: &'a [(PubKey, UFix64)],
 }
 
 /// Adds a contract to an account.
@@ -253,7 +253,7 @@ impl<PubKey> CreateAccountWeightedTransaction<'_, PubKey> {
             H::Algorithm::NAME
         );
         let entries: Vec<_> = self
-            .public_key
+            .public_keys
             .iter()
             .map(|(key, seqnum)| (hex::encode(signer.serialize_public_key(key)), seqnum))
             .collect();
