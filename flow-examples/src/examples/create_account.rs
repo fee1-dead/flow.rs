@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::str::SplitWhitespace;
 
+use anyhow::Result;
 use flow_sdk::prelude::*;
 use flow_sdk::transaction::CreateAccountTransaction;
 
@@ -11,7 +11,7 @@ crate::example!(run);
 async fn run(
     account: &mut ExampleAccount,
     _: &mut SplitWhitespace<'_>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> Result<()> {
     let signer = flow_sdk::algorithms::secp256k1::Secp256k1::signing_only();
 
     let txn = CreateAccountTransaction {

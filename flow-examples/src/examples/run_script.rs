@@ -1,7 +1,7 @@
-use std::error::Error;
 use std::fs;
 use std::str::SplitWhitespace;
 
+use anyhow::*;
 use cadence_json::ValueOwned;
 use flow_sdk::access::*;
 use flow_sdk::prelude::*;
@@ -13,7 +13,7 @@ crate::example!(run);
 async fn run(
     account: &mut ExampleAccount,
     args: &mut SplitWhitespace<'_>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> Result<()> {
     let client = account.client();
     let script_path = args.next().ok_or("Expected path to script file")?;
     let script = fs::read(script_path)

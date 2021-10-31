@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::str::SplitWhitespace;
-use std::{error::Error, future::Future, pin::Pin};
+use std::{future::Future, pin::Pin};
 
 use crate::ExampleAccount;
 
@@ -14,14 +14,6 @@ macro_rules! example {
             Box::pin(async move { $run_ident(account, args).await })
         }
     };
-}
-
-#[macro_export]
-macro_rules! bail {
-    ($($tt:tt)*) => {{
-        eprintln!($($tt)*);
-        return Ok(())
-    }};
 }
 
 // https://veykril.github.io/tlborm/decl-macros/building-blocks/counting.html#bit-twiddling
@@ -68,6 +60,10 @@ examples! {
     #[arguments = "[BLOCK_ID/BLOCK_HEIGHT]"]
     pub mod get_block;
 
+    /// Builds a transaction.
+    #[arguments = "TXN_SCRIPT_FILE [ARGUMENTS_FILE]"]
+    pub mod build_txn;
+
     /// Retrieves information about a transaction
     #[arguments = "TRANSACTION_ID"]
     pub mod get_txn;
@@ -96,7 +92,7 @@ lazy_static::lazy_static! {
 }
 
 pub type ExampleReturnTy<'a> =
-    Pin<Box<dyn Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + 'a>>;
+    Pin<Box<dyn Future<Output = anyhow::Result<()>> + 'a>>;
 
 #[derive(Clone, Copy)]
 pub struct Example {

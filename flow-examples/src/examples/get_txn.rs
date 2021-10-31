@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::str::SplitWhitespace;
 
+use anyhow::*;
 use crate::*;
 
 crate::example!(run);
@@ -8,7 +8,7 @@ crate::example!(run);
 async fn run(
     account: &mut ExampleAccount,
     args: &mut SplitWhitespace<'_>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> Result<()> {
     let id = match args.next().map(hex::decode) {
         Some(Ok(id)) => id,
         Some(Err(_)) => bail!("Invalid argument 1: not a hex encoded transaction id"),

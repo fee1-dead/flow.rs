@@ -1,7 +1,7 @@
-use std::error::Error;
 use std::iter::once;
 use std::str::SplitWhitespace;
 
+use anyhow::*;
 use flow_sdk::access::GetEventsForBlockIdsRequest;
 use flow_sdk::prelude::*;
 
@@ -12,9 +12,9 @@ crate::example!(run);
 async fn run(
     account: &mut ExampleAccount,
     args: &mut SplitWhitespace<'_>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> Result<()> {
     const ERR: &str = "Expected START_HEIGHT and END_HEIGHT or hex encoded block ids";
-    let event_ty = args.next().ok_or("Expected event type")?;
+    let event_ty = args.next().with_context(|| "Expected event type")?;
     let events = match args.next() {
         Some(s) if s.len() == 64 => {
             let mut block_ids = vec![];
@@ -31,13 +31,13 @@ async fn run(
         }
         Some(s) => {
             let start_height = s.parse()?;
-            let end_height = args.next().ok_or(ERR)?.parse()?;
+            let end_height = args.next().with_context(|| ERR)?.parse()?;
             account
                 .client()
                 .events_for_height_range(event_ty, start_height, end_height)
                 .await?
         }
-        None => bail!("{}", ERR),
+        None => bail!(ERR),
     };
 
     for result in events.results {
