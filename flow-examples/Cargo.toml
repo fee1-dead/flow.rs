@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.44"
-flow-sdk = { path = "../" }
+flow-sdk = { path = "../", features = ["secp256k1-rand"] }
 serde = "1.0.130"
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }

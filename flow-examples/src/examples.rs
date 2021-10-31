@@ -67,6 +67,13 @@ examples! {
     /// Sends a transaction after it got built.
     pub mod send_txn;
 
+    /// Builds a transaction with two proposers.
+    #[arguments = "TXN_SCRIPT_FILE [ARGUMENTS_FILE]"]
+    pub mod build_txn_multi;
+
+    /// Sends a transaction after it got built.
+    pub mod send_txn_multi;
+
     /// Retrieves information about a transaction
     #[arguments = "TRANSACTION_ID"]
     pub mod get_txn;

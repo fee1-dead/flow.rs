@@ -38,7 +38,10 @@ async fn run(_: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<(
         .with_context(|| "Parsing arguments file as Cadence JSON")?
         .unwrap_or_default();
 
-    let header = TransactionHeaderBuilder::new().script_owned(script).arguments(arguments).build();
+    let header = TransactionHeaderBuilder::new()
+        .script_owned(script)
+        .arguments(arguments)
+        .build();
 
     let mut built = BUILT_TXN.lock().await;
     if let Some(prev_txn) = built.take() {
@@ -47,7 +50,6 @@ async fn run(_: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Result<(
     println!("Built transaction: {:#?}", header);
 
     *built = Some(header);
-
 
     Ok(())
 }
