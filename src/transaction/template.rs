@@ -129,6 +129,12 @@ impl TransactionHeaderBuilder {
         }
     }
 
+    /// Shorthand for `self.build().into_party_builder()`.
+    #[inline]
+    pub fn into_party_builder(self) -> PartyBuilder {
+        self.build().into_party_builder()
+    }
+
     /// Builds a transaction header, returning Err(self) if the script was not set.
     #[inline]
     pub fn build_checked(self) -> Result<TransactionHeader<Vec<Box<[u8]>>>, Self> {

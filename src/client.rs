@@ -20,6 +20,7 @@ use http::uri::PathAndQuery;
 use http_body::Body;
 
 use crate::access::*;
+use crate::error::TonicError;
 use crate::transaction::TransactionE;
 use crate::{
     codec::{OtoprCodec, PreEncode},
@@ -82,17 +83,7 @@ pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
 pub type GrpcSendResult<'a, Output> =
     Pin<Box<dyn Future<Output = Result<Output, TonicError>> + 'a>>;
 
-/// The errors that could happen when sending a request via tonic.
-#[derive(Debug, thiserror::Error)]
-pub enum TonicError {
-    /// A gRPC status describing the result of an RPC call.
-    #[error(transparent)]
-    Status(#[from] tonic::Status),
 
-    /// Custom error
-    #[error(transparent)]
-    Custom(#[from] Box<dyn Error + Send + Sync>),
-}
 
 impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
 where
@@ -388,7 +379,7 @@ impl TonicHyperFlowClient {
     /// Connects to a shared endpoint. Does not connect until we try to send a request.
     pub fn connect_shared(
         endpoint: impl Into<bytes::Bytes>,
-    ) -> Result<Self, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
             inner: Grpc::new(tonic::transport::Channel::from_shared(endpoint)?.connect_lazy()?),
         })

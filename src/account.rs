@@ -5,8 +5,9 @@
 use std::collections::HashMap;
 use std::iter::empty;
 use std::slice;
-use std::{error::Error as StdError, marker::PhantomData};
+use std::marker::PhantomData;
 
+use crate::error::BoxError;
 use crate::multi::{Party, PartyTransaction};
 use crate::protobuf::Seal;
 use crate::sign::{KeyIdIter, MkSigIter, Multi, One, SignIter, SignMethod};
@@ -32,48 +33,7 @@ const PADDED_LEN: usize = 32;
 pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
     padded::<PADDED_LEN>(b"FLOW-V0.0-transaction");
 
-#[cfg(test)]
-pub(crate) fn test_pad(src: &[u8]) -> [u8; 32] {
-    padded(src)
-}
-
-const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
-    let mut new_buf = [0; N];
-
-    let mut i = 0;
-
-    while i < src.len() {
-        new_buf[i] = src[i];
-        i += 1;
-    }
-
-    new_buf
-}
-
-#[derive(Debug, thiserror::Error)]
-#[non_exhaustive]
-/// The errors that could happen when logging in an account.
-pub enum Error {
-    /// There was not any public keys that matched the provided private key.
-    #[error("Could not find a matching key for the private key.")]
-    NoMatchingKeyFound,
-
-    /// The hashing and signing algorithms provided did not match public information.
-    #[error("The hashing and signing algorithms do not match.")]
-    AlgoMismatch,
-
-    /// Did not have enough signing weight.
-    #[error("The key(s) does not have enough weight.")]
-    NotEnoughWeight,
-
-    /// A key provided was revoked.
-    #[error("A key was revoked.")]
-    KeyRevoked,
-
-    /// An error from the client has occured.
-    #[error(transparent)]
-    Custom(#[from] Box<dyn StdError + Send + Sync>),
-}
+pub use crate::error::AccountError as Error;
 
 /// An account that uses the default signing and hashing algorithms.
 pub type DefaultAccount<Client, SecretKey> = Account<Client, SecretKey>;
@@ -520,7 +480,7 @@ where
     /// Queries the sequence number for the primary key from the network.
     pub async fn primary_key_sequence_number<'a>(
         &'a mut self,
-    ) -> Result<u32, Box<dyn StdError + Send + Sync>>
+    ) -> Result<u32, BoxError>
     where
         Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
     {
@@ -551,7 +511,7 @@ where
     pub async fn send_transaction_header<'a, Arguments, Argument>(
         &'a mut self,
         transaction: &'a TransactionHeader<Arguments>,
-    ) -> Result<SendTransactionResponse, Box<dyn StdError + Send + Sync>>
+    ) -> Result<SendTransactionResponse, BoxError>
     where
         Client: for<'b> GrpcClient<GetAccountAtLatestBlockRequest<'b>, AccountResponse>,
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
@@ -596,7 +556,7 @@ where
             .client
             .latest_block_header(Seal::Sealed)
             .await
-            .map_err(|e| e.into())?;
+            .map_err(Into::into)?;
 
         let reference_block_id = &*latest_block.id;
         let gas_limit = 1000;
@@ -630,10 +590,11 @@ where
             payload_signatures: [],
             envelope_signatures,
         };
-        self.client
+
+        Ok(self.client
             .send_transaction(transaction)
             .await
-            .map_err(|e| e.into())
+            .map_err(Into::into)?)
     }
 }
 
@@ -699,4 +660,22 @@ impl<'a, T, I: Iterator<Item = T>> Iterator for EmitRefAndDropOnNextIter<'a, T, 
 
 impl<T, I> otopr::HasItem for EmitRefAndDropOnNext<T, I> {
     type Item = T;
+}
+
+#[cfg(test)]
+pub(crate) fn test_pad(src: &[u8]) -> [u8; 32] {
+    padded(src)
+}
+
+const fn padded<const N: usize>(src: &[u8]) -> [u8; N] {
+    let mut new_buf = [0; N];
+
+    let mut i = 0;
+
+    while i < src.len() {
+        new_buf[i] = src[i];
+        i += 1;
+    }
+
+    new_buf
 }

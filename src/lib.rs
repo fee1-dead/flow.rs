@@ -15,6 +15,8 @@ pub mod access;
 pub mod client;
 pub mod codec;
 
+pub mod error;
+
 pub mod protobuf;
 
 pub mod transaction;

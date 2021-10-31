@@ -12,7 +12,6 @@
 
 use std::error::Error;
 
-use cadence_json::ValueRef;
 use rlp::RlpStream;
 
 use crate::access::AccountResponse;
@@ -23,6 +22,7 @@ use crate::account::PADDED_TRANSACTION_DOMAIN_TAG;
 use crate::algorithms::FlowHasher;
 use crate::algorithms::FlowSigner;
 use crate::client::GrpcClient;
+use crate::error::BoxError;
 use crate::prelude::Account;
 use crate::protobuf::Seal;
 use crate::transaction::rlp::rlp_encode_transaction_envelope;
@@ -145,19 +145,19 @@ impl PartyBuilder {
     }
 
     /// Appends a new argument.
-    pub fn argument<'a>(self, argument: impl AsRef<ValueRef<'a>>) -> Self {
-        self.argument_raw(serde_json::to_vec(argument.as_ref()).unwrap())
+    pub fn argument<'a>(self, argument: impl serde::Serialize) -> Self {
+        self.argument_raw(serde_json::to_vec(&argument).unwrap())
     }
 
     /// Appends arguments.
     pub fn arguments<'a>(
         self,
-        arguments: impl IntoIterator<Item = impl AsRef<ValueRef<'a>>>,
+        arguments: impl IntoIterator<Item = impl serde::Serialize>,
     ) -> Self {
         self.arguments_raw(
             arguments
                 .into_iter()
-                .map(|val| serde_json::to_vec(val.as_ref()).unwrap()),
+                .map(|val| serde_json::to_vec(&val).unwrap()),
         )
     }
 
@@ -228,7 +228,7 @@ impl PartyBuilder {
     pub async fn proposer_account<'a, C, Sk, Sign, Hash>(
         mut self,
         acc: &'a mut Account<C, Sk, Sign, Hash>,
-    ) -> Result<Self, Box<dyn Error + Send + Sync>>
+    ) -> Result<Self, BoxError>
     where
         C: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
         Sign: FlowSigner<SecretKey = Sk>,
