@@ -171,7 +171,7 @@ where
             sequence_number,
             address,
             [address],
-            empty::<(&[u8], u32, &[u8])>(),
+            empty::<(u32, u32, &[u8])>(),
         );
 
         let mut hasher = Hasher::new();

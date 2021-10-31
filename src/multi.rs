@@ -10,6 +10,9 @@
 //!
 //! Both party types implement the common interface, the [`Party`] trait.
 
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+
 use rlp::RlpStream;
 
 use crate::access::AccountResponse;
@@ -280,18 +283,17 @@ impl PartyBuilder {
 
     /// Builds a [`SigningParty`] from this builder, assuming all fields have been set.
     pub fn build(self) -> SigningParty {
-        SigningParty {
-            script: self.script.unwrap(),
-            arguments: self.arguments.into(),
-            reference_block: self.reference_block.unwrap(),
-            gas_limit: self.gas_limit,
-            proposer_address: self.proposer_address.unwrap(),
-            proposal_key_id: self.proposal_key_id.unwrap(),
-            proposal_key_sequence_number: self.proposal_key_sequence_number.unwrap(),
-            payer: self.payer.unwrap(),
-            authorizers: self.authorizers.into(),
-            payload_signatures: Vec::new(),
-        }
+        SigningParty::new(
+            self.script.unwrap(),
+            self.arguments.into(),
+            self.reference_block.unwrap(),
+            self.gas_limit,
+            self.proposer_address.unwrap(),
+            self.proposal_key_id.unwrap(),
+            self.proposal_key_sequence_number.unwrap(),
+            self.payer.unwrap(),
+            self.authorizers.into(),
+        )
     }
 
     /// Builds a [`PreHashedParty`] from this builder, assuming all fields have been set.
@@ -321,6 +323,7 @@ pub struct SigningParty {
     payer: Box<[u8]>,
     authorizers: Box<[Box<[u8]>]>,
     payload_signatures: Vec<SignatureE<Box<[u8]>, [u8; 64]>>,
+    signer_map: HashMap<Box<[u8]>, u32>,
 }
 
 impl<H: FlowHasher> Party<H> for SigningParty {
@@ -409,9 +412,13 @@ impl<H: FlowHasher> Party<H> for SigningParty {
             self.proposal_key_sequence_number,
             &self.payer,
             self.authorizers.iter(),
-            self.payload_signatures
-                .iter()
-                .map(|sig| (&sig.address, sig.key_id, &sig.signature)),
+            self.payload_signatures.iter().map(|sig| {
+                (
+                    *self.signer_map.get(&sig.address).unwrap(),
+                    sig.key_id,
+                    &sig.signature,
+                )
+            }),
         );
         hasher.update(&stream.out());
         hasher
@@ -440,6 +447,31 @@ impl<H: FlowHasher> Party<H> for SigningParty {
 }
 
 impl SigningParty {
+    /// Builds a signer address to signer index map.
+    pub fn build_signer_map(
+        proposer: &[u8],
+        payer: &[u8],
+        authorizers: &[impl AsRef<[u8]>],
+    ) -> HashMap<Box<[u8]>, u32> {
+        let mut map: HashMap<Box<[u8]>, u32> = HashMap::new();
+        map.insert(proposer.into(), 0);
+
+        let mut add = |addr: &[u8]| {
+            let len = map.len();
+            if let Entry::Vacant(entry) = map.entry(addr.into()) {
+                entry.insert(len as u32);
+            }
+        };
+
+        add(payer);
+
+        for authorizer in authorizers {
+            add(authorizer.as_ref());
+        }
+
+        map
+    }
+
     /// Creates a new [`SigningParty`] with all the data associated to a transaction.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -453,6 +485,7 @@ impl SigningParty {
         payer: Box<[u8]>,
         authorizers: Box<[Box<[u8]>]>,
     ) -> Self {
+        let signer_map = Self::build_signer_map(&proposer_address, &payer, &authorizers);
         Self {
             script,
             arguments,
@@ -464,6 +497,7 @@ impl SigningParty {
             payer,
             authorizers,
             payload_signatures: Vec::new(),
+            signer_map,
         }
     }
 

@@ -1,4 +1,5 @@
 use crate::transaction::rlp::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
+use crate::multi::SigningParty;
 
 use super::fixtures::Test;
 
@@ -35,7 +36,8 @@ impl Test for TxTest {
         let reference_block_id = hex::decode(ref_block).unwrap();
         let proposal_key_address = hex::decode(address).unwrap();
         let payer = hex::decode(payer).unwrap();
-        let authorizers = authorizers.iter().map(hex::decode).map(Result::unwrap);
+        let authorizers: Vec<_> = authorizers.iter().map(hex::decode).map(Result::unwrap).collect();
+        let signer_map = SigningParty::build_signer_map(&proposal_key_address, &payer, &authorizers);
         let mut stream = rlp::RlpStream::new();
 
         rlp_encode_transaction_payload(
@@ -68,7 +70,7 @@ impl Test for TxTest {
             authorizers,
             payload_signatures.into_iter().map(|ps| {
                 (
-                    hex::decode(ps.address).unwrap(),
+                    signer_map[hex::decode(ps.address).unwrap().as_slice()],
                     ps.key_id,
                     hex::decode(ps.sig).unwrap(),
                 )
