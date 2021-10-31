@@ -135,7 +135,7 @@ where
         Signer::Signature: Signature<Serialized = [u8; 64]>,
     {
         assert_eq!(&*self.address, party.payer());
-        let signatures = self.sign(party.payload());
+        let signatures = self.sign(party.envelope());
         let key_ids = self.sign_method.key_ids();
 
         party.into_transaction_with_envelope_signatures(signatures.zip(key_ids).map(
