@@ -285,7 +285,7 @@ core events, and you should read more about them in [this document](https://docs
 #### Examples
 Example depicts ways to get events within block range or by block IDs:
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#get-events-within-a-block-height-range-or-by-list-of-block-ids)**
 ```rust
 use std::error::Error;
 
@@ -437,7 +437,7 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 
 📖 **Block height** expresses the height of the block in the chain.
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#execute-script-on-the-latest-block-or-a-specific-block)**
 ```rust
 use std::error::Error;
 
@@ -585,7 +585,7 @@ transaction(greeting: String) {
 }
 ```
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#build-a-transaction)**
 ```rust
 use cadence_json::ValueRef;
 use flow_sdk::transaction::TransactionHeaderBuilder;
@@ -912,7 +912,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
 | `0x02`  | 3      | 0.5    |
 | `0x02`  | 4      | 0.5    |
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example link
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#build-a-transaction)**
 ```rust
 use std::error::Error;
 
@@ -989,7 +989,7 @@ async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Sen
 After a transaction has been [built](#build-transactions) and [signed](#sign-transactions), it can be sent to the Flow blockchain where it will be executed. If sending was successful you can then [retrieve the transaction result](#get-transactions).
 
 
-**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">]()** // TODO example here
+**[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#sending-transactions)**
 ```rust
 use flow_sdk::access::SendTransactionRequest;
 use flow_sdk::prelude::*;
