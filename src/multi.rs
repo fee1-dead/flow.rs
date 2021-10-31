@@ -143,12 +143,12 @@ impl PartyBuilder {
     }
 
     /// Appends a new argument.
-    pub fn argument<'a>(self, argument: impl serde::Serialize) -> Self {
+    pub fn argument(self, argument: impl serde::Serialize) -> Self {
         self.argument_raw(serde_json::to_vec(&argument).unwrap())
     }
 
     /// Appends arguments.
-    pub fn arguments<'a>(self, arguments: impl IntoIterator<Item = impl serde::Serialize>) -> Self {
+    pub fn arguments(self, arguments: impl IntoIterator<Item = impl serde::Serialize>) -> Self {
         self.arguments_raw(
             arguments
                 .into_iter()
