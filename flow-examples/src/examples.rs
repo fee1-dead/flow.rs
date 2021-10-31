@@ -91,8 +91,7 @@ lazy_static::lazy_static! {
     };
 }
 
-pub type ExampleReturnTy<'a> =
-    Pin<Box<dyn Future<Output = anyhow::Result<()>> + 'a>>;
+pub type ExampleReturnTy<'a> = Pin<Box<dyn Future<Output = anyhow::Result<()>> + 'a>>;
 
 #[derive(Clone, Copy)]
 pub struct Example {

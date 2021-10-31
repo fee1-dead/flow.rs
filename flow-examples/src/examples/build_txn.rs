@@ -1,14 +1,11 @@
-use std::error::Error;
 use std::fs;
 use std::str::SplitWhitespace;
 
 
 use anyhow::*;
 use cadence_json::ValueOwned;
-use flow_sdk::access::*;
 use flow_sdk::multi::{PartyBuilder, PartyTransaction};
 use flow_sdk::prelude::*;
-use flow_sdk::transaction::TransactionE;
 use tokio::sync::Mutex;
 
 use crate::*;
@@ -25,11 +22,10 @@ async fn run(
 ) -> Result<()> {
     let client = account.client();
     let script_path = args.next().with_context(|| "Expected a path to the script file")?;
+    let arguments_path = args.next();
+
     let script = fs::read(script_path).with_context(|| format!("While reading script from {}", script_path))?;
-
     let script = String::from_utf8(script).with_context(|| format!("While reading script from {}", script_path))?;
-
-    let mut arguments_path = args.next();
 
     let arguments_raw: Option<Vec<u8>> = arguments_path
         .map(|p| fs::read(p))
@@ -44,12 +40,21 @@ async fn run(
     let party = PartyBuilder::new()
         .script(script)
         .arguments(arguments)
-        .authorizer_account(account)
-        .payer_account(account)
-        .proposer_account(account).await?
         .latest_block_as_reference(client).await?
-        ;
-   
+        .proposer_account(account).await?
+        .authorizer_account(&*account)
+        .payer_account(&*account).build();
+
+    let txn = account.sign_party_as_payer(party);
+
+    let mut built = BUILT_TXN.lock().await;
+    if let Some(prev_txn) = built.take() {
+        println!("Discarding previously built transaction: {:#?}", prev_txn);
+    }
+
+    println!("Built transaction: {:#?}", txn);
+
+    *built = Some(txn);
 
     Ok(())
 }

@@ -15,9 +15,9 @@ async fn run(
     args: &mut SplitWhitespace<'_>,
 ) -> Result<()> {
     let client = account.client();
-    let script_path = args.next().ok_or("Expected path to script file")?;
+    let script_path = args.next().with_context(|| "Expected path to script file")?;
     let script = fs::read(script_path)
-        .map_err(|e| format!("IO error while opening script file: {}", e))?;
+        .with_context(|| format!("IO error while opening {}", script_path))?;
 
     let mut arguments_path = args.next();
     let block = match args.next() {
@@ -36,25 +36,25 @@ async fn run(
     let arguments_raw: Option<Vec<u8>> = arguments_path
         .map(|p| fs::read(p))
         .transpose()
-        .map_err(|e| format!("IO error while opening arguments file: {}", e))?;
+        .with_context(|| format!("Opening arguments file"))?;
 
     let arguments: Vec<ValueOwned> = arguments_raw.as_deref().map(serde_json::from_slice)
         .transpose()
-        .map_err(|e| format!("JSON error while parsing arguments file: {}", e))?
+        .with_context(|| format!("Parsing arguments file as Cadence JSON"))?
         .unwrap_or_default();
 
     let return_val = match block {
         Some(arg) if arg.len() == 64 => {
             let mut block_id = [0; 32];
             hex::decode_to_slice(arg, &mut block_id)
-                .map_err(|_| "Expected block height or hex encoded block ID")?;
+                .with_context(|| "Expected block height or hex encoded block ID")?;
 
             client.send(ExecuteScriptAtBlockIdRequest { block_id, script, arguments }).await?
         }
         Some(height) => {
             let block_height = height
                 .parse()
-                .map_err(|_| "Expected block height or hex encoded block ID")?;
+                .with_context(|| "Expected block height or hex encoded block ID")?;
             client.send(ExecuteScriptAtBlockHeightRequest { block_height, script, arguments }).await?
         }
         None => client.send(ExecuteScriptAtLatestBlockRequest { script, arguments }).await?,
