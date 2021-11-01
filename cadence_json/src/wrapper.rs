@@ -57,3 +57,15 @@ wrapper!(U16(u16));
 wrapper!(U32(u32));
 wrapper!(U64(u64));
 wrapper!(U128(u128));
+
+#[derive(serde::Deserialize)]
+pub struct TypeDe {
+    #[serde(rename = "staticType")]
+    pub static_type: String
+}
+
+#[derive(serde::Serialize)]
+pub struct TypeSer<'a> {
+    #[serde(rename = "staticType")]
+    pub static_type: &'a str,
+}

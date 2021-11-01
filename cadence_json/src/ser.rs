@@ -72,7 +72,7 @@ impl<'a> Serialize for ValueRef<'a> {
                 ValueRef::Contract(v) => v,
                 ValueRef::Enum(v) => v,
                 ValueRef::Path(v) => v,
-                ValueRef::Type(v) => v,
+                ValueRef::Type(v) => &TypeSer { static_type: v },
                 ValueRef::Capability(v) => v,
                 _ => unreachable!(),
             }
@@ -140,7 +140,7 @@ impl<'a> Serialize for ValueOwned {
                 ValueOwned::Contract(v) => v,
                 ValueOwned::Enum(v) => v,
                 ValueOwned::Path(v) => v,
-                ValueOwned::Type(v) => v,
+                ValueOwned::Type(v) => &TypeSer { static_type: v },
                 ValueOwned::Capability(v) => v,
                 _ => unreachable!(),
             }

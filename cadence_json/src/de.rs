@@ -124,8 +124,8 @@ impl<'de> Visitor<'de> for CadenceObjectVisitor {
             Contract => ValueOwned::Contract(map.next_value()?),
             Enum => ValueOwned::Enum(map.next_value()?),
             Path => ValueOwned::Path(map.next_value()?),
-            Type => ValueOwned::Type(map.next_value()?),
-            Capability => ValueOwned::Contract(map.next_value()?),
+            Type => ValueOwned::Type(map.next_value::<TypeDe>()?.static_type),
+            Capability => ValueOwned::Capability(map.next_value()?),
         })
     }
 }

@@ -144,10 +144,11 @@ impl Serialize for AddressRef<'_> {
     }
 }
 
-#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CapabilityOwned {
     pub path: String,
     pub address: AddressOwned,
+    #[serde(rename = "borrowType")]
     pub borrow_type: String,
 }
 

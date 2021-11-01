@@ -2,16 +2,24 @@ use num_bigint::{BigInt, BigUint, Sign};
 
 use crate::*;
 
+// Tests for decoding JSON-Cadence values, and encoding them back.
+//
+// Testing equality.
 macro_rules! parse_tests {
-    ($(fn $name:ident() {$($tt: tt)*} should_be $exp:expr)+) => {$(
+    ($(fn $name:ident() {$($json: tt)*} <==> $cadence_value:expr)+) => {$(
         #[test]
         fn $name() {
-            let js = concat!("{", stringify!($($tt)*), "}");
+            let json = concat!("{", stringify!($($json)*), "}");
 
-            let found: ValueOwned = serde_json::from_str(js).expect("Failed to parse JSON");
-            let expected: ValueOwned = $exp;
+            let found_cadence: ValueOwned = serde_json::from_str(json).expect("Failed to parse JSON");
+            let expected_cadence: ValueOwned = $cadence_value;
 
-            assert_eq!(expected, found);
+            assert_eq!(expected_cadence, found_cadence);
+
+            let found_json_value = serde_json::to_value(&expected_cadence).expect("Failed to convert to JSON value");
+            let expected_json_value: serde_json::Value = serde_json::from_str(json).expect("Failed to parse JSON");
+
+            assert_eq!(expected_json_value, found_json_value);
         })+
     };
 }
@@ -19,42 +27,42 @@ macro_rules! parse_tests {
 parse_tests! {
     fn void() {
         "type": "Void"
-    } should_be ValueOwned::Void
+    } <==> ValueOwned::Void
 
     fn optional_none() {
         "type": "Optional",
         "value": null
-    } should_be ValueOwned::Optional(None)
+    } <==> ValueOwned::Optional(None)
 
     fn bool() {
         "type": "Bool",
         "value": true
-    } should_be ValueOwned::Bool(true)
+    } <==> ValueOwned::Bool(true)
 
     fn string() {
         "type": "String",
         "value": "Hello World"
-    } should_be ValueOwned::String("Hello World".into())
+    } <==> ValueOwned::String("Hello World".into())
 
     fn address() {
         "type": "Address",
         "value": "0x1234"
-    } should_be ValueOwned::Address(AddressOwned { data: [0x12, 0x34].into() })
+    } <==> ValueOwned::Address(AddressOwned { data: [0x12, 0x34].into() })
 
     fn uint8() {
         "type": "UInt8",
         "value": "123"
-    } should_be ValueOwned::UInt8(123)
+    } <==> ValueOwned::UInt8(123)
 
     fn uint() {
         "type": "UInt",
         "value": "115792089237316195423570985008687907853269984665640564039457584007913129639936"
-    } should_be ValueOwned::UInt(BigUint::from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    } <==> ValueOwned::UInt(BigUint::from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 1]))
 
     fn fixed_point() {
         "type": "Fix64",
-        "value": "12.3"
-    } should_be ValueOwned::Fix64(Fix64::from_raw(1230000000))
+        "value": "12.30000000"
+    } <==> ValueOwned::Fix64(Fix64::from_raw(1230000000))
 
     fn array() {
         "type": "Array",
@@ -72,7 +80,7 @@ parse_tests! {
             "value": true
           }
         ]
-    } should_be ValueOwned::Array(vec![ ValueOwned::Int16(123), ValueOwned::String("test".into()), ValueOwned::Bool(true) ])
+    } <==> ValueOwned::Array(vec![ ValueOwned::Int16(123), ValueOwned::String("test".into()), ValueOwned::Bool(true) ])
 
     fn dictionary() {
         "type": "Dictionary",
@@ -88,7 +96,7 @@ parse_tests! {
             }
           }
         ]
-    } should_be ValueOwned::Dictionary(vec![ EntryOwned {
+    } <==> ValueOwned::Dictionary(vec![ EntryOwned {
         key: ValueOwned::UInt8(123),
         value: ValueOwned::String("test".into())
     }])
@@ -104,7 +112,7 @@ parse_tests! {
             }
           ]
         }
-    } should_be ValueOwned::Resource(CompositeOwned {
+    } <==> ValueOwned::Resource(CompositeOwned {
         id: "0x3.GreatContract.GreatNFT".into(),
         fields: vec![
             CompositeFieldOwned {
@@ -120,7 +128,7 @@ parse_tests! {
           "domain": "storage",
           "identifier": "flowTokenVault"
         }
-    } should_be ValueOwned::Path(PathOwned {
+    } <==> ValueOwned::Path(PathOwned {
         domain: PathDomain::Storage,
         identifier: "flowTokenVault".into(),
     })
@@ -130,16 +138,16 @@ parse_tests! {
         "value": {
           "staticType": "Int"
         }
-    } should_be ValueOwned::Type("Int".into())
+    } <==> ValueOwned::Type("Int".into())
 
     fn capability() {
         "type": "Capability",
         "value": {
           "path": "/public/someInteger",
           "address": "0x01",
-          "borrowType": "Int",
+          "borrowType": "Int"
         }
-    } should_be ValueOwned::Capability(CapabilityOwned {
+    } <==> ValueOwned::Capability(CapabilityOwned {
         path: "/public/someInteger".into(),
         address: AddressOwned { data: [0x01].into() },
         borrow_type: "Int".into(),
@@ -177,7 +185,7 @@ parse_tests! {
                 }]
             }
         ]
-    } should_be ValueOwned::Array(vec![
+    } <==> ValueOwned::Array(vec![
         ValueOwned::Array(vec![
             ValueOwned::Array(vec![
                 ValueOwned::Array(vec![
