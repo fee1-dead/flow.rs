@@ -71,9 +71,8 @@ macro_rules! test_fixtures {
     ($TestTy:ty, $file_name:literal, $fn_name: ident) => {
         #[test]
         fn $fn_name() -> Result<(), crate::tests::fixtures::TestFixtureResult> {
-            let fixture = crate::tests::fixtures::parse_test_fixture::<$TestTy>(include_str!(
-                $file_name
-            ));
+            let fixture =
+                crate::tests::fixtures::parse_test_fixture::<$TestTy>(include_str!($file_name));
             fixture.run()
         }
     };

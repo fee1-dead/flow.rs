@@ -61,7 +61,7 @@ wrapper!(U128(u128));
 #[derive(serde::Deserialize)]
 pub struct TypeDe {
     #[serde(rename = "staticType")]
-    pub static_type: String
+    pub static_type: String,
 }
 
 #[derive(serde::Serialize)]
