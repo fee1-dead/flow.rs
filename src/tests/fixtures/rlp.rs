@@ -1,7 +1,7 @@
 use crate::multi::SigningParty;
 use crate::transaction::rlp::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
 
-use super::fixtures::Test;
+use super::Test;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct TxTest {

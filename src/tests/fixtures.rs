@@ -7,6 +7,9 @@ use std::{
 
 use serde::de::DeserializeOwned;
 
+pub mod domain_tag;
+pub mod rlp;
+
 #[derive(serde::Deserialize)]
 pub struct TestFixture<T> {
     pub title: String,
@@ -69,7 +72,7 @@ macro_rules! test_fixtures {
         #[test]
         fn $fn_name() -> Result<(), crate::tests::fixtures::TestFixtureResult> {
             let fixture = crate::tests::fixtures::parse_test_fixture::<$TestTy>(include_str!(
-                concat!("fixtures/", $file_name)
+                $file_name
             ));
             fixture.run()
         }

@@ -1,4 +1,4 @@
-use super::fixtures::Test;
+use super::Test;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct DTagTest {
