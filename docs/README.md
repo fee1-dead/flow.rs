@@ -1,20 +1,18 @@
 <br />
 <div align="center">
-  <a href="">
-    <img src="./" alt="Logo" width="300" height="auto">
-  </a>
   <p align="center"> <br />
-    <a href=""><strong>View on GitHub »</strong></a> <br /><br />
-    <a href="https://docs.onflow.org/sdk-guidelines/">SDK Specifications</a> ·
-    <a href="">Contribute</a> ·
-    <a href="">Report a Bug</a>
+    <a href="https://github.com/fee1-dead/flow.rs/tree/master/docs"><strong>View on GitHub »</strong></a> <br /><br />
+    <a href="https://docs.rs/flow-sdk/latest/flow_sdk/client/index.html">Documentation</a> ·
+    <!-- <a href="">Contribute</a> · -->
+    <a href="https://github.com/fee1-dead/flow.rs/issues/new">Report a Bug</a>
   </p>
 </div><br />
 
 ## Overview 
 
 This reference documents all the methods available in the SDK, and explains in detail how these methods work.
-SDKs are open source, and you can use them according to the licence.
+
+This SDKs is dual-licenced under MIT or Apache 2.0, at your option.
 
 The library client specifications can be found here:
 
@@ -386,42 +384,29 @@ Example retrieving a collection:
 ```rust
 use std::error::Error;
 
-use flow_sdk::client::TonicHyperFlowClient;
+use flow_sdk::prelude::*;
+
+async fn run(collection_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut client = TonicHyperFlowClient::mainnet()?;
+    let collection = client
+            .collection_by_id(&hex::decode(collection_id).unwrap())
+            .await?;
+
+    println!("OK: {:#?}", collection);
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::testnet()?;
-    client.ping().await?;
-
-    let mut latest_block = client.latest_block(true).await?;
-
-    // traverse latest blocks until we find a collection guarantee.
-    let collection_guarrantee = loop {
-        if latest_block.collection_guarantees.is_empty() {
-            // Go to the next block
-            latest_block = client.block_by_id(&latest_block.parent_id).await?;
-        } else {
-            break latest_block.collection_guarantees.pop().unwrap();
-        }
-    };
-
-    // retrieve the collection by id.
-    let collection = client
-        .collection_by_id(&collection_guarrantee.collection_id)
-        .await?
-        .collection;
-
-    println!("OK: {:#?}", collection);
-
-    Ok(())
+    run("e77a56556aadcc2f2b6e4ef853983a2be3dc8ff72873a8e1a1ae13651ec779ed")
 }
 ```
 Example output:
 ```rust
 OK: Collection {
-    id: 6ccc4829aaab7e7d06446b201c49f092dcef9be0428eabd690692067e2e1d947,
+    id: e77a56556aadcc2f2b6e4ef853983a2be3dc8ff72873a8e1a1ae13651ec779ed,
     transactions: [
-        9481cc10ed0938bf9a429e098684dd30b3a95fa66db6287c23eebd6b46c30eaf,
+        bcb7a41ffa990fd09f4285eebdf31a69d3fce23cf23c39ac86753c1cbd3207ed,
     ],
 }
 ```
