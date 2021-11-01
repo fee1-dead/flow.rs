@@ -23,6 +23,10 @@ you can look at the `examples/` directory.
 
 To run examples in `examples/`, run `cargo run --example file_name_without_rs`.
 
+## Tests
+
+The SDK has tests within [`src/tests`](./src/tests) and Cadence JSON tests are in [`cadence_json/src/tests`](./cadence_json/src/tests)
+
 ## Cryptography and Hashing algorithms
 
 Currently the library supports signing with secp256k1 and SHA3 hashing. Support for other algorithms
