@@ -1,8 +1,8 @@
 # Flow Rust SDK
 
 [![CI](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml)
-![Crates.io](https://img.shields.io/crates/v/flow-sdk)
-![docs.rs](https://img.shields.io/docsrs/flow-sdk)
+[![Crates.io](https://img.shields.io/crates/v/flow-sdk)](https://crates.io/crates/flow-sdk)
+[![docs.rs](https://img.shields.io/docsrs/flow-sdk)](https://docs.rs/flow-sdk/)
 ![Crates.io](https://img.shields.io/crates/l/flow-sdk)
 
 The minimum supported Rust version (MSRV) of this project is 1.56.0.
