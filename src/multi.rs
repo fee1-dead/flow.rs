@@ -113,7 +113,7 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
 /// ```
 /// # use flow_sdk::multi::{PartyBuilder, SigningParty};
 /// # use cadence_json::ValueRef;
-/// 
+///
 /// let party = PartyBuilder::new()
 ///     .script("s")
 ///     .reference_block([0])
@@ -124,9 +124,9 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
 ///     .payer([4])
 ///     .authorizer([5])
 ///     .build();
-/// 
+///
 /// let party2 = SigningParty::new("s".into(), [].into(), [0].into(), 123, [1].into(), 2, 3, [4].into(), [[5].into()].into());
-/// 
+///
 /// assert_eq!(party, party2);
 /// ```
 #[derive(Clone)]
