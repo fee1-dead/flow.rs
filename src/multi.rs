@@ -109,6 +109,26 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
 }
 
 /// A builder that makes it easy to create new [`SigningParty`] instances.
+///
+/// ```
+/// # use flow_sdk::multi::{PartyBuilder, SigningParty};
+/// # use cadence_json::ValueRef;
+/// 
+/// let party = PartyBuilder::new()
+///     .script("s")
+///     .reference_block([0])
+///     .gas_limit(123)
+///     .proposer_address([1])
+///     .proposal_key_id(2)
+///     .proposal_key_sequence_number(3)
+///     .payer([4])
+///     .authorizer([5])
+///     .build();
+/// 
+/// let party2 = SigningParty::new("s".into(), [].into(), [0].into(), 123, [1].into(), 2, 3, [4].into(), [[5].into()].into());
+/// 
+/// assert_eq!(party, party2);
+/// ```
 #[derive(Clone)]
 pub struct PartyBuilder {
     script: Option<Box<str>>,
@@ -311,7 +331,7 @@ impl Default for PartyBuilder {
 }
 
 /// A basic signing party. Contains all the information needed to make signatures.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SigningParty {
     script: Box<str>,
     arguments: Box<[Box<[u8]>]>,
@@ -518,7 +538,7 @@ impl SigningParty {
 ///
 /// Note that this can be a bit less secure than using [`SigningParty`].
 /// A malicious attacker may modify the payload using unsafe pointer operations.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PreHashedParty<H> {
     party: SigningParty,
     payload: H,
