@@ -7,8 +7,8 @@ use flow_sdk::multi::{PartyBuilder, PartyTransaction};
 use flow_sdk::prelude::*;
 use tokio::sync::Mutex;
 
-use flow_sdk::algorithms::secp256k1::*;
 use flow_sdk::algorithms::rand;
+use flow_sdk::algorithms::secp256k1::*;
 
 use crate::*;
 
@@ -126,14 +126,16 @@ async fn run(service: &mut ExampleAccount, args: &mut SplitWhitespace<'_>) -> Re
     let mut party = PartyBuilder::new()
         .script(script)
         .arguments(arguments)
-        .latest_block_as_reference(service.client()).await?
-        .proposer_account(&mut acc1).await?
+        .latest_block_as_reference(service.client())
+        .await?
+        .proposer_account(&mut acc1)
+        .await?
         .payer_account(&acc1)
         .authorizer_accounts([&acc1, &acc2])
         .build();
 
     acc2.sign_party(&mut party);
-    
+
     let txn = acc1.sign_party_as_payer(party);
 
     let mut lock = BUILT_TXN.lock().await;

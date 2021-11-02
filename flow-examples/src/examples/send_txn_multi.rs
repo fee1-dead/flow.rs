@@ -16,9 +16,10 @@ async fn run(account: &mut ExampleAccount, _: &mut SplitWhitespace<'_>) -> Resul
 
     drop(lock);
 
-    account.client().send(SendTransactionRequest {
-        transaction
-    }).await?;
+    account
+        .client()
+        .send(SendTransactionRequest { transaction })
+        .await?;
 
     Ok(())
 }
