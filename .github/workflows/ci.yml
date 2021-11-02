@@ -16,6 +16,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
+          args: -p flow-sdk -p cadence_json -p flow-examples
 
   test:
     name: Test Suite
@@ -30,6 +31,25 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+      - run: cd cadence_json && cargo test
+  
+  release:
+    name: Release Examples Binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+          override: true
+      - run: sudo apt-get install musl
+      - run: cd flow-examples && cargo build --target x86_64-unknown-linux-musl --release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: flow-examples
+          path: target/x86_64-unknown-linux-musl/release/flow-examples
 
   fmt:
     name: Rustfmt
@@ -45,7 +65,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: --all -p flow-sdk -p cadence_json -p flow-examples -- --check flow-examples/src/examples/*
 
   clippy:
     name: Clippy
@@ -61,4 +81,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: -p flow-sdk -p cadence_json -p flow-examples -- -D warnings
