@@ -44,7 +44,7 @@ jobs:
           toolchain: stable
           target: x86_64-unknown-linux-musl
           override: true
-      - run: sudo apt-get install musl
+      - run: sudo apt-get install musl musl-tools
       - run: cd flow-examples && cargo build --target x86_64-unknown-linux-musl --release
       - uses: actions/upload-artifact@v2
         with:
@@ -62,10 +62,7 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -p flow-sdk -p cadence_json -p flow-examples -- --check flow-examples/src/examples/*
+      - run: cargo fmt --all -p flow-sdk -p cadence_json -p flow-examples -- --check flow-examples/src/examples/*
 
   clippy:
     name: Clippy
