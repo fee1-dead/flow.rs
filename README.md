@@ -5,6 +5,8 @@
 [![docs.rs](https://img.shields.io/docsrs/flow-sdk)](https://docs.rs/flow-sdk/)
 ![Crates.io](https://img.shields.io/crates/l/flow-sdk)
 
+[Documentation](docs/README.md)
+
 The minimum supported Rust version (MSRV) of this project is 1.56.0.
 
 To install Rust, visit the [rustup] website for information.
