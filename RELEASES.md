@@ -2,6 +2,8 @@
 
 ### Changed
  - Added documentation about compiler bugs which caused issues for some functions
+ - `TonicHyperFlowClient` connection methods now connects to the endpoint instead of initializing lazily.
+    - Previous functions are renamed to `*_lazy`. 
 
 # Version 0.2
 
