@@ -45,7 +45,11 @@ pub trait GrpcClient<I, O> {
 
 /// A gRPC client wrapper. Has utility functions for sending requests.
 ///
-/// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+/// ## error: the method `xx` exists for struct `FlowClient<...>`, but its trait bounds were not satisfied
+///
+/// This error is due to bugs in the compiler's trait system (notably [#56556] and [#89196]),
+/// consider using `send` when you encounter a confusing error. Unfortunately, this cannot be
+/// worked around at the library level.
 ///
 /// i.e. use this:
 ///
@@ -53,7 +57,7 @@ pub trait GrpcClient<I, O> {
 /// client.send(ExecuteScriptAtLatestBlockRequest { script, arguments })
 /// ```
 ///
-/// instead of this when you encounter an error:
+/// instead of this when you encounter the error:
 ///
 /// ```ignore
 /// client.execute_script_at_latest_block(script, arguments);
@@ -224,11 +228,15 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves events with the specified type with the specified block ids.
+        ///
+        /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
         pub async fn events_for_blocks_by_ids<(EventTy, BlockIds)>(ty: EventTy, block_ids: BlockIds) GetEventsForBlockIdsRequest<EventTy, BlockIds> => EventsResponse {
             GetEventsForBlockIdsRequest { ty, block_ids }
         }
 
         /// Executes Cadence script at the latest block and returns the result.
+        ///
+        /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
         pub async fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
