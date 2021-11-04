@@ -346,9 +346,16 @@ where
     //////////////////
     // SIGNING
 
-    /// Creates a signature using this account's public key(s), consuming a populated hasher.
+    /// Creates signature(s) using this account's public key(s), consuming a populated hasher.
     pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
         Self::sign_(hasher, self.signer(), &self.sign_method)
+    }
+
+    /// Creates signature(s) using this account's public key(s), signing provided data.
+    pub fn sign_data(&self, data: impl AsRef<[u8]>) -> SignIter<Signer> {
+        let mut hasher = Hasher::new();
+        hasher.update(&data);
+        self.sign(hasher)
     }
 
     /// Signs a party, assuming that you have confirmed all the details of the party.
