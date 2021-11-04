@@ -6,6 +6,9 @@ pub type DefaultHasher = DefaultHasherNoDoc;
 /// The default signer, the exact type depends on the feature flags enabled.
 pub type DefaultSigner = DefaultSignerNoDoc;
 
+/// The default secret key, the exact type depends on the feature flags enabled.
+pub type DefaultSecretKey = DefaultSecretKeyNoDoc;
+
 include!("algorithms/macro_impl.rs");
 macro_rules! algorithms {
     ($($tt:tt)+) => {
@@ -187,6 +190,9 @@ type DefaultHasherNoDoc = tiny_keccak::Sha3;
 #[cfg(feature = "secp256k1-sign")]
 type DefaultSignerNoDoc = secp256k1::Secp256k1<secp256k1::SignOnly>;
 
+#[cfg(feature = "secp256k1-sign")]
+type DefaultSecretKeyNoDoc = secp256k1::SecretKey;
+
 #[cfg(not(any(feature = "sha3-hash")))]
 type DefaultHasherNoDoc = NoDefaultHasherAvailable;
 
@@ -200,3 +206,7 @@ pub struct NoDefaultHasherAvailable;
 #[cfg(not(any(feature = "secp256k1-sign")))]
 #[doc(hidden)]
 pub struct NoDefaultSignerAvailable;
+
+#[cfg(not(any(feature = "secp256k1-sign")))]
+#[doc(hidden)]
+pub struct NoDefaultSecretKeyAvailable;
