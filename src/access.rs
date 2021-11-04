@@ -11,6 +11,7 @@ use crate::client::{FlowClient, GrpcClient};
 use crate::entities::*;
 use crate::protobuf::*;
 use crate::transaction::*;
+use crate::trait_hack::Hack;
 
 /// Ping.
 #[derive(EncodableMessage)]
@@ -107,17 +108,17 @@ pub struct CollectionResponse {
         Arguments: HasItem,
         <Arguments as HasItem>::Item: AsRef<[u8]>,
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a Arguments as IntoIterator>::IntoIter>: Clone,
         Authorizers: HasItem,
         <Authorizers as HasItem>::Item: AsRef<[u8]>,
         for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
-        for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a Authorizers as IntoIterator>::IntoIter>: Clone,
         PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
-        for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a PayloadSignatures as IntoIterator>::IntoIter>: Clone,
         EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
-        for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a EnvelopeSignatures as IntoIterator>::IntoIter>: Clone,
 ))]
 /// Sends a transaction over the network.
 pub struct SendTransactionRequest<
@@ -223,7 +224,7 @@ pub struct AccountResponse {
     pub account: Account,
 }
 
-fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Clone + 'a>(
+fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + 'a>(
     it: It,
 ) -> std::iter::Map<It, fn(&T) -> Vec<u8>> {
     fn enc<T: serde::Serialize>(t: &T) -> Vec<u8> {
@@ -239,7 +240,7 @@ fn encode_argument<'a, T: serde::Serialize + 'a, It: Iterator<Item = &'a T> + Cl
         Arguments: HasItem,
         <Arguments as HasItem>::Item: serde::Serialize,
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a Arguments as IntoIterator>::IntoIter>: Clone,
 ))]
 /// Executes a script (maybe with arguments) at the latest block.
 pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
@@ -247,7 +248,7 @@ pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
     /// The script.
     pub script: Script,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |hacked| encode_argument(hacked.0))))]
     /// The arguments. A collection of [`ValueRef`]s.
     ///
     /// [`ValueRef`]: cadence_json::ValueRef
@@ -263,7 +264,7 @@ pub struct ExecuteScriptAtLatestBlockRequest<Script, Arguments> {
         Arguments: HasItem,
         <Arguments as HasItem>::Item: serde::Serialize,
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a Arguments as IntoIterator>::IntoIter>: Clone,
 ))]
 pub struct ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> {
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
@@ -274,7 +275,7 @@ pub struct ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> {
     /// The script.
     pub script: Script,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |hacked| encode_argument(hacked.0))))]
     /// The arguments. A collection of [`ValueRef`]s.
     ///
     /// [`ValueRef`]: cadence_json::ValueRef
@@ -289,7 +290,7 @@ pub struct ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> {
         Arguments: HasItem,
         <Arguments as HasItem>::Item: serde::Serialize,
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a Arguments as IntoIterator>::IntoIter>: Clone,
 ))]
 pub struct ExecuteScriptAtBlockHeightRequest<Script, Arguments> {
     /// height of the block.
@@ -299,7 +300,7 @@ pub struct ExecuteScriptAtBlockHeightRequest<Script, Arguments> {
     /// The script.
     pub script: Script,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&Arguments>>::from(&x).map(encode_argument)))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |hacked| encode_argument(hacked.0))))]
     /// The arguments. A collection of [`ValueRef`]s.
     ///
     /// [`ValueRef`]: cadence_json::ValueRef
@@ -344,14 +345,14 @@ pub struct GetEventsForHeightRangeRequest<EventTy> {
         BlockIds: HasItem,
         <BlockIds as HasItem>::Item: AsRef<[u8]>,
         for<'a> &'a BlockIds: IntoIterator<Item = &'a <BlockIds as HasItem>::Item>,
-        for<'a> <&'a BlockIds as IntoIterator>::IntoIter: Clone,
+        for<'a> Hack<<&'a BlockIds as IntoIterator>::IntoIter>: Clone,
 ))]
 pub struct GetEventsForBlockIdsRequest<EventTy, BlockIds> {
     /// The type of the event we are looking for.
     #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     pub ty: EventTy,
     /// The IDs of the blocks.
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, <&Repeated<&BlockIds>>::from(&x).map(|it| it.map(AsRef::as_ref))))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |it| it.0.map(AsRef::as_ref))))]
     pub block_ids: BlockIds,
 }
 

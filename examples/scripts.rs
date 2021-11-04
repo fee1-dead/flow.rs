@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use cadence_json::ValueRef;
-use flow_sdk::access::ExecuteScriptAtLatestBlockRequest;
 use flow_sdk::prelude::TonicHyperFlowClient;
 
 const SIMPLE_SCRIPT: &str = "
@@ -38,20 +37,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client.ping().await?;
 
     let ret = client
-        .send(ExecuteScriptAtLatestBlockRequest {
-            script: SIMPLE_SCRIPT,
-            arguments: [ValueRef::Int(cadence_json::BigInt::from(32))],
-        })
+        .execute_script_at_latest_block(
+            SIMPLE_SCRIPT,
+            [ValueRef::Int(cadence_json::BigInt::from(32))],
+        )
         .await?
         .parse()?;
 
     println!("{:#?}", ret);
 
     let ret = client
-        .send(ExecuteScriptAtLatestBlockRequest {
-            script: COMPLEX_SCRIPT,
-            arguments: [ValueRef::String("John Doe")],
-        })
+        .execute_script_at_latest_block(
+            COMPLEX_SCRIPT,
+            [ValueRef::String("John Doe")],
+        )
         .await?
         .parse()?;
 

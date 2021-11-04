@@ -25,6 +25,8 @@ pub mod requests;
 pub mod sign;
 pub mod transaction;
 
+pub(crate) mod trait_hack;
+
 #[cfg(test)]
 pub mod tests;
 

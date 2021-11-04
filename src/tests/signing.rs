@@ -114,7 +114,7 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
     if false {
         account1
             .client()
-            .send(SendTransactionRequest { transaction: txn })
+            .send_transaction(txn)
             .await?;
     }
 
@@ -165,7 +165,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
     if false {
         account1
             .client()
-            .send(SendTransactionRequest { transaction: txn })
+            .send_transaction(txn)
             .await?;
     }
 
