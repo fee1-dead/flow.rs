@@ -17,7 +17,7 @@
 //! # fn some_fn<T>(it: T)
 //! where
 //!     for<'a> &'a T: IntoIterator,
-//!     for<'a> Hack(<&'a T as IntoIterator>::IntoIter): Clone,
+//!     for<'a> Hack<<&'a T as IntoIterator>::IntoIter>: Clone,
 //! # {}
 //! ```
 //!
