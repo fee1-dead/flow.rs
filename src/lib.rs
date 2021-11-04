@@ -30,4 +30,7 @@ pub(crate) mod trait_hack;
 #[cfg(test)]
 pub mod tests;
 
+#[cfg(doctest)]
+pub mod doctests;
+
 mod fmt;
