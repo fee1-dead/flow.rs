@@ -106,7 +106,8 @@ async fn main_inner(
     mut cfg: FlowConfig,
     emulator: String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::connect(format!("http://{}", emulator).try_into().unwrap()).await?;
+    let client =
+        TonicHyperFlowClient::connect(format!("http://{}", emulator).try_into().unwrap()).await?;
     let acc = cfg.accounts.remove("emulator-account").unwrap();
 
     let addr = hex::decode(acc.address).unwrap();

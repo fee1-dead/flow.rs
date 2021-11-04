@@ -11,7 +11,10 @@ use crate::access::{
     AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
     GetLatestBlockHeaderRequest, SendTransactionRequest, SendTransactionResponse,
 };
-use crate::algorithms::{DefaultHasher, DefaultSecretKey, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm, Signature, SignatureAlgorithm};
+use crate::algorithms::{
+    DefaultHasher, DefaultSecretKey, DefaultSigner, FlowHasher, FlowSigner, HashAlgorithm,
+    Signature, SignatureAlgorithm,
+};
 use crate::client::{FlowClient, GrpcClient};
 use crate::entities::AccountKey;
 use crate::error::BoxError;
@@ -37,7 +40,12 @@ pub type DefaultAccount<Client, SecretKey> = Account<Client, SecretKey>;
 ///
 /// This is your gateway to making transactions, as this holds the secret keys necessary for signing them, as well
 /// as the client, for sending any requests over the network.
-pub struct Account<Client, SecretKey = DefaultSecretKey, Signer = DefaultSigner, Hasher = DefaultHasher> {
+pub struct Account<
+    Client,
+    SecretKey = DefaultSecretKey,
+    Signer = DefaultSigner,
+    Hasher = DefaultHasher,
+> {
     // The address of this account.
     address: Box<[u8]>,
     sign_method: SignMethod<SecretKey>,

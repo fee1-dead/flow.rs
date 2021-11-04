@@ -47,10 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("{:#?}", ret);
 
     let ret = client
-        .execute_script_at_latest_block(
-            COMPLEX_SCRIPT,
-            [ValueRef::String("John Doe")],
-        )
+        .execute_script_at_latest_block(COMPLEX_SCRIPT, [ValueRef::String("John Doe")])
         .await?
         .parse()?;
 

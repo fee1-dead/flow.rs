@@ -329,7 +329,9 @@ impl TonicHyperFlowClient {
     }
 
     /// Connects to an endpoint
-    pub async fn connect(endpoint: tonic::transport::Endpoint) -> Result<Self, tonic::transport::Error> {
+    pub async fn connect(
+        endpoint: tonic::transport::Endpoint,
+    ) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
             inner: Grpc::new(endpoint.connect().await?),
         })
@@ -350,7 +352,7 @@ impl TonicHyperFlowClient {
     /// Note: You must have entered the tokio runtime context before calling this function.
     /// You can do so by writing the code down below, or it will automatically be entered, if
     /// you have an `.await` before calling this. Consider using the `async` functions instead.
-    /// 
+    ///
     /// ```rust,ignore
     /// let handle = tokio::runtime::Handle::current();
     /// handle.enter();
@@ -364,12 +366,14 @@ impl TonicHyperFlowClient {
     /// Note: You must have entered the tokio runtime context before calling this function.
     /// You can do so by writing the code down below, or it will automatically be entered, if
     /// you have an `.await` before calling this. Consider using the `async` functions instead.
-    /// 
+    ///
     /// ```rust,ignore
     /// let handle = tokio::runtime::Handle::current();
     /// handle.enter();
     /// ```
-    pub fn connect_lazy(endpoint: tonic::transport::Endpoint) -> Result<Self, tonic::transport::Error> {
+    pub fn connect_lazy(
+        endpoint: tonic::transport::Endpoint,
+    ) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
             inner: Grpc::new(endpoint.connect_lazy()?),
         })
@@ -380,7 +384,7 @@ impl TonicHyperFlowClient {
     /// Note: You must have entered the tokio runtime context before calling this function.
     /// You can do so by writing the code down below, or it will automatically be entered, if
     /// you have an `.await` before calling this. Consider using the `async` functions instead.
-    /// 
+    ///
     /// ```rust,ignore
     /// let handle = tokio::runtime::Handle::current();
     /// handle.enter();
@@ -394,7 +398,7 @@ impl TonicHyperFlowClient {
     /// Note: You must have entered the tokio runtime context before calling this function.
     /// You can do so by writing the code down below, or it will automatically be entered, if
     /// you have an `.await` before calling this. Consider using the `async` functions instead.
-    /// 
+    ///
     /// ```rust,ignore
     /// let handle = tokio::runtime::Handle::current();
     /// handle.enter();

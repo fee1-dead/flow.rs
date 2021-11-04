@@ -112,10 +112,7 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
     println!("{:?}", txn);
 
     if false {
-        account1
-            .client()
-            .send_transaction(txn)
-            .await?;
+        account1.client().send_transaction(txn).await?;
     }
 
     Ok(())
@@ -163,10 +160,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
     println!("{:?}", txn);
 
     if false {
-        account1
-            .client()
-            .send_transaction(txn)
-            .await?;
+        account1.client().send_transaction(txn).await?;
     }
 
     Ok(())

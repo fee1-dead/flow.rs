@@ -10,8 +10,8 @@ use otopr::*;
 use crate::client::{FlowClient, GrpcClient};
 use crate::entities::*;
 use crate::protobuf::*;
-use crate::transaction::*;
 use crate::trait_hack::Hack;
+use crate::transaction::*;
 
 /// Ping.
 #[derive(EncodableMessage)]
