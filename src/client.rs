@@ -7,26 +7,25 @@
 //! support all types, consider using the [`FlowRequest`](crate::requests::FlowRequest)
 //! trait to generalize implementations.
 
-use std::{error::Error, future::Future, pin::Pin};
-
-use otopr::{decoding::DecodableMessage, encoding::EncodableMessage};
-use tonic::{
-    body::BoxBody,
-    client::{Grpc, GrpcService},
-    Request,
-};
+use std::error::Error;
+use std::future::Future;
+use std::pin::Pin;
 
 use http::uri::PathAndQuery;
 use http_body::Body;
+use otopr::decoding::DecodableMessage;
+use otopr::encoding::EncodableMessage;
+use tonic::body::BoxBody;
+use tonic::client::{Grpc, GrpcService};
+use tonic::Request;
 
-use crate::error::TonicError;
-use crate::transaction::TransactionE;
-use crate::{access::*, error::BoxError};
-use crate::{
-    codec::{OtoprCodec, PreEncode},
-    entities::{Account, Block, BlockHeader, Collection},
-    transaction::TransactionD,
-};
+use crate::access::*;
+use crate::codec::{OtoprCodec, PreEncode};
+use crate::entities::{Account, Block, BlockHeader, Collection};
+use crate::error::{BoxError, TonicError};
+use crate::protobuf::*;
+use crate::requests::FlowRequest;
+use crate::transaction::{TransactionD, TransactionE};
 
 /// A gRPC client trait.
 ///
@@ -113,8 +112,6 @@ where
         })
     }
 }
-
-use crate::{protobuf::*, requests::FlowRequest};
 
 macro_rules! choose {
     ((), ($($empty:tt)*), ($($non_empty:tt)*)) => {

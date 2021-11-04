@@ -1,9 +1,7 @@
 use std::num::Wrapping;
 
-use serde::{
-    de::{DeserializeSeed, Error, Visitor},
-    Deserializer,
-};
+use serde::de::{DeserializeSeed, Error, Visitor};
+use serde::Deserializer;
 
 use super::wrapper::*;
 use crate::ValueOwned;

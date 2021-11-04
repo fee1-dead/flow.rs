@@ -13,11 +13,9 @@ pub use event::*;
 
 mod execution_result;
 pub use execution_result::*;
+use otopr::{DecodableMessage, Repeated};
 
 use crate::protobuf::Timestamp;
-
-use otopr::DecodableMessage;
-use otopr::Repeated;
 
 /// A block header is a summary of a block and contains only the block ID, height, and parent block ID.
 #[derive(DecodableMessage, Default, Debug, PartialEq, Eq)]

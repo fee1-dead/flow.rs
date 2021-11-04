@@ -1,7 +1,8 @@
+use std::future::Future;
 use std::intrinsics::transmute;
-use std::{future::Future, pin::Pin, time::Duration};
-
+use std::pin::Pin;
 use std::task::Poll;
+use std::time::Duration;
 
 use crate::access::*;
 use crate::client::{FlowClient, GrpcClient};

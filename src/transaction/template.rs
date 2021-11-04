@@ -1,4 +1,5 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
 use cadence_json::{EntryRef, UFix64, ValueRef};
 use serde::Serialize;

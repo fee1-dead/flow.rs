@@ -2,9 +2,9 @@
 //!
 //! A transaction represents a unit of computation that is submitted to the Flow network.
 
-use cadence_json::ValueOwned;
 use std::slice;
 
+use cadence_json::ValueOwned;
 use otopr::encoding::EncodeAsRef;
 use otopr::*;
 use wire_types::*;

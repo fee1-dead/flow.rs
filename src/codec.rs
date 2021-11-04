@@ -2,13 +2,11 @@
 
 use std::marker::PhantomData;
 
+use bytes::BufMut;
 use otopr::decoding::{DecodableMessage, Deserializer};
-use otopr::encoding::EncodableMessage;
-use otopr::encoding::ProtobufSerializer;
+use otopr::encoding::{EncodableMessage, ProtobufSerializer};
 use tonic::codec::{Codec, Decoder, Encoder};
 use tonic::Status;
-
-use bytes::BufMut;
 
 /// A buffer that contains a preencoded message.
 pub struct PreEncode(Box<[u8]>);

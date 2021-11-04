@@ -1,6 +1,7 @@
 //! Errors
 
-use std::{error::Error, fmt};
+use std::error::Error;
+use std::fmt;
 
 /// Boxed Error.
 pub struct BoxError(Box<dyn Error + Send + Sync>);

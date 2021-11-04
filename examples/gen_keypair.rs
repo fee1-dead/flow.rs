@@ -1,4 +1,5 @@
-use secp256k1::{rand::rngs::EntropyRng, PublicKey, Secp256k1, SecretKey};
+use secp256k1::rand::rngs::EntropyRng;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 fn main() {
     let secp = Secp256k1::signing_only();

@@ -1,9 +1,7 @@
-use std::{
-    collections::{HashMap, HashSet},
-    error::Error,
-    fmt::Display,
-    panic::{catch_unwind, UnwindSafe},
-};
+use std::collections::{HashMap, HashSet};
+use std::error::Error;
+use std::fmt::Display;
+use std::panic::{catch_unwind, UnwindSafe};
 
 use serde::de::DeserializeOwned;
 

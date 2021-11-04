@@ -15,22 +15,18 @@ use std::collections::HashMap;
 
 use rlp::RlpStream;
 
-use crate::access::AccountResponse;
-use crate::access::BlockHeaderResponse;
-use crate::access::GetAccountAtLatestBlockRequest;
-use crate::access::GetLatestBlockHeaderRequest;
+use crate::access::{
+    AccountResponse, BlockHeaderResponse, GetAccountAtLatestBlockRequest,
+    GetLatestBlockHeaderRequest,
+};
 use crate::account::PADDED_TRANSACTION_DOMAIN_TAG;
-use crate::algorithms::FlowHasher;
-use crate::algorithms::FlowSigner;
+use crate::algorithms::{FlowHasher, FlowSigner};
 use crate::client::GrpcClient;
 use crate::error::BoxError;
 use crate::prelude::Account;
 use crate::protobuf::Seal;
-use crate::transaction::rlp::rlp_encode_transaction_envelope;
-use crate::transaction::rlp::rlp_encode_transaction_payload;
-use crate::transaction::ProposalKeyE;
-use crate::transaction::SignatureE;
-use crate::transaction::TransactionE;
+use crate::transaction::rlp::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
+use crate::transaction::{ProposalKeyE, SignatureE, TransactionE};
 
 mod private {
     use crate::algorithms::FlowHasher;

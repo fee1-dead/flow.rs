@@ -4,12 +4,13 @@
 
 use std::time::Duration;
 
+use otopr::wire_types::*;
+use otopr::*;
+
 use crate::client::{FlowClient, GrpcClient};
 use crate::entities::*;
 use crate::protobuf::*;
 use crate::transaction::*;
-use otopr::wire_types::*;
-use otopr::*;
 
 /// Ping.
 #[derive(EncodableMessage)]

@@ -1,9 +1,12 @@
+use std::borrow::Cow;
+use std::fmt::Display;
+use std::num::Wrapping;
+use std::str::FromStr;
+
 use hex::FromHexError;
+pub use num_bigint::{BigInt, BigUint};
 use serde::{Deserialize, Serialize};
 use serde_with::*;
-use std::{borrow::Cow, fmt::Display, num::Wrapping, str::FromStr};
-
-pub use num_bigint::{BigInt, BigUint};
 
 mod fmt;
 

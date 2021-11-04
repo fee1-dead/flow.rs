@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::str::SplitWhitespace;
-use std::{future::Future, pin::Pin};
 
 use crate::ExampleAccount;
 

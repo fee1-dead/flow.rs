@@ -1,11 +1,8 @@
-use std::{
-    error::Error,
-    io::{stdin, BufRead},
-};
+use std::error::Error;
+use std::io::{stdin, BufRead};
 
 use ::cadence_json::{AddressOwned, ValueOwned};
 use flow_sdk::prelude::*;
-
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 #[tokio::main]

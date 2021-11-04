@@ -1,7 +1,5 @@
-use std::{
-    error::Error,
-    io::{stdin, BufRead},
-};
+use std::error::Error;
+use std::io::{stdin, BufRead};
 
 use ::cadence_json::AddressOwned;
 use flow_sdk::prelude::*;

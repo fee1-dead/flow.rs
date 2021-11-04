@@ -1,8 +1,7 @@
 use std::error::Error;
 
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
-
 use ::cadence_json::AddressOwned;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use crate::access::SendTransactionRequest;
 use crate::prelude::*;

@@ -1,9 +1,8 @@
-use serde::{ser::SerializeStruct, Serialize};
-
-use crate::ValueOwned;
-use crate::ValueRef;
+use serde::ser::SerializeStruct;
+use serde::Serialize;
 
 use crate::wrapper::*;
+use crate::{ValueOwned, ValueRef};
 
 impl<'a> AsRef<ValueRef<'a>> for ValueRef<'a> {
     #[inline]

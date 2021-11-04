@@ -1,7 +1,9 @@
 //! Debug / Display implementations for structures.
 
+use std::collections::HashMap;
+use std::fmt;
 use std::marker::PhantomData;
-use std::{collections::HashMap, fmt, ops::Deref};
+use std::ops::Deref;
 
 use cadence_json::AddressRef;
 use otopr::HasItem;

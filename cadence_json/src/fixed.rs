@@ -1,9 +1,8 @@
+use std::fmt::{Display, Write};
+use std::num::ParseIntError;
+use std::str::FromStr;
+
 use serde_with::*;
-use std::{
-    fmt::{Display, Write},
-    num::ParseIntError,
-    str::FromStr,
-};
 
 /// ```
 /// # use cadence_json::UFix64;

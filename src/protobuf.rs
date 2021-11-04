@@ -1,6 +1,7 @@
 //! Protobuf objects to decode/encode.
 
-use otopr::{encoding::Encodable, DecodableMessage};
+use otopr::encoding::Encodable;
+use otopr::DecodableMessage;
 
 /// A protobuf timestamp.
 #[derive(Clone, Copy, Default, DecodableMessage, Debug, PartialEq, Eq, Hash)]
