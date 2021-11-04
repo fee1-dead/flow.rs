@@ -227,6 +227,10 @@ impl<Inner> FlowClient<Inner> {
         /// Retrieves events with the specified type with the specified block ids.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+        /// 
+        /// See [`FlowClient`'s documentation] for more details.
+        /// 
+        /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn events_for_blocks_by_ids<(EventTy, BlockIds)>(ty: EventTy, block_ids: BlockIds) GetEventsForBlockIdsRequest<EventTy, BlockIds> => EventsResponse {
             GetEventsForBlockIdsRequest { ty, block_ids }
         }
@@ -234,21 +238,43 @@ impl<Inner> FlowClient<Inner> {
         /// Executes Cadence script at the latest block and returns the result.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+        /// 
+        /// See [`FlowClient`'s documentation] for more details.
+        /// 
+        /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
         }
 
         /// Executes Cadence script at a specific block height and returns the result.
+        ///
+        /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+        /// 
+        /// See [`FlowClient`'s documentation] for more details.
+        /// 
+        /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_block_id<(BlockId, Script, Arguments)>(block_id: BlockId, script: Script, arguments: Arguments) ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtBlockIdRequest { block_id, script, arguments }
         }
 
         /// Executes Cadence script at a specific block height and returns the result.
+        ///
+        /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+        /// 
+        /// See [`FlowClient`'s documentation] for more details.
+        /// 
+        /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_block_height<(Script, Arguments)>(block_height: u64, script: Script, arguments: Arguments) ExecuteScriptAtBlockHeightRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtBlockHeightRequest { block_height, script, arguments }
         }
 
         /// Sends a transaction over the network.
+        ///
+        /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
+        /// 
+        /// See [`FlowClient`'s documentation] for more details.
+        /// 
+        /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn send_transaction<(
             Script,
             Arguments,
