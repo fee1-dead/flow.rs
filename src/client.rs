@@ -22,7 +22,7 @@ use tonic::Request;
 use crate::access::*;
 use crate::codec::{OtoprCodec, PreEncode};
 use crate::entities::{Account, Block, BlockHeader, Collection};
-use crate::error::{BoxError, TonicError};
+use crate::error::TonicError;
 use crate::protobuf::*;
 use crate::requests::FlowRequest;
 use crate::transaction::{TransactionD, TransactionE};
@@ -323,33 +323,84 @@ impl<Inner> FlowClient<Inner> {
 
 #[cfg(feature = "tonic-transport")]
 impl TonicHyperFlowClient {
-    /// Connects to a static endpoint. Does not connect until we try to send a request.
-    pub fn connect_static(endpoint: &'static str) -> Result<Self, tonic::transport::Error> {
-        Ok(Self {
-            inner: Grpc::new(tonic::transport::Channel::from_static(endpoint).connect_lazy()?),
-        })
+    /// Connects to a static endpoint URI.
+    pub async fn connect_static(uri: &'static str) -> Result<Self, tonic::transport::Error> {
+        Self::connect(tonic::transport::Endpoint::from_static(uri)).await
     }
 
-    /// Connects to a shared endpoint. Does not connect until we try to send a request.
-    pub fn connect_shared(endpoint: impl Into<bytes::Bytes>) -> Result<Self, BoxError> {
+    /// Connects to an endpoint
+    pub async fn connect(endpoint: tonic::transport::Endpoint) -> Result<Self, tonic::transport::Error> {
         Ok(Self {
-            inner: Grpc::new(
-                tonic::transport::Channel::from_shared(endpoint)
-                    .map_err::<Box<dyn Error + Send + Sync>, _>(Into::into)?
-                    .connect_lazy()
-                    .map_err::<Box<dyn Error + Send + Sync>, _>(Into::into)?,
-            ),
+            inner: Grpc::new(endpoint.connect().await?),
         })
     }
 
     /// Connects to the Mainnet access node provided by Dapper Labs.
-    pub fn mainnet() -> Result<Self, tonic::transport::Error> {
-        Self::connect_static("http://access.mainnet.nodes.onflow.org:9000")
+    pub async fn mainnet() -> Result<Self, tonic::transport::Error> {
+        Self::connect_static("http://access.mainnet.nodes.onflow.org:9000").await
     }
 
     /// Connects to the Testnet access node provided by Dapper Labs.
-    pub fn testnet() -> Result<Self, tonic::transport::Error> {
-        Self::connect_static("http://access.devnet.nodes.onflow.org:9000")
+    pub async fn testnet() -> Result<Self, tonic::transport::Error> {
+        Self::connect_static("http://access.devnet.nodes.onflow.org:9000").await
+    }
+
+    /// Connects to a static endpoint URI. Does not connect until we try to send a request.
+    ///
+    /// Note: You must have entered the tokio runtime context before calling this function.
+    /// You can do so by writing the code down below, or it will automatically be entered, if
+    /// you have an `.await` before calling this. Consider using the `async` functions instead.
+    /// 
+    /// ```rust,ignore
+    /// let handle = tokio::runtime::Handle::current();
+    /// handle.enter();
+    /// ```
+    pub fn connect_static_lazy(uri: &'static str) -> Result<Self, tonic::transport::Error> {
+        Self::connect_lazy(tonic::transport::Endpoint::from_static(uri))
+    }
+
+    /// Connects to an endpoint. Does not connect until we try to send a request.
+    ///
+    /// Note: You must have entered the tokio runtime context before calling this function.
+    /// You can do so by writing the code down below, or it will automatically be entered, if
+    /// you have an `.await` before calling this. Consider using the `async` functions instead.
+    /// 
+    /// ```rust,ignore
+    /// let handle = tokio::runtime::Handle::current();
+    /// handle.enter();
+    /// ```
+    pub fn connect_lazy(endpoint: tonic::transport::Endpoint) -> Result<Self, tonic::transport::Error> {
+        Ok(Self {
+            inner: Grpc::new(endpoint.connect_lazy()?),
+        })
+    }
+
+    /// Builds a lazy connection to the Mainnet access node provided by Dapper Labs.
+    ///
+    /// Note: You must have entered the tokio runtime context before calling this function.
+    /// You can do so by writing the code down below, or it will automatically be entered, if
+    /// you have an `.await` before calling this. Consider using the `async` functions instead.
+    /// 
+    /// ```rust,ignore
+    /// let handle = tokio::runtime::Handle::current();
+    /// handle.enter();
+    /// ```
+    pub fn mainnet_lazy() -> Result<Self, tonic::transport::Error> {
+        Self::connect_static_lazy("http://access.mainnet.nodes.onflow.org:9000")
+    }
+
+    /// Builds a lazy connection to the Testnet access node provided by Dapper Labs.
+    ///
+    /// Note: You must have entered the tokio runtime context before calling this function.
+    /// You can do so by writing the code down below, or it will automatically be entered, if
+    /// you have an `.await` before calling this. Consider using the `async` functions instead.
+    /// 
+    /// ```rust,ignore
+    /// let handle = tokio::runtime::Handle::current();
+    /// handle.enter();
+    /// ```
+    pub fn testnet_lazy() -> Result<Self, tonic::transport::Error> {
+        Self::connect_static_lazy("http://access.devnet.nodes.onflow.org:9000")
     }
 }
 
