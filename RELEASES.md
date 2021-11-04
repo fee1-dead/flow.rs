@@ -1,3 +1,8 @@
+# Release 1.0.0
+
+### Changed
+ - Added documentation about compiler bugs which caused issues for some functions
+
 # Version 0.2
 
 ### Added
