@@ -98,163 +98,8 @@ where
     Signer: FlowSigner<SecretKey = SecretKey>,
     Hasher: FlowHasher,
 {
-    fn sign_<'a>(
-        hasher: Hasher,
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-    ) -> SignIter<'a, Signer> {
-        SignIter::new(hasher.finalize(), signer, method)
-    }
-
-    /// Creates a signature using this account's public key(s), consuming a populated hasher.
-    pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
-        Self::sign_(hasher, self.signer(), &self.sign_method)
-    }
-
-    /// Signs a party, assuming that you have confirmed all the details of the party.
-    pub fn sign_party<P: Party<Hasher>>(&self, party: &mut P)
-    where
-        Signer::Signature: Signature<Serialized = [u8; 64]>,
-    {
-        let signatures = self.sign(party.payload());
-        let key_ids = self.sign_method.key_ids();
-        for (sig, key_id) in signatures.zip(key_ids) {
-            party.add_payload_signature(self.address.clone(), key_id, sig.serialize())
-        }
-    }
-
-    /// Signs the party as the payer, thereby converting the party into a transaction, ready to be sent.
-    pub fn sign_party_as_payer<P: Party<Hasher>>(
-        &self,
-        party: P,
-    ) -> PartyTransaction<Box<[u8]>, [u8; 64]>
-    where
-        Signer::Signature: Signature<Serialized = [u8; 64]>,
-    {
-        assert_eq!(&*self.address, party.payer());
-        let signatures = self.sign(party.envelope());
-        let key_ids = self.sign_method.key_ids();
-
-        party.into_transaction_with_envelope_signatures(signatures.zip(key_ids).map(
-            |(sig, key_id)| SignatureE {
-                address: self.address.clone(),
-                key_id,
-                signature: sig.serialize(),
-            },
-        ))
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn sign_transaction_<'a>(
-        key_id: u32,
-        address: &[u8],
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-        script: impl AsRef<[u8]>,
-        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<'a, Signer> {
-        let mut s = rlp::RlpStream::new();
-        rlp_encode_transaction_envelope(
-            &mut s,
-            script,
-            arguments,
-            reference_block_id,
-            gas_limit,
-            address,
-            key_id as u64,
-            sequence_number,
-            address,
-            [address],
-            empty::<(u32, u32, &[u8])>(),
-        );
-
-        let mut hasher = Hasher::new();
-        hasher.update(&PADDED_TRANSACTION_DOMAIN_TAG);
-        hasher.update(&s.out());
-
-        Self::sign_(hasher, signer, method)
-    }
-
-    /// Sign a transaction with this account being the proposer, the payer and the only authorizer.
-    ///
-    /// Returns an envelope signature.
-    pub fn sign_transaction(
-        &self,
-        script: impl AsRef<[u8]>,
-        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<Signer> {
-        Self::sign_transaction_(
-            self.primary_key_id(),
-            &self.address,
-            &self.signer,
-            &self.sign_method,
-            script,
-            arguments,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn sign_transaction_header_<'a, 'b, Arguments>(
-        key_id: u32,
-        address: &[u8],
-        signer: &'a Signer,
-        method: &'a SignMethod<SecretKey>,
-        header: &'b TransactionHeader<Arguments>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<'a, Signer>
-    where
-        &'b Arguments: IntoIterator,
-        <&'b Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'b Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        Self::sign_transaction_(
-            key_id,
-            address,
-            signer,
-            method,
-            &header.script.as_ref(),
-            &header.arguments,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
-
-    /// Sign a transaction header with a block id and gas limit.
-    pub fn sign_transaction_header<'a, Arguments>(
-        &self,
-        header: &'a TransactionHeader<Arguments>,
-        reference_block_id: impl AsRef<[u8]>,
-        sequence_number: u64,
-        gas_limit: u64,
-    ) -> SignIter<Signer>
-    where
-        &'a Arguments: IntoIterator,
-        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
-        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
-    {
-        Self::sign_transaction_header_(
-            self.primary_key_id(),
-            &self.address,
-            &self.signer,
-            &self.sign_method,
-            header,
-            reference_block_id,
-            sequence_number,
-            gas_limit,
-        )
-    }
+    ///////////////////////
+    // CONSTRUCTION
 
     /// Logs in to the account with one key, verifying that the key and the address matches.
     ///
@@ -474,6 +319,9 @@ where
         }
     }
 
+    ////////////////////
+    // INFORMATION
+
     /// Queries the sequence number for the primary key from the network.
     pub async fn primary_key_sequence_number<'a>(&'a mut self) -> Result<u32, BoxError>
     where
@@ -493,6 +341,96 @@ where
             }
         }
         unreachable!();
+    }
+    
+    //////////////////
+    // SIGNING
+
+    /// Creates a signature using this account's public key(s), consuming a populated hasher.
+    pub fn sign(&self, hasher: Hasher) -> SignIter<Signer> {
+        Self::sign_(hasher, self.signer(), &self.sign_method)
+    }
+
+    /// Signs a party, assuming that you have confirmed all the details of the party.
+    pub fn sign_party<P: Party<Hasher>>(&self, party: &mut P)
+    where
+        Signer::Signature: Signature<Serialized = [u8; 64]>,
+    {
+        let signatures = self.sign(party.payload());
+        let key_ids = self.sign_method.key_ids();
+        for (sig, key_id) in signatures.zip(key_ids) {
+            party.add_payload_signature(self.address.clone(), key_id, sig.serialize())
+        }
+    }
+
+    /// Signs the party as the payer, thereby converting the party into a transaction, ready to be sent.
+    pub fn sign_party_as_payer<P: Party<Hasher>>(
+        &self,
+        party: P,
+    ) -> PartyTransaction<Box<[u8]>, [u8; 64]>
+    where
+        Signer::Signature: Signature<Serialized = [u8; 64]>,
+    {
+        assert_eq!(&*self.address, party.payer());
+        let signatures = self.sign(party.envelope());
+        let key_ids = self.sign_method.key_ids();
+
+        party.into_transaction_with_envelope_signatures(signatures.zip(key_ids).map(
+            |(sig, key_id)| SignatureE {
+                address: self.address.clone(),
+                key_id,
+                signature: sig.serialize(),
+            },
+        ))
+    }
+
+    /// Sign a transaction with this account being the proposer, the payer and the only authorizer.
+    ///
+    /// Returns an envelope signature.
+    pub fn sign_transaction(
+        &self,
+        script: impl AsRef<[u8]>,
+        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<Signer> {
+        Self::sign_transaction_(
+            self.primary_key_id(),
+            &self.address,
+            &self.signer,
+            &self.sign_method,
+            script,
+            arguments,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
+    }
+
+    /// Sign a transaction header with a block id and gas limit.
+    pub fn sign_transaction_header<'a, Arguments>(
+        &self,
+        header: &'a TransactionHeader<Arguments>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<Signer>
+    where
+        &'a Arguments: IntoIterator,
+        <&'a Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'a Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
+    {
+        Self::sign_transaction_header_(
+            self.primary_key_id(),
+            &self.address,
+            &self.signer,
+            &self.sign_method,
+            header,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
     }
 
     /// Send a transaction to the network. Signs the transaction header with a gas limit of 1000
@@ -591,6 +529,80 @@ where
             .send_transaction(transaction)
             .await
             .map_err(Into::into)?)
+    }
+
+    ///////////////
+    /// PRIVATE
+
+    fn sign_<'a>(
+        hasher: Hasher,
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+    ) -> SignIter<'a, Signer> {
+        SignIter::new(hasher.finalize(), signer, method)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn sign_transaction_<'a>(
+        key_id: u32,
+        address: &[u8],
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+        script: impl AsRef<[u8]>,
+        arguments: impl IntoIterator<IntoIter = impl ExactSizeIterator<Item = impl AsRef<[u8]>>>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<'a, Signer> {
+        let mut s = rlp::RlpStream::new();
+        rlp_encode_transaction_envelope(
+            &mut s,
+            script,
+            arguments,
+            reference_block_id,
+            gas_limit,
+            address,
+            key_id as u64,
+            sequence_number,
+            address,
+            [address],
+            empty::<(u32, u32, &[u8])>(),
+        );
+
+        let mut hasher = Hasher::new();
+        hasher.update(&PADDED_TRANSACTION_DOMAIN_TAG);
+        hasher.update(&s.out());
+
+        Self::sign_(hasher, signer, method)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn sign_transaction_header_<'a, 'b, Arguments>(
+        key_id: u32,
+        address: &[u8],
+        signer: &'a Signer,
+        method: &'a SignMethod<SecretKey>,
+        header: &'b TransactionHeader<Arguments>,
+        reference_block_id: impl AsRef<[u8]>,
+        sequence_number: u64,
+        gas_limit: u64,
+    ) -> SignIter<'a, Signer>
+    where
+        &'b Arguments: IntoIterator,
+        <&'b Arguments as IntoIterator>::IntoIter: ExactSizeIterator,
+        <<&'b Arguments as IntoIterator>::IntoIter as Iterator>::Item: AsRef<[u8]>,
+    {
+        Self::sign_transaction_(
+            key_id,
+            address,
+            signer,
+            method,
+            &header.script.as_ref(),
+            &header.arguments,
+            reference_block_id,
+            sequence_number,
+            gas_limit,
+        )
     }
 }
 

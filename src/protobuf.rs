@@ -21,6 +21,7 @@ pub enum Seal {
     NotSealed,
 }
 
+// delegate encoding to `bool`.
 impl Encodable for Seal {
     type Wire = <bool as Encodable>::Wire;
 

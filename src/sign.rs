@@ -26,14 +26,6 @@ pub type KeyIdIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> u32>;
 /// An Iterator over secret keys.
 pub type KeyIter<'a, T> = Map<slice::Iter<'a, One<T>>, fn(&'a One<T>) -> &'a T>;
 
-fn key_id<T>(one: &One<T>) -> u32 {
-    one.key_id
-}
-
-fn key<T>(one: &One<T>) -> &T {
-    &one.key
-}
-
 impl<SecretKey> Multi<SecretKey> {
     /// The primary key. Refer to this when proposing a transaction.
     pub fn primary_key(&self) -> &SecretKey {
@@ -201,4 +193,12 @@ impl<Signer: FlowSigner> ExactSizeIterator for SignIter<'_, Signer> {
     fn len(&self) -> usize {
         self.remaining()
     }
+}
+
+fn key_id<T>(one: &One<T>) -> u32 {
+    one.key_id
+}
+
+fn key<T>(one: &One<T>) -> &T {
+    &one.key
 }

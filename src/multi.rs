@@ -28,34 +28,15 @@ use crate::protobuf::Seal;
 use crate::transaction::rlp::{rlp_encode_transaction_envelope, rlp_encode_transaction_payload};
 use crate::transaction::{ProposalKeyE, SignatureE, TransactionE};
 
-mod private {
-    use crate::algorithms::FlowHasher;
-
-    pub trait Sealed {}
-    impl<H: FlowHasher> Sealed for super::PreHashedParty<H> {}
-    impl Sealed for super::SigningParty {}
-}
-
-/// After envelope signatures are fed to a party, it turns into a transaction.
-///
-/// This is the exact type a party will turn in to.
-pub type PartyTransaction<SigAddr, Sig> = TransactionE<
-    Box<[u8]>,
-    Vec<Box<[u8]>>,
-    Box<[u8]>,
-    Box<[u8]>,
-    Box<[u8]>,
-    Vec<Box<[u8]>>,
-    Vec<SignatureE<Box<[u8]>, [u8; 64]>>,
-    Vec<SignatureE<SigAddr, Sig>>,
->;
-
 /// The `Party` trait. You can get information about the transaction you are signing and sign it by
 /// accepting some type that implements this trait.
 ///
 /// This is `Sealed`, which means no foreign types may implement it, and it is not **Object safe**,
 /// so no one can create bad behaving trait objects which can make this trait insecure.
 pub trait Party<H: FlowHasher>: Sized + private::Sealed {
+    ///////////////////
+    // INFORMATION
+
     /// Gets the script of the transaction.
     fn script(&self) -> &str;
 
@@ -83,8 +64,17 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
     /// Gets the addresses of the authorizers of the transaciton.
     fn authorizers(&self) -> &[Box<[u8]>];
 
+    ///////////////////
+    // HASHES
+
     /// Computes the hash of the payload.
     fn payload(&self) -> H;
+
+    /// Computes the hash of the envelope.
+    fn envelope(&self) -> H;
+
+    ///////////////////
+    // MUTATE/CONVERT
 
     /// Adds a payload signature.
     fn add_payload_signature(
@@ -94,15 +84,26 @@ pub trait Party<H: FlowHasher>: Sized + private::Sealed {
         signature: [u8; 64],
     );
 
-    /// Computes the hash of the envelope.
-    fn envelope(&self) -> H;
-
-    /// Creates [`PartyTransaction`] by feeding this party with envelope signatures.
+    /// Creates a [`PartyTransaction`] by feeding this party with envelope signatures.
     fn into_transaction_with_envelope_signatures<SigAddr, Sig>(
         self,
         signatures: impl IntoIterator<Item = SignatureE<SigAddr, Sig>>,
     ) -> PartyTransaction<SigAddr, Sig>;
 }
+
+/// After envelope signatures are fed to a party, it turns into a transaction.
+///
+/// This is the exact type a party will turn in to.
+pub type PartyTransaction<SigAddr, Sig> = TransactionE<
+    Box<[u8]>,
+    Vec<Box<[u8]>>,
+    Box<[u8]>,
+    Box<[u8]>,
+    Box<[u8]>,
+    Vec<Box<[u8]>>,
+    Vec<SignatureE<Box<[u8]>, [u8; 64]>>,
+    Vec<SignatureE<SigAddr, Sig>>,
+>;
 
 /// A builder that makes it easy to create new [`SigningParty`] instances.
 ///
@@ -637,4 +638,12 @@ impl<H: FlowHasher + Clone> Party<H> for PreHashedParty<H> {
             self.party, signatures,
         )
     }
+}
+
+mod private {
+    use crate::algorithms::FlowHasher;
+
+    pub trait Sealed {}
+    impl<H: FlowHasher> Sealed for super::PreHashedParty<H> {}
+    impl Sealed for super::SigningParty {}
 }

@@ -11,6 +11,15 @@ use tonic::Status;
 /// A buffer that contains a preencoded message.
 pub struct PreEncode(Box<[u8]>);
 
+/// The otopr codec.
+pub struct OtoprCodec<U>(PhantomData<U>);
+
+/// The encoder of the otopr codec.
+pub struct PEnc;
+
+/// The decoder of the otopr codec.
+pub struct PDec<T>(PhantomData<T>);
+
 impl PreEncode {
     /// Creates an instance of `PreEncode` by encoding a message.
     pub fn new<T: EncodableMessage>(msg: &T) -> Self {
@@ -18,15 +27,6 @@ impl PreEncode {
         let mut buf = Vec::with_capacity(cap);
         msg.encode(&mut ProtobufSerializer::new(&mut buf));
         Self(buf.into_boxed_slice())
-    }
-}
-
-/// The otopr codec.
-pub struct OtoprCodec<U>(PhantomData<U>);
-
-impl<U> Default for OtoprCodec<U> {
-    fn default() -> Self {
-        Self(PhantomData)
     }
 }
 
@@ -50,14 +50,6 @@ where
         PDec(PhantomData)
     }
 }
-
-/// The encoder of the otopr codec.
-pub struct PEnc;
-
-/// The decoder of the otopr codec.
-pub struct PDec<T>(PhantomData<T>);
-
-unsafe impl<T> Sync for PDec<T> {}
 
 impl Encoder for PEnc {
     type Item = PreEncode;
@@ -101,3 +93,12 @@ impl<T: for<'de> DecodableMessage<'de> + Default> Decoder for PDec<T> {
         }
     }
 }
+
+impl<U> Default for OtoprCodec<U> {
+    fn default() -> Self {
+        Self(PhantomData)
+    }
+}
+
+// Doesn't matter whether `T` is `Sync`. `PDec` is just a ZST and we all know it!
+unsafe impl<T> Sync for PDec<T> {}

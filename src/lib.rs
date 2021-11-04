@@ -8,29 +8,22 @@
 //! [`testnet()`]: crate::client::TonicHyperFlowClient::testnet()
 //! [`mainnet()`]: crate::client::TonicHyperFlowClient::mainnet()
 //! [login to an account]: crate::account::Account::new()
-#![forbid(missing_docs)]
-
-pub mod access;
-
-pub mod client;
-pub mod codec;
-
-pub mod error;
-
-pub mod protobuf;
-
-pub mod transaction;
-
-pub mod entities;
-
-pub mod algorithms;
-pub mod requests;
-
-pub mod account;
-pub mod multi;
-pub mod sign;
+#![forbid(missing_docs)] // Every public items must be documented
 
 pub mod prelude;
+
+pub mod access;
+pub mod account;
+pub mod algorithms;
+pub mod client;
+pub mod codec;
+pub mod entities;
+pub mod error;
+pub mod multi;
+pub mod protobuf;
+pub mod requests;
+pub mod sign;
+pub mod transaction;
 
 #[cfg(test)]
 pub mod tests;

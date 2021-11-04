@@ -44,24 +44,28 @@ pub enum TonicError {
 }
 
 impl From<Box<dyn Error + Send + Sync>> for BoxError {
+    #[inline]
     fn from(e: Box<dyn Error + Send + Sync>) -> Self {
         Self(e)
     }
 }
 
 impl fmt::Debug for BoxError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
 }
 
 impl fmt::Display for BoxError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
 }
 
 impl Error for BoxError {
+    #[inline]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.0.source()
     }

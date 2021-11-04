@@ -1,55 +1,15 @@
 //! The hashing and signing algorithms.
 
-#[cfg(feature = "secp256k1-sign")]
-/// Re-exports items from the `secp256k1` crate.
-pub mod secp256k1 {
-    pub use secp256k1::*;
-}
+/// The default hasher, the exact type depends on the feature flags enabled.
+pub type DefaultHasher = DefaultHasherNoDoc;
 
-#[cfg(feature = "sha3-hash")]
-/// Re-exports items from the `tiny_keccak` crate.
-pub mod sha3 {
-    pub use tiny_keccak::*;
-}
+/// The default signer, the exact type depends on the feature flags enabled.
+pub type DefaultSigner = DefaultSignerNoDoc;
 
-#[cfg(feature = "secp256k1-rand")]
-/// Re-exports items from the `rand` crate.
-pub mod rand {
-    pub use rand::*;
-}
-
+include!("algorithms/macro_impl.rs");
 macro_rules! algorithms {
-    ($(
-        $(#[$algometa:meta])*
-        $algo:ident {
-            $(
-                $(#[$meta:meta])*
-                $name:ident = ($code:expr, $algoname:expr)
-            ),+$(,)?
-        }
-    )+) => {
-        mod private {
-            pub trait Sealed {}
-        }
-        $(
-            $(#[$algometa])*
-            pub trait $algo: private::Sealed {
-                /// The code of the algorithm.
-                const CODE: u32;
-
-                /// The name of the algorithm.
-                const NAME: &'static str;
-            }
-            $(
-                $(#[$meta])*
-                pub struct $name;
-                impl private::Sealed for $name {}
-                impl $algo for $name {
-                    const CODE: u32 = $code;
-                    const NAME: &'static str = $algoname;
-                }
-            )+
-        )+
+    ($($tt:tt)+) => {
+        algorithms_impl!($($tt)+);
     };
 }
 
@@ -135,6 +95,24 @@ pub trait SecretKey {
     type Signer: FlowSigner<SecretKey = Self>;
 }
 
+#[cfg(feature = "secp256k1-sign")]
+/// Re-exports items from the `secp256k1` crate.
+pub mod secp256k1 {
+    pub use secp256k1::*;
+}
+
+#[cfg(feature = "sha3-hash")]
+/// Re-exports items from the `tiny_keccak` crate.
+pub mod sha3 {
+    pub use tiny_keccak::*;
+}
+
+#[cfg(feature = "secp256k1-rand")]
+/// Re-exports items from the `rand` crate.
+pub mod rand {
+    pub use rand::*;
+}
+
 #[cfg(feature = "sha3-hash")]
 impl FlowHasher for tiny_keccak::Sha3 {
     type Algorithm = Sha3;
@@ -214,12 +192,6 @@ type DefaultHasherNoDoc = NoDefaultHasherAvailable;
 
 #[cfg(not(any(feature = "sha3-hash")))]
 type DefaultSignerNoDoc = NoDefaultSignerAvailable;
-
-/// The default hasher, the exact type depends on the feature flags enabled.
-pub type DefaultHasher = DefaultHasherNoDoc;
-
-/// The default signer, the exact type depends on the feature flags enabled.
-pub type DefaultSigner = DefaultSignerNoDoc;
 
 #[cfg(not(any(feature = "sha3-hash")))]
 #[doc(hidden)]

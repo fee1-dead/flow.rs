@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use cadence_json::ValueRef;
-
 use flow_sdk::access::ExecuteScriptAtLatestBlockRequest;
 use flow_sdk::prelude::TonicHyperFlowClient;
 

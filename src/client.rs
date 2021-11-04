@@ -86,33 +86,6 @@ pub type TonicHyperFlowClient = FlowClient<TonicHyperClient>;
 pub type GrpcSendResult<'a, Output> =
     Pin<Box<dyn Future<Output = Result<Output, TonicError>> + 'a>>;
 
-impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
-where
-    I: FlowRequest<O> + Send + Sync + EncodableMessage,
-    O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
-    Service: GrpcService<BoxBody> + 'static,
-    Service::Error: Into<Box<dyn Error + Send + Sync>>,
-    Service::ResponseBody: Body + Send + Sync + 'static,
-    <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
-{
-    type Error = TonicError;
-
-    fn send(&mut self, input: I) -> GrpcSendResult<O> {
-        let preenc = PreEncode::new(&input);
-        Box::pin(async move {
-            self.ready().await.map_err(Into::into)?;
-            Ok(self
-                .unary(
-                    Request::new(preenc),
-                    PathAndQuery::from_static(I::PATH),
-                    OtoprCodec::default(),
-                )
-                .await?
-                .into_inner())
-        })
-    }
-}
-
 macro_rules! choose {
     ((), ($($empty:tt)*), ($($non_empty:tt)*)) => {
         $($empty)*
@@ -227,9 +200,9 @@ impl<Inner> FlowClient<Inner> {
         /// Retrieves events with the specified type with the specified block ids.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
-        /// 
+        ///
         /// See [`FlowClient`'s documentation] for more details.
-        /// 
+        ///
         /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn events_for_blocks_by_ids<(EventTy, BlockIds)>(ty: EventTy, block_ids: BlockIds) GetEventsForBlockIdsRequest<EventTy, BlockIds> => EventsResponse {
             GetEventsForBlockIdsRequest { ty, block_ids }
@@ -238,9 +211,9 @@ impl<Inner> FlowClient<Inner> {
         /// Executes Cadence script at the latest block and returns the result.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
-        /// 
+        ///
         /// See [`FlowClient`'s documentation] for more details.
-        /// 
+        ///
         /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_latest_block<(Script, Arguments)>(script: Script, arguments: Arguments) ExecuteScriptAtLatestBlockRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtLatestBlockRequest { script, arguments }
@@ -249,9 +222,9 @@ impl<Inner> FlowClient<Inner> {
         /// Executes Cadence script at a specific block height and returns the result.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
-        /// 
+        ///
         /// See [`FlowClient`'s documentation] for more details.
-        /// 
+        ///
         /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_block_id<(BlockId, Script, Arguments)>(block_id: BlockId, script: Script, arguments: Arguments) ExecuteScriptAtBlockIdRequest<BlockId, Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtBlockIdRequest { block_id, script, arguments }
@@ -260,9 +233,9 @@ impl<Inner> FlowClient<Inner> {
         /// Executes Cadence script at a specific block height and returns the result.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
-        /// 
+        ///
         /// See [`FlowClient`'s documentation] for more details.
-        /// 
+        ///
         /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn execute_script_at_block_height<(Script, Arguments)>(block_height: u64, script: Script, arguments: Arguments) ExecuteScriptAtBlockHeightRequest<Script, Arguments> => ExecuteScriptResponse {
             ExecuteScriptAtBlockHeightRequest { block_height, script, arguments }
@@ -271,9 +244,9 @@ impl<Inner> FlowClient<Inner> {
         /// Sends a transaction over the network.
         ///
         /// Note: due to a bug in the compiler's trait system, consider using `send` when you encounter a confusing error.
-        /// 
+        ///
         /// See [`FlowClient`'s documentation] for more details.
-        /// 
+        ///
         /// [`FlowClient`'s documentation]: ./struct.FlowClient.html#error-the-method-xx-exists-for-struct-flowclient-but-its-trait-bounds-were-not-satisfied
         pub async fn send_transaction<(
             Script,
@@ -425,6 +398,33 @@ impl TonicHyperFlowClient {
     /// Connects to the Testnet access node provided by Dapper Labs.
     pub fn testnet() -> Result<Self, tonic::transport::Error> {
         Self::connect_static("http://access.devnet.nodes.onflow.org:9000")
+    }
+}
+
+impl<I, O, Service> GrpcClient<I, O> for Grpc<Service>
+where
+    I: FlowRequest<O> + Send + Sync + EncodableMessage,
+    O: for<'b> DecodableMessage<'b> + Send + Sync + Default + 'static,
+    Service: GrpcService<BoxBody> + 'static,
+    Service::Error: Into<Box<dyn Error + Send + Sync>>,
+    Service::ResponseBody: Body + Send + Sync + 'static,
+    <Service::ResponseBody as Body>::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    type Error = TonicError;
+
+    fn send(&mut self, input: I) -> GrpcSendResult<O> {
+        let preenc = PreEncode::new(&input);
+        Box::pin(async move {
+            self.ready().await.map_err(Into::into)?;
+            Ok(self
+                .unary(
+                    Request::new(preenc),
+                    PathAndQuery::from_static(I::PATH),
+                    OtoprCodec::default(),
+                )
+                .await?
+                .into_inner())
+        })
     }
 }
 
