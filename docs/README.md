@@ -18,6 +18,9 @@ The library client specifications can be found here:
 
 [<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/index.html)
 
+Note: All examples in this document are tested to compile successfully.
+Examples that do not send transactions to the network will run on every push.
+
 
 ## Getting Started
 
