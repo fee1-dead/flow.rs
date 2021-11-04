@@ -4,7 +4,7 @@ use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let mut latest_block = client.latest_block(Seal::Sealed).await?;

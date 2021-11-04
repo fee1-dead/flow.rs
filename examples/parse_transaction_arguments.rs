@@ -3,7 +3,7 @@ use std::error::Error;
 use flow_sdk::prelude::*;
 
 async fn run(tx_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let decoded_tx_id = hex::decode(tx_id)?;

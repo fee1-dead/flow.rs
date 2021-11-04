@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let addr = buf.trim();
 
     let address: AddressOwned = addr.parse()?;
-    let net = TonicHyperFlowClient::testnet()?;
+    let net = TonicHyperFlowClient::testnet().await?;
 
     let mut account = Account::<_, _>::new(net, &address.data, secret_key).await?;
 

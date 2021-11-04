@@ -4,7 +4,7 @@ use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let latest_block_height = client.latest_block_header(Seal::Sealed).await?.height;

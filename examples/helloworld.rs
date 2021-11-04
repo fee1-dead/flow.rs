@@ -6,7 +6,7 @@ use flow_sdk::protobuf::Timestamp;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut net = TonicHyperFlowClient::testnet()?;
+    let mut net = TonicHyperFlowClient::testnet().await?;
     let _ = net.ping().await?;
     let latest_block_header = net.latest_block_header(Seal::Sealed).await?;
     println!("{:?}", latest_block_header);

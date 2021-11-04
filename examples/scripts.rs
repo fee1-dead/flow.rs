@@ -33,7 +33,7 @@ const COMPLEX_SCRIPT: &str = "
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let ret = client
