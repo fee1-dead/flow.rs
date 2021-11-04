@@ -463,17 +463,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::mainnet()?;
     client.ping().await?;
 
-    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
-        script: SIMPLE_SCRIPT,
-        arguments: [ValueRef::Int(BigInt::from(32))],
-    }).await?.parse()?;
+    let ret = client
+        .execute_script_at_latest_block(
+            SIMPLE_SCRIPT,
+            [ValueRef::Int(cadence_json::BigInt::from(32))],
+        )
+        .await?
+        .parse()?;
 
     println!("{:#?}", ret);
 
-    let ret = client.send(ExecuteScriptAtLatestBlockRequest {
-        script: COMPLEX_SCRIPT,
-        arguments: [ValueRef::String("John Doe")],
-    }).await?.parse()?;
+    let ret = client
+        .execute_script_at_latest_block(
+            COMPLEX_SCRIPT,
+            [ValueRef::String("John Doe")],
+        )
+        .await?
+        .parse()?;
 
     println!("{:#?}", ret);
 
@@ -795,9 +801,7 @@ async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + S
 
     println!("{:?}", txn);
 
-    account1.client().send(SendTransactionRequest {
-        transaction: txn,
-    }).await?;
+    account1.client().send_transaction(txn).await?;
 
     Ok(())
 }
@@ -873,9 +877,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
 
     println!("{:?}", txn);
 
-    account1.client().send(SendTransactionRequest {
-        transaction: txn,
-    }).await?;
+    account1.client().send_transaction(txn).await?;
 
     Ok(())
 }
@@ -960,7 +962,7 @@ async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Sen
 
     account1
         .client()
-        .send(SendTransactionRequest { transaction: txn })
+        .send_transaction(txn)
         .await?;
 
     Ok(())
@@ -991,9 +993,7 @@ let txn_from_party: PartyTransaction<_, _> = /* Make a party, let people sign it
 let res = account.send_transaction_header(&txn_header).await?;
 
 // do this when you have a party and multiple accounts need to sign it.
-let res2 = account.client().send(SendTransactionRequest {
-    transaction: txn_from_party,
-}).await?;
+let res2 = account.client().send_transaction(txn_from_party).await?;
 
 // We can use `finalize` to wait until the transaction has been sealed.
 if let Some(txn_result) = res.finalize(account.client()).await? {
