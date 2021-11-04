@@ -52,7 +52,7 @@ use flow_sdk::client::TonicHyperFlowClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
     Ok(())
 }
@@ -82,7 +82,7 @@ use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::testnet()?;
+    let mut client = TonicHyperFlowClient::testnet().await?;
     client.ping().await?;
 
     let latest_block = client.latest_block(Seal::Sealed).await?;
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 ```
 Result output:
-```rust
+```rs
 OK: Block {
     id: 1ad194977bef2c8ee364daffda73c81efa26f9e03c58f15966e38008115c3739,
     parent_id: 1cddc076c5976ee2235fe838fa4d0d724a7668186d5f87992b1d497b6f6a3f34,
@@ -138,12 +138,14 @@ Example depicts ways to get an account at the latest block and at a specific blo
 ```rust
 use std::error::Error;
 
-use cadence_json::AddressOwned;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
+
 use flow_sdk::prelude::*;
 
-async fn run(address: &str) -> Result<(), Box<dyn Error Send + Sync>> {
-    let address: AddressOwned = addr.parse()?;
-    let mut net = TonicHyperFlowClient::mainnet()?;
+async fn run(address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let address: AddressOwned = address.parse()?;
+    let mut net = TonicHyperFlowClient::mainnet().await?;
 
     let account = net.account_at_latest_block(&address.data).await?;
 
@@ -163,7 +165,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 ```
 Result output:
-```rust
+```rs
 Account {
     address: 0x9e06eebf494e2d78,
     balance: 9411868000,
@@ -212,7 +214,7 @@ use std::error::Error;
 use flow_sdk::prelude::*;
 
 async fn run(tx_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let decoded_tx_id = hex::decode(tx_id)?;
@@ -228,7 +230,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 ```
 Example output:
-```rust
+```rs
 Transaction {
     script: "import FungibleToken from 0xf233dcee88fe0abe\nimport DapperUtilityCoin from 0xead892083b3e2c6c\nimport TopShot from 0x0b2a3299cc857e29\nimport Market from 0xc1e4f4f4c4257510\nimport TopShotMarketV3 from 0xc1e4f4f4c4257510\n\n// This transaction purchases a moment from the v3 sale collection\n// The v3 sale collection will also check the v1 collection for for sale moments as part of the purchase\n// If there is no v3 sale collection, the transaction will just purchase it from v1 anyway\n\ntransaction() {\n\n\tlet purchaseTokens: @DapperUtilityCoin.Vault\n\n\tprepare(acct: AuthAccount) {\n\n\t\t// Borrow a provider reference to the buyers vault\n\t\tlet provider = acct.borrow<&DapperUtilityCoin.Vault{FungibleToken.Provider}>(from: /storage/dapperUtilityCoinVault)\n\t\t\t?? panic(\"Could not borrow a reference to the buyers FlowToken Vault\")\n\t\t\n\t\t// withdraw the purchase tokens from the vault\n\t\tself.purchaseTokens <- provider.withdraw(amount: UFix64(8)) as! @DapperUtilityCoin.Vault\n\t\t\n\t}\n\n\texecute {\n\n\t\t// get the accounts for the seller and recipient\n\t\tlet seller = getAccount(0x942e29b7b46ee571)\n\t\tlet recipient = getAccount(0x23eafaf413144b65)\n\n\t\t// Get the reference for the recipient's nft receiver\n\t\tlet receiverRef = recipient.getCapability(/public/MomentCollection)!.borrow<&{TopShot.MomentCollectionPublic}>()\n\t\t\t?? panic(\"Could not borrow a reference to the recipients moment collection\")\n\n\t\tif let marketV3CollectionRef = seller.getCapability(/public/topshotSalev3Collection)\n\t\t\t\t.borrow<&{Market.SalePublic}>() {\n\n\t\t\tlet purchasedToken <- marketV3CollectionRef.purchase(tokenID: 11224606, buyTokens: <-self.purchaseTokens)\n\t\t\treceiverRef.deposit(token: <-purchasedToken)\n\n\t\t} else if let marketV1CollectionRef = seller.getCapability(/public/topshotSaleCollection)\n\t\t\t.borrow<&{Market.SalePublic}>() {\n\t\t\t// purchase the moment\n\t\t\tlet purchasedToken <- marketV1CollectionRef.purchase(tokenID: 11224606, buyTokens: <-self.purchaseTokens)\n\n\t\t\t// deposit the purchased moment into the signer's collection\n\t\t\treceiverRef.deposit(token: <-purchasedToken)\n\n\t\t} else {\n\t\t\tpanic(\"Could not borrow reference to either Sale collection\")\n\t\t}\n\t}\n}",
     arguments: [],
@@ -272,7 +274,7 @@ Transaction {
 Retrieve events by a given type in a specified block height range or through a list of block IDs.
 
 📖 **Event type** is a string that follow a standard format:
-```
+```format
 A.{contract address}.{contract name}.{event name}
 ```
 
@@ -292,10 +294,10 @@ use flow_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
-    let latest_block_height = client.latest_block_header(true).await?.0.height;
+    let latest_block_height = client.latest_block_header(Seal::Sealed).await?.height;
     let start_height = latest_block_height - 20;
 
     println!(
@@ -307,7 +309,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .events_for_height_range("flow.AccountCreated", start_height, latest_block_height)
         .await?
         .results
-        .iter()
     {
         if events.events.is_empty() {
             continue;
@@ -329,7 +330,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
 ```
 Example output:
-```rust
+```rs
 Searching for accounts created within the last 20 blocks (19495374-19495394)...
 
 Block #19495378 (6d9d4315127cc9f26fde6ca7429d1d6718d35cd4a8ef2a7804d3e1ae6d2b9bbe):
@@ -388,7 +389,7 @@ use std::error::Error;
 use flow_sdk::prelude::*;
 
 async fn run(collection_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     let collection = client
             .collection_by_id(&hex::decode(collection_id).unwrap())
             .await?;
@@ -399,11 +400,11 @@ async fn run(collection_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    run("e77a56556aadcc2f2b6e4ef853983a2be3dc8ff72873a8e1a1ae13651ec779ed")
+    run("e77a56556aadcc2f2b6e4ef853983a2be3dc8ff72873a8e1a1ae13651ec779ed").await
 }
 ```
 Example output:
-```rust
+```rs
 OK: Collection {
     id: e77a56556aadcc2f2b6e4ef853983a2be3dc8ff72873a8e1a1ae13651ec779ed,
     transactions: [
@@ -427,7 +428,9 @@ We can execute a script using the latest state of the Flow blockchain or we can 
 ```rust
 use std::error::Error;
 
-use cadence_json::{BigInt, ValueRef};
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::{BigInt, ValueRef};
+
 use flow_sdk::access::ExecuteScriptAtLatestBlockRequest;
 use flow_sdk::prelude::*;
 
@@ -461,7 +464,7 @@ const COMPLEX_SCRIPT: &str = "
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = TonicHyperFlowClient::mainnet()?;
+    let mut client = TonicHyperFlowClient::mainnet().await?;
     client.ping().await?;
 
     let ret = client
@@ -488,7 +491,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 ```
 Example output:
-```rust
+```rs
 42
 Struct {
     id: "s.ccbac9e72ee36be8881671e8939b970bb8bc81fb8cfd695c6fd848cf75248802.User",
@@ -512,7 +515,7 @@ Executing a transaction requires couple of steps:
 A transaction is nothing more than a signed set of data that includes script code which are instructions on how to mutate the network state and properties that define and limit it's execution. All these properties are explained bellow. 
 
 📖 **Script** field is the portion of the transaction that describes the state mutation logic. On Flow, transaction logic is written in [Cadence](https://docs.onflow.org/cadence/). Here is an example transaction script:
-```
+```cadence
 transaction(greeting: String) {
   execute {
     log(greeting.concat(", World!"))
@@ -540,7 +543,7 @@ A transaction is only valid if its declared sequence number matches the current 
 The number of authorizers on the transaction must match the number of AuthAccount parameters declared in the prepare statement of the Cadence script.
 
 Example transaction with multiple authorizers:
-```
+```cadence
 transaction {
   prepare(authorizer1: AuthAccount, authorizer2: AuthAccount) { }
 }
@@ -562,7 +565,7 @@ Building a transaction involves setting the required properties explained above 
 
 Here we define a simple transaction script that will be used to execute on the network and serve as a good learning example.
 
-```
+```cadence
 transaction(greeting: String) {
 
   let guest: Address
@@ -616,45 +619,62 @@ Quick example of building a transaction:
 ```rust
 use std::error::Error;
 
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
-
 use flow_sdk::prelude::*;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
 
-let client = TonicHyperFlowClient::testnet()?;
-    
-let secp256k1 = Secp256k1::signing_only();
-let secret_key_raw = hex::decode(MY_SECRET_KEY).unwrap();
-let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
-let public_key = PublicKey::from_secret_key(&secp256k1, &secret_key);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet().await?;
+        
+    let secp256k1 = Secp256k1::signing_only();
+    let secret_key_raw = hex::decode(MY_SECRET_KEY).unwrap();
+    let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
+    let public_key = PublicKey::from_secret_key(&secp256k1, &secret_key);
 
-let txn = CreateAccountTransaction {
-    public_keys: &[
-        public_key
-    ],
-};
-let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
+    let txn = CreateAccountTransaction {
+        public_keys: &[
+            public_key
+        ],
+    };
+    let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
+
+    Ok(())
+}
 ```
 
 Signatures can be generated more securely using keys stored in a hardware device such as an [HSM](https://en.wikipedia.org/wiki/Hardware_security_module). The `FlowSigner` interface is intended to be flexible enough to support a variety of signer implementations and is not limited to in-memory implementations.
 
 Simple signature example:
 ```rust
-/* Using variables from above */
+use std::error::Error;
 
-use cadence_json::AddressOwned;
+use crate::cadence_json::AddressOwned;
+// ^ this example tests with cadence_json crate imported, which introduces an ambiguity if you remove `crate::`.
+// | in your own crate, you can remove `crate::` if you don't have `cadence_json` in your `Cargo.toml`.
+use flow_sdk::prelude::*;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
 
-let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet().await?;
+        
+    let secp256k1 = Secp256k1::signing_only();
+    let secret_key_raw = hex::decode(MY_SECRET_KEY).unwrap();
+    let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
 
-let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
+    let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+    let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
 
-let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
-let sequence_number = account.primary_key_sequence_number().await?;
-
-account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1000);
+    for signature in account.sign_data("Hello, world!") {
+        println!("{:?}", signature.serialize_compact());
+    }
+    Ok(())
+}
 ```
 
 Flow supports great flexibility when it comes to transaction signing, we can define multiple authorizers (multi-sig transactions) and have different payer account than proposer. We will explore advanced signing scenarios bellow.
@@ -672,12 +692,43 @@ Flow supports great flexibility when it comes to transaction signing, we can def
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/onflow/flow-go-sdk/tree/master/examples#single-party-single-signature)**
 ```rust
-let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
+use std::error::Error;
 
-let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
-let sequence_number = account.primary_key_sequence_number().await?;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
 
-account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1000);
+use flow_sdk::prelude::*;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet().await?;
+        
+    let secp256k1 = Secp256k1::signing_only();
+    let secret_key_raw = hex::decode(MY_SECRET_KEY).unwrap();
+    let secret_key = SecretKey::from_slice(&secret_key_raw).unwrap();
+    let public_key = PublicKey::from_secret_key(&secp256k1, &secret_key);
+
+    let txn = CreateAccountTransaction {
+        public_keys: &[
+            public_key
+        ],
+    };
+    let txn = txn.to_header::<_, DefaultHasher>(&secp256k1);
+
+    let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+    let mut account = Account::<_, _>::new(client, &address.data, secret_key).await?;
+
+    let latest_block_id = account.client().latest_block_header(Seal::Sealed).await?.id;
+    let sequence_number = account.primary_key_sequence_number().await?;
+
+    account.sign_transaction_header(&txn, latest_block_id, sequence_number as u64, 1000);
+
+    Ok(())
+}
 ```
 
 
@@ -698,7 +749,8 @@ use std::error::Error;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
-use cadence_json::AddressOwned;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
 
 use flow_sdk::prelude::*;
 
@@ -706,8 +758,9 @@ const MULTISIG_1_ADDRESS: &str = "0x750859bbbd3fe597";
 const MULTISIG_1_SK_1: &str = "db8b853c24795cba465b7d70a7ebeb8eed06f1c18307e58885dd54db478f17fd";
 const MULTISIG_1_SK_2: &str = "ec4917f95c5d59a7b3967ba67f0a43e2bbf619f3119837429ec6efe05d11ed12";
 
-async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::testnet().await?;
     
     let secp256k1 = Secp256k1::signing_only();
     let sk1 = hex::decode(MULTISIG_1_SK_1).unwrap();
@@ -756,7 +809,8 @@ use std::error::Error;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
-use cadence_json::AddressOwned;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
 
 use flow_sdk::access::SendTransactionRequest;
 use flow_sdk::prelude::*;
@@ -768,7 +822,7 @@ const ONEKEY_2_ADDRESS: &str = "0x6abc82b79b9a5573";
 const ONEKEY_2_SK: &str = "10d5ba77219d1074c8fd7b2a8990e0873e70183e2388300eeb4d332495f5d636";
 
 async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let secp256k1 = Secp256k1::signing_only();
@@ -828,7 +882,8 @@ use std::error::Error;
 
 use secp256k1::SecretKey;
 
-use cadence_json::AddressOwned;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
 
 use flow_sdk::access::SendTransactionRequest;
 use flow_sdk::prelude::*;
@@ -847,7 +902,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
             log([acct1, acct2])
         }
     }";
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let sk1 = hex::decode(ONEKEY_1_SK).unwrap();
@@ -906,10 +961,11 @@ use std::error::Error;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
-use cadence_json::AddressOwned;
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
 
-use crate::access::SendTransactionRequest;
-use crate::prelude::*;
+use flow_sdk::access::SendTransactionRequest;
+use flow_sdk::prelude::*;
 
 const MULTISIG_1_ADDRESS: &str = "0x750859bbbd3fe597";
 const MULTISIG_1_SK_1: &str = "db8b853c24795cba465b7d70a7ebeb8eed06f1c18307e58885dd54db478f17fd";
@@ -920,7 +976,7 @@ const MULTISIG_2_SK_1: &str = "fdf68c79fb7234b15b3cad54e2d6f424e831c7c09dadd277f
 const MULTISIG_2_SK_2: &str = "145f3687501494168f85457f8e7fcd02b8251a5ca10cfe9b73395a7f9aaaee85";
 
 async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let secp = Secp256k1::signing_only();
@@ -979,30 +1035,37 @@ After a transaction has been [built](#build-transactions) and [signed](#sign-tra
 
 **[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/try.svg" width="130">](https://github.com/fee1-dead/flow.rs/tree/master/flow-examples#sending-transactions)**
 ```rust
+use std::error::Error;
+
 use flow_sdk::access::SendTransactionRequest;
 use flow_sdk::prelude::*;
 use flow_sdk::transaction::TransactionHeader;
 use flow_sdk::multi::PartyTransaction;
 
-let mut account: Account<_, _> = /* login to the account here */;
+// The type parameters used here may not match what you actually use here.
+// Feel free to change them if you like! (they are specified to pass tests)
+async fn example() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut account: Account<TonicHyperFlowClient> = todo!("login to the account here");
 
-let txn_header: TransactionHeader<_> = /* Build one from TransactionHeaderBuilder or use one of the templates */;
+    let txn_header: TransactionHeader<Vec<Box<[u8]>>> = todo!("Build one from TransactionHeaderBuilder or use one of the templates");
 
-let txn_from_party: PartyTransaction<_, _> = /* Make a party, let people sign it, and call `sign_party_as_payer` */;
+    let txn_from_party: PartyTransaction<Box<[u8]>, [u8; 64]> = todo!("Make a party, let people sign it, and call `sign_party_as_payer`");
 
-// do this if you only have a header and you just want to send this with one account.
-let res = account.send_transaction_header(&txn_header).await?;
+    // do this if you only have a header and you just want to send this with one account.
+    let res = account.send_transaction_header(&txn_header).await?;
 
-// do this when you have a party and multiple accounts need to sign it.
-let res2 = account.client().send_transaction(txn_from_party).await?;
+    // do this when you have a party and multiple accounts need to sign it.
+    let res2 = account.client().send_transaction(txn_from_party).await?;
 
-// We can use `finalize` to wait until the transaction has been sealed.
-if let Some(txn_result) = res.finalize(account.client()).await? {
-    // Do stuff with the result here.
-} else {
-    // Timeout has reached.
-    // You can customize delay between retries and timeout by constructing `Finalize` yourself:
-    // `Finalize::new(&res.id, account.client(), /* delay */, /* timeout */)`
+    // We can use `finalize` to wait until the transaction has been sealed.
+    if let Some(txn_result) = res.finalize(account.client()).await? {
+        // Do stuff with the result here.
+    } else {
+        // Timeout has reached.
+        // You can customize delay between retries and timeout by constructing `Finalize` yourself:
+        // `Finalize::new(&res.id, account.client(), /* delay */, /* timeout */)`
+    }
+    Ok(())
 }
 ```
 
@@ -1034,7 +1097,9 @@ Account creation happens inside a transaction, which means that somebody must pa
 ```rust
 use std::error::Error;
 
-use cadence_json::{AddressOwned, ValueOwned};
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
+
 use flow_sdk::prelude::*;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
@@ -1042,15 +1107,14 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
 const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn create_account() -> Result<(), Box<dyn Error + Send + Sync>> {
     let secp = Secp256k1::signing_only();
     let secret_key = hex::decode(MY_SECRET_KEY).unwrap();
-    let secret_key = SecretKey::from_slice(&mut rng).unwrap();
+    let secret_key = SecretKey::from_slice(&secret_key).unwrap();
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
     let address: AddressOwned = MY_ADDRESS.parse().unwrap();
-    let net = TonicHyperFlowClient::testnet()?;
+    let net = TonicHyperFlowClient::testnet().await?;
 
     let mut account = Account::<_, _>::new(net, &address.data, secret_key).await?;
 
@@ -1070,7 +1134,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     Ok(())
 }
-
 ```
 
 After the account creation transaction has been submitted you can retrieve the new account address by [getting the transaction result](#get-transactions). 
@@ -1078,7 +1141,45 @@ After the account creation transaction has been submitted you can retrieve the n
 The new account address will be emitted in a system-level `flow.AccountCreated` event.
 
 ```rust
-    // Continuing the example above...
+use std::error::Error;
+
+use flow_sdk::prelude::cadence_json as cjson;
+use cjson::AddressOwned;
+
+use flow_sdk::prelude::*;
+
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+const MY_ADDRESS: &str = "0x41c60c9bacab2a3d";
+const MY_SECRET_KEY: &str = "74cd94fc21e264811c97bb87f1061edc93aaeedb6885ff8307608a9f2bcebec5";
+
+// reusing the example above...
+async fn create_account() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let secp = Secp256k1::signing_only();
+    let secret_key = hex::decode(MY_SECRET_KEY).unwrap();
+    let secret_key = SecretKey::from_slice(&secret_key).unwrap();
+    let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+    let address: AddressOwned = MY_ADDRESS.parse().unwrap();
+    let net = TonicHyperFlowClient::testnet().await?;
+
+    let mut account = Account::<_, _>::new(net, &address.data, secret_key).await?;
+
+    let create_account = CreateAccountTransaction {
+        public_keys: &[public_key],
+    };
+
+    let create_account_header = create_account.to_header::<_, tiny_keccak::Sha3>(account.signer());
+    let res = account
+        .send_transaction_header(&create_account_header)
+        .await?;
+
+    println!(
+        "Just made {} to create another account :p",
+        hex::encode(&res.id)
+    );
+
+    // Add:
     let response = res.finalize(account.client()).await?;
 
     match response {
@@ -1087,7 +1188,7 @@ The new account address will be emitted in a system-level `flow.AccountCreated` 
                 if event.ty == "flow.AccountCreated" {
                     let payload = event.parse_payload()?;
                     let address = payload.find_field("address").unwrap().expect_address();
-                    println!("Created {}", address);
+                    println!("Address of created account: {}", address);
                 }
             }
         }
@@ -1095,6 +1196,9 @@ The new account address will be emitted in a system-level `flow.AccountCreated` 
             panic!("The transaction did not get sealed within timeout... Perhaps the network is malfunctioning?")
         }
     }
+
+    Ok(())
+}
 ```
 
 ### Generate Keys
@@ -1104,7 +1208,7 @@ Flow uses [ECDSA](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature
 
 Here's how to generate an ECDSA private key for the secp256k1 curve used by Bitcoin and Ethereum.
 
-```
+```rust
 use secp256k1::{rand::rngs::EntropyRng, PublicKey, Secp256k1, SecretKey};
 
 fn main() {
