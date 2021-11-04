@@ -342,7 +342,7 @@ where
         }
         unreachable!();
     }
-    
+
     //////////////////
     // SIGNING
 
