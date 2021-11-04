@@ -54,6 +54,7 @@ use flow_sdk::client::TonicHyperFlowClient;
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut client = TonicHyperFlowClient::mainnet()?;
     client.ping().await?;
+    Ok(())
 }
 ```
 

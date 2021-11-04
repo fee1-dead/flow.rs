@@ -96,19 +96,17 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .enable_all()
         .build()
         .unwrap();
-    let _enter = rt.enter();
 
-    let client = TonicHyperFlowClient::connect_shared(format!("http://{}", emulator))?;
-
-    rt.block_on(main_inner(cfg, client))?;
+    rt.block_on(main_inner(cfg, emulator))?;
 
     Ok(())
 }
 
 async fn main_inner(
     mut cfg: FlowConfig,
-    client: TonicHyperFlowClient,
+    emulator: String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let client = TonicHyperFlowClient::connect(format!("http://{}", emulator).try_into().unwrap()).await?;
     let acc = cfg.accounts.remove("emulator-account").unwrap();
 
     let addr = hex::decode(acc.address).unwrap();

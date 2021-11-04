@@ -23,7 +23,7 @@ const SCRIPT: &str = r#"
 
 #[tokio::test]
 async fn building_transaction_headers() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let argument = ValueRef::String("Hello");
 
     let header = TransactionHeaderBuilder::new()

@@ -22,7 +22,7 @@ const MULTISIG_2_SK_2: &str = "145f3687501494168f85457f8e7fcd02b8251a5ca10cfe9b7
 
 #[tokio::test]
 async fn signing_transactions_one_one() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
 
     let secp256k1 = Secp256k1::signing_only();
     let secret_key_raw = hex::decode(ONEKEY_1_SK).unwrap();
@@ -48,7 +48,7 @@ async fn signing_transactions_one_one() -> Result<(), Box<dyn Error + Send + Syn
 
 #[tokio::test]
 async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
 
     let secp256k1 = Secp256k1::signing_only();
     let sk1 = hex::decode(MULTISIG_1_SK_1).unwrap();
@@ -77,7 +77,7 @@ async fn signing_transactions_multisig_one() -> Result<(), Box<dyn Error + Send 
 
 #[tokio::test]
 async fn signing_transactions_one_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let secp256k1 = Secp256k1::signing_only();
@@ -129,7 +129,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
             log([acct1, acct2])
         }
     }";
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let sk1 = hex::decode(ONEKEY_1_SK).unwrap();
@@ -174,7 +174,7 @@ async fn signing_transactions_one_multi_authorizers() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
     let client2 = client.clone();
 
     let secp = Secp256k1::signing_only();
@@ -227,7 +227,7 @@ async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Sen
 
 // #[tokio::test]
 async fn _create_accounts() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let client = TonicHyperFlowClient::testnet()?;
+    let client = TonicHyperFlowClient::testnet().await?;
 
     let secp256k1 = Secp256k1::signing_only();
     let my_secret_key = SecretKey::from_slice(&hex::decode(ONEKEY_1_SK).unwrap()).unwrap();
