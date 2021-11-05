@@ -4,7 +4,7 @@
 //!
 //! Start by connecting to the [`testnet()`] or the [`mainnet()`], or [login to an account] by
 //! providing the address and secret key.
-//! 
+//!
 //! You can also take a look at [the reference] for examples around individual functionalities.
 //!
 //! [`testnet()`]: crate::client::TonicHyperFlowClient::testnet()

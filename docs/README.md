@@ -378,7 +378,7 @@ Block #19495392 (e3c457b6fc92d04c4087ce0ae3e647e76f4da8e10a12c456b9e0a888a161cc3
 ```
 
 ### Get Collections
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/0.1.3/flow_sdk/client/struct.FlowClient.html#method.collection_by_id)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.collection_by_id)
 
 Retrieve a batch of transactions that have been included in the same block, known as ***collections***. 
 Collections are used to improve consensus throughput by increasing the number of transactions per block and they act as a link between a block and a transaction.
