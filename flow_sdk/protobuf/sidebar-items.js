@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Seal","Seal: the status of an entity."]],"struct":[["Timestamp","A protobuf timestamp."]]});

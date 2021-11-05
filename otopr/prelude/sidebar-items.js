@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["VarInt","A VarInt type."]]});

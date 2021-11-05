@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Signable","A type that can be encoded using ZigZag encoding."]]});

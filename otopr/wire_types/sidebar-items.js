@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["WireTypes",""]],"struct":[["Fixed32Wire",""],["Fixed64Wire",""],["LengthDelimitedWire",""],["VarIntWire",""]],"trait":[["WireType","A WireType."]]});

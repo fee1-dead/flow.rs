@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["EncodeAsRef",""],["ProtobufSerializer",""]],"trait":[["Encodable",""],["EncodableMessage",""]]});

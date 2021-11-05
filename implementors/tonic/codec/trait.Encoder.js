@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["flow_sdk"] = [{"text":"impl <a class=\"trait\" href=\"tonic/codec/trait.Encoder.html\" title=\"trait tonic::codec::Encoder\">Encoder</a> for <a class=\"struct\" href=\"flow_sdk/codec/struct.PEnc.html\" title=\"struct flow_sdk::codec::PEnc\">PEnc</a>","synthetic":false,"types":["flow_sdk::codec::PEnc"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
