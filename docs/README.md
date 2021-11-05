@@ -12,7 +12,7 @@
 
 This reference documents all the methods available in the SDK, and explains in detail how these methods work.
 
-This SDKs is dual-licenced under MIT or Apache 2.0, at your option.
+This SDK is dual-licensed under MIT or Apache 2.0, at your option.
 
 The library client specifications can be found here:
 
@@ -30,7 +30,7 @@ To install Rust, refer to [rustup.rs](https://rustup.rs) for instructions.
 
 ### Importing the Library
 
-Add the folllowing to your project's `Cargo.toml`:
+Add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -43,7 +43,7 @@ flow-sdk = "0.1.0"
 The library uses gRPC to communicate with the access nodes and it must be configured with correct access node API URL. 
 
 📖 **Access API URLs** can be found [here](https://docs.onflow.org/access-api/#flow-access-node-endpoints). An error will be returned if the host is unreachable.
-The Access Nodes APIs hosted by DapperLabs are accessible at:
+The Access Nodes APIs hosted by Dapper Labs are accessible at:
 - Testnet `access.devnet.nodes.onflow.org:9000`
 - Mainnet `access.mainnet.nodes.onflow.org:9000`
 - Local Emulator `127.0.0.1:3569` 
@@ -69,7 +69,7 @@ After you have established a connection with an access node, you can query the F
 
 Query the network for block by id, height or get the latest block.
 
-📖 **Block ID** is SHA3-256 hash of the entire block payload. This hash is stored as an ID field on any block response object (ie. response from `GetLatestBlock`). 
+📖 **Block ID** is SHA3-256 hash of the entire block payload. This hash is stored as an ID field on any block response object (i.e. response from `GetLatestBlock`). 
 
 📖 **Block height** expresses the height of the block on the chain. The latest block height increases by one for every valid block produced.
 
@@ -1078,7 +1078,7 @@ async fn example() -> Result<(), Box<dyn Error + Send + Sync>> {
 
 On Flow, account creation happens inside a transaction. Because the network allows for a many-to-many relationship between public keys and accounts, it's not possible to derive a new account address from a public key offline. 
 
-The Flow VM uses a deterministic address generation algorithm to assigen account addresses on chain. You can find more details about address generation in the [accounts & keys documentation](https://docs.onflow.org/concepts/accounts-and-keys/).
+The Flow VM uses a deterministic address generation algorithm to assign account addresses on chain. You can find more details about address generation in the [accounts & keys documentation](https://docs.onflow.org/concepts/accounts-and-keys/).
 
 #### Public Key
 Flow uses ECDSA key pairs to control access to user accounts. Each key pair can be used in combination with the SHA2-256 or SHA3-256 hashing algorithms.

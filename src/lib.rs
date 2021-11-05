@@ -4,11 +4,14 @@
 //!
 //! Start by connecting to the [`testnet()`] or the [`mainnet()`], or [login to an account] by
 //! providing the address and secret key.
+//! 
+//! You can also take a look at [the reference] for examples around individual functionalities.
 //!
 //! [`testnet()`]: crate::client::TonicHyperFlowClient::testnet()
 //! [`mainnet()`]: crate::client::TonicHyperFlowClient::mainnet()
 //! [login to an account]: crate::account::Account::new()
-#![forbid(missing_docs)] // Every public items must be documented
+//! [the reference]: https://github.com/fee1-dead/flow.rs/blob/master/docs/README.md
+#![forbid(missing_docs)] // Every public item must be documented
 
 pub mod prelude;
 

@@ -3,7 +3,7 @@
 [![CI](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml/badge.svg)](https://github.com/fee1-dead/flow.rs/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/flow-sdk)](https://crates.io/crates/flow-sdk)
 [![docs.rs](https://img.shields.io/docsrs/flow-sdk)](https://docs.rs/flow-sdk/)
-![Crates.io](https://img.shields.io/crates/l/flow-sdk)
+![MIT OR Apache-2.0](https://img.shields.io/crates/l/flow-sdk)
 
 [Documentation](docs/README.md)
 
@@ -30,7 +30,9 @@ To run examples in `examples/`, run `cargo run --example file_name_without_rs`.
 
 ## Tests
 
-The SDK has tests within [`src/tests`](./src/tests) and Cadence JSON tests are in [`cadence_json/src/tests`](./cadence_json/src/tests)
+The SDK has tests within [`src/tests`](./src/tests) and Cadence JSON tests are in [`cadence_json/src/tests`](./cadence_json/src/tests).
+
+Examples inside the documentation are also tested.
 
 ## Cryptography and Hashing algorithms
 
@@ -38,7 +40,7 @@ Currently the library supports signing with secp256k1 and SHA3 hashing. Support 
 may be added in the near future.
 
 secp256k1 signing is provided by the `secp256k1` crate, which is an FFI wrapper around [libsecp256k1],
-a C library by Pieter Wuille that is used in many bitcoin projects.
+a C library by Pieter Wuille that is used in many projects.
 
 sha3 hashing is provided by the [`tiny-keccak`] crate, which claims to have [better performance] than
 another crate by `RustCrypto`.
