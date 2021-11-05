@@ -5,11 +5,18 @@
 [![docs.rs](https://img.shields.io/docsrs/flow-sdk)](https://docs.rs/flow-sdk/)
 ![MIT OR Apache-2.0](https://img.shields.io/crates/l/flow-sdk)
 
-[Documentation](docs/README.md)
-
 The minimum supported Rust version (MSRV) of this project is 1.56.0.
 
 To install Rust, visit the [rustup] website for information.
+
+## Documentation
+
+To see examples with definition of concepts as well as links to the API reference, see [docs/README.md](docs/README.md).
+
+To see the latest API reference, go to https://fee1-dead.github.io/flow.rs/flow_sdk/. It uses unstable features that enable scraping the repository
+for example usages.
+
+[docs.rs](https://docs.rs/flow-sdk/) also hosts documentation of the latest published version, but does not have example snippets for functions.
 
 ## Examples
 
