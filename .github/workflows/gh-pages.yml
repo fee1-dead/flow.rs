@@ -1,0 +1,21 @@
+on: push
+
+name: Docs
+
+jobs:
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: chmod +x docs/make_docs.sh
+      - run: bash docs/make_docs.sh
+      - uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+            branch: gh-pages
+            folder: target/doc

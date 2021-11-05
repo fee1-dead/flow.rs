@@ -1,0 +1,24 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index f980e6b..45d4d87 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,5 +1,5 @@
+ [package]
+-name = "flow-sdk"
++name = "flow_sdk"
+ version = "1.0.0"
+ edition = "2021"
+ license = "MIT OR Apache-2.0"
+diff --git a/flow-examples/Cargo.toml b/flow-examples/Cargo.toml
+index 30f123c..f41ba99 100644
+--- a/flow-examples/Cargo.toml
++++ b/flow-examples/Cargo.toml
+@@ -7,7 +7,7 @@ edition = "2021"
+ 
+ [dependencies]
+ anyhow = "1.0.44"
+-flow-sdk = { path = "../", features = ["secp256k1-rand"] }
++flow_sdk = { path = "../", features = ["secp256k1-rand"] }
+ serde = "1.0.130"
+ serde_json = "1.0"
+ tokio = { version = "1", features = ["full"] }
