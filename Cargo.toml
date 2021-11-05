@@ -51,6 +51,3 @@ tonic-transport = ["tonic/transport"]
 
 [workspace]
 members = ["cadence_json", "flow-examples"]
-
-[package.metadata.docs.rs]
-rustc-args = ["--cfg", "docsrs"]
