@@ -2,7 +2,7 @@
 <div align="center">
   <p align="center"> <br />
     <a href="https://github.com/fee1-dead/flow.rs/tree/master/docs"><strong>View on GitHub »</strong></a> <br /><br />
-    <a href="https://docs.rs/flow-sdk/latest/flow_sdk/client/index.html">Documentation</a> ·
+    <a href="https://fee1-dead.github.io/flow.rs/flow_sdk/client/index.html">Documentation</a> ·
     <!-- <a href="">Contribute</a> · -->
     <a href="https://github.com/fee1-dead/flow.rs/issues/new">Report a Bug</a>
   </p>
@@ -16,7 +16,7 @@ This SDK is dual-licensed under MIT or Apache 2.0, at your option.
 
 The library client specifications can be found here:
 
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/index.html)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/index.html)
 
 Note: All examples in this document are tested to compile successfully.
 Examples that do not send transactions to the network will run on every push.
@@ -38,7 +38,7 @@ flow-sdk = "0.1.0"
 ```
 
 ## Connect
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#impl-1)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#impl-1)
 
 The library uses gRPC to communicate with the access nodes and it must be configured with correct access node API URL. 
 
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 After you have established a connection with an access node, you can query the Flow network to retrieve data about blocks, accounts, events and transactions. We will explore how to retrieve each of these entities in the sections below.
 
 ### Get Blocks
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.latest_block)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.latest_block)
 
 Query the network for block by id, height or get the latest block.
 
@@ -121,7 +121,7 @@ OK: Block {
 ```
 
 ### Get Account
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.account_at_latest_block)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.account_at_latest_block)
 
 Retrieve any account from Flow network's latest block or from a specified block height.
 
@@ -190,7 +190,7 @@ Account {
 
 
 ### Get Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.transaction_by_id)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.transaction_by_id)
 
 Retrieve transactions from the network by providing a transaction ID. After a transaction has been submitted, you can also get the transaction result to check the status.
 
@@ -272,7 +272,7 @@ Transaction {
 
 
 ### Get Events
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.events_for_height_range)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.events_for_height_range)
 
 Retrieve events by a given type in a specified block height range or through a list of block IDs.
 
@@ -378,7 +378,7 @@ Block #19495392 (e3c457b6fc92d04c4087ce0ae3e647e76f4da8e10a12c456b9e0a888a161cc3
 ```
 
 ### Get Collections
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.collection_by_id)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.collection_by_id)
 
 Retrieve a batch of transactions that have been included in the same block, known as ***collections***. 
 Collections are used to improve consensus throughput by increasing the number of transactions per block and they act as a link between a block and a transaction.
@@ -417,7 +417,7 @@ OK: Collection {
 ```
 
 ### Execute Scripts
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/client/struct.FlowClient.html#method.execute_script_at_latest_block)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/client/struct.FlowClient.html#method.execute_script_at_latest_block)
 
 Scripts allow you to write arbitrary non-mutating Cadence code on the Flow blockchain and return data. You can learn more about [Cadence and scripts here](https://docs.onflow.org/cadence/language/), but we are now only interested in executing the script code and getting back the data.
 
@@ -562,7 +562,7 @@ A transaction will be rejected if it is submitted past its expiry block. Flow ca
 A transaction expires after `600` blocks are committed on top of the reference block, which takes about 10 minutes at average Mainnet block rates.
 
 ### Build Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/transaction/struct.TransactionHeaderBuilder.html)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/transaction/struct.TransactionHeaderBuilder.html)
 
 Building a transaction involves setting the required properties explained above and producing a transaction object. 
 
@@ -611,7 +611,7 @@ let header = TransactionHeaderBuilder::new().script_static(SCRIPT).argument(&arg
 After you have successfully [built a transaction](#build-transactions) the next step in the process is to sign it.
 
 ### Sign Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/account/struct.Account.html#method.sign)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/account/struct.Account.html#method.sign)
 
 Flow introduces new concepts that allow for more flexibility when creating and signing transactions.
 Before trying the examples below, we recommend that you read through the [transaction signature documentation](https://docs.onflow.org/concepts/accounts-and-keys/).
@@ -1031,7 +1031,7 @@ async fn signing_transactions_multisig_multi() -> Result<(), Box<dyn Error + Sen
 
 
 ### Send Transactions
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/account/struct.Account.html#method.send_transaction_header)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/account/struct.Account.html#method.send_transaction_header)
 
 After a transaction has been [built](#build-transactions) and [signed](#sign-transactions), it can be sent to the Flow blockchain where it will be executed. If sending was successful you can then [retrieve the transaction result](#get-transactions).
 
@@ -1074,7 +1074,7 @@ async fn example() -> Result<(), Box<dyn Error + Send + Sync>> {
 
 
 ### Create Accounts
-[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://docs.rs/flow-sdk/latest/flow_sdk/transaction/struct.CreateAccountTransaction.html)
+[<img src="https://raw.githubusercontent.com/onflow/sdks/main/templates/documentation/ref.svg" width="130">](https://fee1-dead.github.io/flow.rs/flow_sdk/transaction/struct.CreateAccountTransaction.html)
 
 On Flow, account creation happens inside a transaction. Because the network allows for a many-to-many relationship between public keys and accounts, it's not possible to derive a new account address from a public key offline. 
 
