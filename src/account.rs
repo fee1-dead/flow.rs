@@ -33,7 +33,7 @@ pub const PADDED_TRANSACTION_DOMAIN_TAG: [u8; PADDED_LEN] =
 pub use crate::error::AccountError as Error;
 
 /// An account that uses the default signing and hashing algorithms.
-pub type DefaultAccount<Client, SecretKey> = Account<Client, SecretKey>;
+pub type DefaultAccount<Client> = Account<Client>;
 
 #[derive(Clone)]
 /// An account.
