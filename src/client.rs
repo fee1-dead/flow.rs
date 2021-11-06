@@ -42,7 +42,10 @@ pub trait GrpcClient<I, O> {
     ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>>;
 }
 
-impl<'t, T, I, O> GrpcClient<I, O> for &'t mut T where T: GrpcClient<I, O> {
+impl<'t, T, I, O> GrpcClient<I, O> for &'t mut T
+where
+    T: GrpcClient<I, O>,
+{
     type Error = T::Error;
 
     fn send<'a>(

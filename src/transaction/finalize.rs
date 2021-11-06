@@ -24,12 +24,10 @@ pub struct Finalize<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResu
 
 impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Finalize<Id, C> {
     /// Creates a new instance of [`Finalize`] with the transaction's id, the client, the delay, and the timeout.
-    pub fn new(
-        tx_id: Id,
-        mut client: C,
-        delay: Duration,
-        timeout: Duration,
-    ) -> Self where Id: Copy {
+    pub fn new(tx_id: Id, mut client: C, delay: Duration, timeout: Duration) -> Self
+    where
+        Id: Copy,
+    {
         let timeout = futures_timer::Delay::new(timeout);
         let fut = client.send(GetTransactionRequest { id: tx_id.clone() });
 
@@ -54,7 +52,10 @@ impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Fi
 }
 
 impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Future
-    for Finalize<Id, C> where Self: Unpin, Id: Copy,
+    for Finalize<Id, C>
+where
+    Self: Unpin,
+    Id: Copy,
 {
     type Output = Result<Option<TransactionResultResponse>, C::Error>;
 

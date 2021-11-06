@@ -158,7 +158,10 @@ impl SendTransactionResponse {
     /// To customize the delay and the timeout, refer to [`Finalize`]'s documentation.
     ///
     /// [`Finalize`]: crate::transaction::Finalize
-    pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<&'a [u8]>, TransactionResultResponse>>(
+    pub fn finalize<
+        'a,
+        C: GrpcClient<GetTransactionRequest<&'a [u8]>, TransactionResultResponse>,
+    >(
         &'a self,
         client: C,
     ) -> Finalize<&'a [u8], C> {
