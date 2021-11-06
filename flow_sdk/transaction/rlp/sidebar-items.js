@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["rlp_encode_transaction_envelope","Encodes a transaction’s envelope."],["rlp_encode_transaction_payload","Encodes a transaction’s payload."]]});

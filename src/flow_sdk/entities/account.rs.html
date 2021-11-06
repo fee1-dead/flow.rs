@@ -58,7 +58,7 @@
 <span class="doccomment">/// The `code` and `contracts` fields contain the raw Cadence source code, encoded as UTF-8 bytes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// More information on accounts can be found [here](https://docs.onflow.org/concepts/accounts-and-keys/).</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">DecodableMessage</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">DecodableMessage</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Account</span> {
     <span class="doccomment">/// A unique account identifier.</span>
     <span class="kw">pub</span> <span class="ident">address</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
@@ -77,7 +77,7 @@
 }
 
 <span class="doccomment">/// A key configured on some account.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">DecodableMessage</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">DecodableMessage</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountKey</span> {
     <span class="doccomment">/// The index of the key, also referred as the key ID.</span>
     <span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u32</span>,
@@ -102,5 +102,5 @@
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="flow_sdk" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
-    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../scrape-examples.js"></script><script src="../../../source-files.js"></script>
 </body></html>

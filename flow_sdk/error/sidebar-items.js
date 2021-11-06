@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["AccountError","The errors that could happen when logging in an account."],["TonicError","The errors that could happen when sending a request via tonic."]],"struct":[["BoxError","Boxed Error."]]});
