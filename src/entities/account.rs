@@ -7,7 +7,7 @@ use otopr::{DecodableMessage, Map, Repeated};
 /// The `code` and `contracts` fields contain the raw Cadence source code, encoded as UTF-8 bytes.
 ///
 /// More information on accounts can be found [here](https://docs.onflow.org/concepts/accounts-and-keys/).
-#[derive(DecodableMessage, Default, PartialEq, Eq)]
+#[derive(Clone, DecodableMessage, Default, PartialEq, Eq)]
 pub struct Account {
     /// A unique account identifier.
     pub address: Box<[u8]>,
@@ -26,7 +26,7 @@ pub struct Account {
 }
 
 /// A key configured on some account.
-#[derive(DecodableMessage, Default, PartialEq, Eq)]
+#[derive(Clone, DecodableMessage, Default, PartialEq, Eq)]
 pub struct AccountKey {
     /// The index of the key, also referred as the key ID.
     pub index: u32,
