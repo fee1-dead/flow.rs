@@ -29,7 +29,7 @@ impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Fi
         Id: Copy,
     {
         let timeout = futures_timer::Delay::new(timeout);
-        let fut = client.send(GetTransactionRequest { id: tx_id.clone() });
+        let fut = client.send(GetTransactionRequest { id: tx_id });
 
         // transmute PinnedBox<dyn Future + 'a> to PinnedBox<dyn Future + 'static>
         //
