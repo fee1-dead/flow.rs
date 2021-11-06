@@ -125,14 +125,14 @@
     <span class="ident">rpc</span> <span class="ident">Ping</span>(<span class="ident">PingRequest</span>) <span class="ident">returns</span> (<span class="ident">PingResponse</span>);
     <span class="ident">rpc</span> <span class="ident">GetLatestBlockHeader</span>(<span class="ident">GetLatestBlockHeaderRequest</span>)
         <span class="ident">returns</span> (<span class="ident">BlockHeaderResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetBlockHeaderByID</span>(<span class="ident">GetBlockHeaderByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>)
+    <span class="ident">rpc</span> <span class="ident">GetBlockHeaderByID</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">GetBlockHeaderByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">BlockHeaderResponse</span>);
     <span class="ident">rpc</span> <span class="ident">GetBlockHeaderByHeight</span>(<span class="ident">GetBlockHeaderByHeightRequest</span>)
         <span class="ident">returns</span> (<span class="ident">BlockHeaderResponse</span>);
     <span class="ident">rpc</span> <span class="ident">GetLatestBlock</span>(<span class="ident">GetLatestBlockRequest</span>) <span class="ident">returns</span> (<span class="ident">BlockResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetBlockByID</span>(<span class="ident">GetBlockByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">BlockResponse</span>);
+    <span class="ident">rpc</span> <span class="ident">GetBlockByID</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">GetBlockByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">BlockResponse</span>);
     <span class="ident">rpc</span> <span class="ident">GetBlockByHeight</span>(<span class="ident">GetBlockByHeightRequest</span>) <span class="ident">returns</span> (<span class="ident">BlockResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetCollectionByID</span>(<span class="ident">GetCollectionByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">CollectionResponse</span>);
+    <span class="ident">rpc</span> <span class="ident">GetCollectionByID</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">GetCollectionByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">CollectionResponse</span>);
     <span class="ident">rpc</span> <span class="ident">SendTransaction</span><span class="op">&lt;</span>
         <span class="ident">Script</span>,
         <span class="ident">Arguments</span>,
@@ -152,12 +152,12 @@
         <span class="ident">PayloadSignatures</span>,
         <span class="ident">EnvelopeSignatures</span>,
     <span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">SendTransactionResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetTransaction</span>(<span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">TransactionResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetTransactionResult</span>(<span class="ident">noseal</span> <span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>)
+    <span class="ident">rpc</span> <span class="ident">GetTransaction</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>) <span class="ident">returns</span> (<span class="ident">TransactionResponse</span>);
+    <span class="ident">rpc</span> <span class="ident">GetTransactionResult</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">noseal</span> <span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">TransactionResultResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetAccountAtLatestBlock</span>(<span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>)
+    <span class="ident">rpc</span> <span class="ident">GetAccountAtLatestBlock</span><span class="op">&lt;</span><span class="ident">Addr</span><span class="op">&gt;</span>(<span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="ident">Addr</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">AccountResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetAccountAtBlockHeight</span>(<span class="ident">GetAccountAtBlockHeightRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>)
+    <span class="ident">rpc</span> <span class="ident">GetAccountAtBlockHeight</span><span class="op">&lt;</span><span class="ident">Addr</span><span class="op">&gt;</span>(<span class="ident">GetAccountAtBlockHeightRequest</span><span class="op">&lt;</span><span class="ident">Addr</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">AccountResponse</span>);
     <span class="ident">rpc</span> <span class="ident">ExecuteScriptAtLatestBlock</span><span class="op">&lt;</span><span class="ident">Script</span>, <span class="ident">Arguments</span><span class="op">&gt;</span>(<span class="ident">ExecuteScriptAtLatestBlockRequest</span><span class="op">&lt;</span><span class="ident">Script</span>, <span class="ident">Arguments</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">ExecuteScriptResponse</span>);
@@ -173,7 +173,7 @@
         <span class="ident">returns</span> (<span class="ident">GetNetworkParametersResponse</span>);
     <span class="ident">rpc</span> <span class="ident">GetLatestProtocolStateSnapshot</span>(<span class="ident">GetLatestProtocolStateSnapshotRequest</span>)
         <span class="ident">returns</span> (<span class="ident">ProtocolStateSnapshotResponse</span>);
-    <span class="ident">rpc</span> <span class="ident">GetExecutionResultForBlockID</span>(<span class="ident">GetExecutionResultForBlockIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>)
+    <span class="ident">rpc</span> <span class="ident">GetExecutionResultForBlockID</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>(<span class="ident">GetExecutionResultForBlockIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>)
         <span class="ident">returns</span> (<span class="ident">ExecutionResultForBlockIdResponse</span>);
 }
 </code></pre></div>

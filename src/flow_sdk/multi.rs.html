@@ -894,7 +894,7 @@
         <span class="ident">acc</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">Account</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">Sk</span>, <span class="ident">Sign</span>, <span class="ident">Hash</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">BoxError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
-        <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">AccountResponse</span><span class="op">&gt;</span>,
+        <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AccountResponse</span><span class="op">&gt;</span>,
         <span class="ident">Sign</span>: <span class="ident">FlowSigner</span><span class="op">&lt;</span><span class="ident">SecretKey</span> <span class="op">=</span> <span class="ident">Sk</span><span class="op">&gt;</span>,
         <span class="ident">Hash</span>: <span class="ident">FlowHasher</span>,
     {

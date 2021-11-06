@@ -284,12 +284,6 @@
 <span id="284">284</span>
 <span id="285">285</span>
 <span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Transactions on the flow blockchain.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! A transaction represents a unit of computation that is submitted to the Flow network.</span>
@@ -311,8 +305,6 @@
 
 <span class="kw">mod</span> <span class="ident">finalize</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">finalize</span>::<span class="kw-2">*</span>;
-
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::trait_hack::Hack</span>;
 
 <span class="doccomment">/// Status of a transaction.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Enumeration</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -425,17 +417,13 @@
         <span class="ident">Arguments</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">Authorizers</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Authorizers</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">PayloadSignatures</span>: <span class="ident">HasItem</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">PayloadSignatureAddress</span>, <span class="ident">PayloadSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PayloadSignatures</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">PayloadSignatureAddress</span>, <span class="ident">PayloadSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PayloadSignatures</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">EnvelopeSignatures</span>: <span class="ident">HasItem</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">EnvelopeSignatureAddress</span>, <span class="ident">EnvelopeSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EnvelopeSignatures</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">EnvelopeSignatureAddress</span>, <span class="ident">EnvelopeSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EnvelopeSignatures</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="doccomment">/// A transaction represents a unit of computation that is submitted to the Flow network.</span>
 <span class="doccomment">///</span>
@@ -454,7 +442,7 @@
     <span class="doccomment">/// Raw source code for a Cadence script, encoded as UTF-8 bytes</span>
     <span class="kw">pub</span> <span class="ident">script</span>: <span class="ident">Script</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">it</span><span class="op">|</span> <span class="ident">it</span>.<span class="number">0</span>.<span class="ident">map</span>(<span class="ident">EncodeAsRef::new</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">EncodeAsRef::new</span>))))]</span>
     <span class="doccomment">/// Arguments passed to the Cadence script, encoded as JSON-Cadence bytes</span>
     <span class="kw">pub</span> <span class="ident">arguments</span>: <span class="ident">Arguments</span>,
 
@@ -472,15 +460,15 @@
     <span class="doccomment">/// Address of the payer account</span>
     <span class="kw">pub</span> <span class="ident">payer</span>: <span class="ident">Payer</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">it</span><span class="op">|</span> <span class="ident">it</span>.<span class="number">0</span>.<span class="ident">map</span>(<span class="ident">AsRef::as_ref</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">AsRef::as_ref</span>))))]</span>
     <span class="doccomment">/// Addresses of the transaction authorizers</span>
     <span class="kw">pub</span> <span class="ident">authorizers</span>: <span class="ident">Authorizers</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">it</span><span class="op">|</span> <span class="ident">it</span>.<span class="number">0</span>)))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">into_iter</span>())))]</span>
     <span class="doccomment">/// Signatures from all payload signer accounts</span>
     <span class="kw">pub</span> <span class="ident">payload_signatures</span>: <span class="ident">PayloadSignatures</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">it</span><span class="op">|</span> <span class="ident">it</span>.<span class="number">0</span>)))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">into_iter</span>())))]</span>
     <span class="doccomment">/// Signatures from all envelope signer accounts</span>
     <span class="kw">pub</span> <span class="ident">envelope_signatures</span>: <span class="ident">EnvelopeSignatures</span>,
 }

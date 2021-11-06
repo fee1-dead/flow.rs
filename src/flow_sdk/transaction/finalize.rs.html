@@ -125,6 +125,7 @@
 <span id="125">125</span>
 <span id="126">126</span>
 <span id="127">127</span>
+<span id="128">128</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::future::Future</span>;
 <span class="kw">use</span> <span class="ident">std::intrinsics::transmute</span>;
 <span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
@@ -132,7 +133,7 @@
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::access</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::client</span>::{<span class="ident">FlowClient</span>, <span class="ident">GrpcClient</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::client::GrpcClient</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::transaction</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Repeatedly queries a client about a transaction,</span>
@@ -141,24 +142,22 @@
 <span class="doccomment">/// If an error occured while making requests, yields Err.</span>
 <span class="doccomment">/// If the timeout has reached, yields Ok(None). Otherwise,</span>
 <span class="doccomment">/// yields Ok(Some(transaction_result)).</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="ident">tx_id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
-    <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">FlowClient</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="ident">tx_id</span>: <span class="ident">Id</span>,
+    <span class="ident">client</span>: <span class="ident">C</span>,
     <span class="ident">delay</span>: <span class="ident">Duration</span>,
     <span class="ident">timeout</span>: <span class="ident">futures_timer::Delay</span>,
-    <span class="ident">state</span>: <span class="ident">FinalizeState</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">state</span>: <span class="ident">FinalizeState</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Creates a new instance of [`Finalize`] with the transaction&#39;s id, the client, the delay, and the timeout.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">tx_id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
-        <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">FlowClient</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-        <span class="ident">delay</span>: <span class="ident">Duration</span>,
-        <span class="ident">timeout</span>: <span class="ident">Duration</span>,
-    ) -&gt; <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">tx_id</span>: <span class="ident">Id</span>, <span class="kw-2">mut</span> <span class="ident">client</span>: <span class="ident">C</span>, <span class="ident">delay</span>: <span class="ident">Duration</span>, <span class="ident">timeout</span>: <span class="ident">Duration</span>) -&gt; <span class="self">Self</span>
+    <span class="kw">where</span>
+        <span class="ident">Id</span>: <span class="ident">Copy</span>,
+    {
         <span class="kw">let</span> <span class="ident">timeout</span> <span class="op">=</span> <span class="ident">futures_timer::Delay::new</span>(<span class="ident">timeout</span>);
-        <span class="kw">let</span> <span class="ident">fut</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">send</span>(<span class="ident">GetTransactionRequest</span> { <span class="ident">id</span>: <span class="ident">tx_id</span> });
+        <span class="kw">let</span> <span class="ident">fut</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">send</span>(<span class="ident">GetTransactionRequest</span> { <span class="ident">id</span>: <span class="ident">tx_id</span>.<span class="ident">clone</span>() });
 
         <span class="comment">// transmute PinnedBox&lt;dyn Future + &#39;a&gt; to PinnedBox&lt;dyn Future + &#39;static&gt;</span>
         <span class="comment">//</span>
@@ -180,8 +179,11 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Future</span>
-    <span class="kw">for</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Future</span>
+    <span class="kw">for</span> <span class="ident">Finalize</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">Unpin</span>,
+    <span class="ident">Id</span>: <span class="ident">Copy</span>,
 {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionResultResponse</span><span class="op">&gt;</span>, <span class="ident">C::Error</span><span class="op">&gt;</span>;
 
@@ -248,7 +250,7 @@
     }
 }
 
-<span class="kw">enum</span> <span class="ident">FinalizeState</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+<span class="kw">enum</span> <span class="ident">FinalizeState</span><span class="op">&lt;</span><span class="ident">Id</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="ident">Request</span>(<span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionResultResponse</span>, <span class="ident">C::Error</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>),
     <span class="ident">Waiting</span>(<span class="ident">futures_timer::Delay</span>),
 }

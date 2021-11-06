@@ -415,6 +415,12 @@
 <span id="415">415</span>
 <span id="416">416</span>
 <span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Access API type definitions</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This modules contains definitions for requests and responses of the access API.</span>
@@ -424,10 +430,9 @@
 <span class="kw">use</span> <span class="ident">otopr::wire_types</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">otopr</span>::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::client</span>::{<span class="ident">FlowClient</span>, <span class="ident">GrpcClient</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::client::GrpcClient</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entities</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protobuf</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::trait_hack::Hack</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::transaction</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Ping.</span>
@@ -451,10 +456,11 @@
 
 <span class="doccomment">/// Gets a block&#39;s header by id.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetBlockHeaderByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Id</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetBlockHeaderByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span> {
     <span class="doccomment">/// id of the block.</span>
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="number">1</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">Id</span>,
 }
 
 <span class="doccomment">/// Gets a block&#39;s header by its height.</span>
@@ -478,10 +484,11 @@
 
 <span class="doccomment">/// Gets full information about a block by its id.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetBlockByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Id</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetBlockByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span> {
     <span class="doccomment">/// id of the block.</span>
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="number">1</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">Id</span>,
 }
 
 <span class="doccomment">/// Gets full information about a block by its height.</span>
@@ -493,9 +500,11 @@
 
 <span class="doccomment">/// Gets information about a collection by its id.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetCollectionByIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Id</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetCollectionByIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span> {
     <span class="doccomment">/// id of the collection.</span>
-    <span class="kw">pub</span> <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">Id</span>,
 }
 
 <span class="doccomment">/// A collection.</span>
@@ -525,17 +534,13 @@
         <span class="ident">Arguments</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">Authorizers</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Authorizers</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Authorizers</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">PayloadSignatures</span>: <span class="ident">HasItem</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">PayloadSignatureAddress</span>, <span class="ident">PayloadSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PayloadSignatures</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">PayloadSignatureAddress</span>, <span class="ident">PayloadSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">PayloadSignatures</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
         <span class="ident">EnvelopeSignatures</span>: <span class="ident">HasItem</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">EnvelopeSignatureAddress</span>, <span class="ident">EnvelopeSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EnvelopeSignatures</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureE</span><span class="op">&lt;</span><span class="ident">EnvelopeSignatureAddress</span>, <span class="ident">EnvelopeSignature</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EnvelopeSignatures</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="doccomment">/// Sends a transaction over the network.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SendTransactionRequest</span><span class="op">&lt;</span>
@@ -576,10 +581,13 @@
     <span class="doccomment">/// To customize the delay and the timeout, refer to [`Finalize`]&#39;s documentation.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`Finalize`]: crate::transaction::Finalize</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">finalize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">finalize</span><span class="op">&lt;</span>
+        <span class="lifetime">&#39;a</span>,
+        <span class="ident">C</span>: <span class="ident">GrpcClient</span><span class="op">&lt;</span><span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">TransactionResultResponse</span><span class="op">&gt;</span>,
+    <span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>,
-        <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">FlowClient</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="ident">Finalize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+        <span class="ident">client</span>: <span class="ident">C</span>,
+    ) -&gt; <span class="ident">Finalize</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>], <span class="ident">C</span><span class="op">&gt;</span> {
         <span class="ident">Finalize::new</span>(
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">id</span>,
             <span class="ident">client</span>,
@@ -591,9 +599,11 @@
 
 <span class="doccomment">/// Gets a transaction&#39;s details by its id.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Id</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetTransactionRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
     <span class="doccomment">/// the id of the transaction.</span>
-    <span class="kw">pub</span> <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">Id</span>,
 }
 
 <span class="doccomment">/// The full details of a transaction.</span>
@@ -620,16 +630,20 @@
 
 <span class="doccomment">/// Retrieves information of an account at the latest block.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Address</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAccountAtLatestBlockRequest</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The raw bytes of the address of the account.</span>
-    <span class="kw">pub</span> <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
+    <span class="kw">pub</span> <span class="ident">address</span>: <span class="ident">Address</span>,
 }
 
 <span class="doccomment">/// Retrieves information of an account at the specific block height.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAccountAtBlockHeightRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Address</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAccountAtBlockHeightRequest</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The raw bytes of the address of the account.</span>
-    <span class="kw">pub</span> <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
+    <span class="kw">pub</span> <span class="ident">address</span>: <span class="ident">Address</span>,
     <span class="doccomment">/// The block height.</span>
     <span class="kw">pub</span> <span class="ident">block_height</span>: <span class="ident">u64</span>,
 }
@@ -657,7 +671,6 @@
         <span class="ident">Arguments</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">serde::Serialize</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="doccomment">/// Executes a script (maybe with arguments) at the latest block.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExecuteScriptAtLatestBlockRequest</span><span class="op">&lt;</span><span class="ident">Script</span>, <span class="ident">Arguments</span><span class="op">&gt;</span> {
@@ -665,7 +678,7 @@
     <span class="doccomment">/// The script.</span>
     <span class="kw">pub</span> <span class="ident">script</span>: <span class="ident">Script</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">hacked</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">hacked</span>.<span class="number">0</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()))))]</span>
     <span class="doccomment">/// The arguments. A collection of [`ValueRef`]s.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`ValueRef`]: cadence_json::ValueRef</span>
@@ -681,7 +694,6 @@
         <span class="ident">Arguments</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">serde::Serialize</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExecuteScriptAtBlockIdRequest</span><span class="op">&lt;</span><span class="ident">BlockId</span>, <span class="ident">Script</span>, <span class="ident">Arguments</span><span class="op">&gt;</span> {
     <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
@@ -692,7 +704,7 @@
     <span class="doccomment">/// The script.</span>
     <span class="kw">pub</span> <span class="ident">script</span>: <span class="ident">Script</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">hacked</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">hacked</span>.<span class="number">0</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()))))]</span>
     <span class="doccomment">/// The arguments. A collection of [`ValueRef`]s.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`ValueRef`]: cadence_json::ValueRef</span>
@@ -707,7 +719,6 @@
         <span class="ident">Arguments</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">serde::Serialize</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Arguments</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExecuteScriptAtBlockHeightRequest</span><span class="op">&lt;</span><span class="ident">Script</span>, <span class="ident">Arguments</span><span class="op">&gt;</span> {
     <span class="doccomment">/// height of the block.</span>
@@ -717,7 +728,7 @@
     <span class="doccomment">/// The script.</span>
     <span class="kw">pub</span> <span class="ident">script</span>: <span class="ident">Script</span>,
 
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">hacked</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">hacked</span>.<span class="number">0</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">encode_argument</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()))))]</span>
     <span class="doccomment">/// The arguments. A collection of [`ValueRef`]s.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`ValueRef`]: cadence_json::ValueRef</span>
@@ -762,14 +773,13 @@
         <span class="ident">BlockIds</span>: <span class="ident">HasItem</span>,
         <span class="op">&lt;</span><span class="ident">BlockIds</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>,
         <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BlockIds</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="op">&lt;</span><span class="ident">BlockIds</span> <span class="kw">as</span> <span class="ident">HasItem</span><span class="op">&gt;</span><span class="ident">::Item</span><span class="op">&gt;</span>,
-        <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Hack</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BlockIds</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span><span class="ident">::IntoIter</span><span class="op">&gt;</span>: <span class="ident">Clone</span>,
 ))]
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetEventsForBlockIdsRequest</span><span class="op">&lt;</span><span class="ident">EventTy</span>, <span class="ident">BlockIds</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The type of the event we are looking for.</span>
     <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
     <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">EventTy</span>,
     <span class="doccomment">/// The IDs of the blocks.</span>
-    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">Hack</span>(<span class="ident">x</span>.<span class="ident">into_iter</span>()), <span class="op">|</span><span class="ident">it</span><span class="op">|</span> <span class="ident">it</span>.<span class="number">0</span>.<span class="ident">map</span>(<span class="ident">AsRef::as_ref</span>))))]</span>
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">wire_types::LengthDelimitedWire</span>, <span class="ident">RepeatedMap::new</span>(<span class="ident">x</span>, <span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">AsRef::as_ref</span>))))]</span>
     <span class="kw">pub</span> <span class="ident">block_ids</span>: <span class="ident">BlockIds</span>,
 }
 
@@ -821,9 +831,11 @@
 <span class="doccomment">/// and contain data about chunks/collection level execution results rather than particular transactions.</span>
 <span class="doccomment">/// Particularly, it contains EventsCollection hash for every chunk which can be used to verify the events for a block.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">EncodableMessage</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetExecutionResultForBlockIdRequest</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_where_clause</span>(<span class="kw">where</span> <span class="ident">Id</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]</span><span class="op">&gt;</span>))]
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetExecutionResultForBlockIdRequest</span><span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">otopr</span>(<span class="ident">encode_via</span>(<span class="ident">LengthDelimitedWire</span>, <span class="ident">x</span>.<span class="ident">as_ref</span>()))]</span>
     <span class="doccomment">/// ID of the block.</span>
-    <span class="kw">pub</span> <span class="ident">block_id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>],
+    <span class="kw">pub</span> <span class="ident">block_id</span>: <span class="ident">Id</span>,
 }
 
 <span class="doccomment">/// An execution result.</span>
