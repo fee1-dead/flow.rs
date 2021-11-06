@@ -7,7 +7,7 @@ use std::time::Duration;
 use otopr::wire_types::*;
 use otopr::*;
 
-use crate::client::{FlowClient, GrpcClient};
+use crate::client::GrpcClient;
 use crate::entities::*;
 use crate::protobuf::*;
 use crate::trait_hack::Hack;
@@ -34,10 +34,11 @@ pub struct GetLatestBlockHeaderRequest {
 
 /// Gets a block's header by id.
 #[derive(EncodableMessage)]
-pub struct GetBlockHeaderByIdRequest<'a> {
+#[otopr(encode_where_clause(where Id: AsRef<[u8]>))]
+pub struct GetBlockHeaderByIdRequest<Id> {
     /// id of the block.
-    #[otopr(1)]
-    pub id: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub id: Id,
 }
 
 /// Gets a block's header by its height.
@@ -61,10 +62,11 @@ pub struct GetLatestBlockRequest {
 
 /// Gets full information about a block by its id.
 #[derive(EncodableMessage)]
-pub struct GetBlockByIdRequest<'a> {
+#[otopr(encode_where_clause(where Id: AsRef<[u8]>))]
+pub struct GetBlockByIdRequest<Id> {
     /// id of the block.
-    #[otopr(1)]
-    pub id: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub id: Id,
 }
 
 /// Gets full information about a block by its height.
@@ -76,9 +78,11 @@ pub struct GetBlockByHeightRequest {
 
 /// Gets information about a collection by its id.
 #[derive(EncodableMessage)]
-pub struct GetCollectionByIdRequest<'a> {
+#[otopr(encode_where_clause(where Id: AsRef<[u8]>))]
+pub struct GetCollectionByIdRequest<Id> {
     /// id of the collection.
-    pub id: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub id: Id,
 }
 
 /// A collection.
@@ -159,10 +163,10 @@ impl SendTransactionResponse {
     /// To customize the delay and the timeout, refer to [`Finalize`]'s documentation.
     ///
     /// [`Finalize`]: crate::transaction::Finalize
-    pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>>(
+    pub fn finalize<'a, C: GrpcClient<GetTransactionRequest<&'a [u8]>, TransactionResultResponse>>(
         &'a self,
-        client: &'a mut FlowClient<C>,
-    ) -> Finalize<'a, C> {
+        client: C,
+    ) -> Finalize<&'a [u8], C> {
         Finalize::new(
             &self.id,
             client,
@@ -174,9 +178,11 @@ impl SendTransactionResponse {
 
 /// Gets a transaction's details by its id.
 #[derive(EncodableMessage)]
-pub struct GetTransactionRequest<'a> {
+#[otopr(encode_where_clause(where Id: AsRef<[u8]>))]
+pub struct GetTransactionRequest<Id> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// the id of the transaction.
-    pub id: &'a [u8],
+    pub id: Id,
 }
 
 /// The full details of a transaction.
@@ -203,16 +209,20 @@ pub struct TransactionResultResponse {
 
 /// Retrieves information of an account at the latest block.
 #[derive(EncodableMessage)]
-pub struct GetAccountAtLatestBlockRequest<'a> {
+#[otopr(encode_where_clause(where Address: AsRef<[u8]>))]
+pub struct GetAccountAtLatestBlockRequest<Address> {
     /// The raw bytes of the address of the account.
-    pub address: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub address: Address,
 }
 
 /// Retrieves information of an account at the specific block height.
 #[derive(EncodableMessage)]
-pub struct GetAccountAtBlockHeightRequest<'a> {
+#[otopr(encode_where_clause(where Address: AsRef<[u8]>))]
+pub struct GetAccountAtBlockHeightRequest<Address> {
     /// The raw bytes of the address of the account.
-    pub address: &'a [u8],
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
+    pub address: Address,
     /// The block height.
     pub block_height: u64,
 }
@@ -404,9 +414,11 @@ pub struct ProtocolStateSnapshotResponse {
 /// and contain data about chunks/collection level execution results rather than particular transactions.
 /// Particularly, it contains EventsCollection hash for every chunk which can be used to verify the events for a block.
 #[derive(EncodableMessage)]
-pub struct GetExecutionResultForBlockIdRequest<'a> {
+#[otopr(encode_where_clause(where Id: AsRef<[u8]>))]
+pub struct GetExecutionResultForBlockIdRequest<Id> {
+    #[otopr(encode_via(LengthDelimitedWire, x.as_ref()))]
     /// ID of the block.
-    pub block_id: &'a [u8],
+    pub block_id: Id,
 }
 
 /// An execution result.

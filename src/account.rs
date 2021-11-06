@@ -116,21 +116,19 @@ where
     ///  - the secret key does not have the full weight to be able to act on its own (weight < 1000)
     ///  - could not find any public key of the account that matches the secret key supplied.
     ///  - the algorithms for the signer and the hasher do not match with the public information of the key.
-    pub async fn new<'a>(
+    pub async fn new<Addr>(
         client: Client,
-        address: &'a [u8],
+        address: Addr,
         secret_key: SecretKey,
     ) -> Result<Self, Error>
     where
-        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+        Client: GrpcClient<GetAccountAtLatestBlockRequest<Addr>, AccountResponse>,
     {
         let mut client = FlowClient::new(client);
         let acc = client
             .account_at_latest_block(address)
             .await
             .map_err(Into::into)?;
-
-        assert_eq!(&*acc.address, address);
 
         let crate::entities::Account { address, keys, .. } = acc;
 
@@ -189,14 +187,14 @@ where
     ///  - the secret keys does not add up to the full weight to be able to sign (weight < 1000)
     ///  - could not find any public key of the account that matches one of the the secret key supplied.
     ///  - the algorithms for the signer and the hasher do not match with the public information of a key.
-    pub async fn new_multisign<'a>(
+    pub async fn new_multisign<Addr>(
         client: Client,
-        address: &'a [u8],
+        address: Addr,
         primary_index: usize,
         secret_keys: &[SecretKey],
     ) -> Result<Self, Error>
     where
-        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+        Client: GrpcClient<GetAccountAtLatestBlockRequest<Addr>, AccountResponse>,
         SecretKey: Clone,
     {
         assert!(
@@ -209,8 +207,6 @@ where
             .account_at_latest_block(address)
             .await
             .map_err(Into::into)?;
-
-        assert_eq!(&*acc.address, address);
 
         let crate::entities::Account { address, keys, .. } = acc;
 
@@ -330,7 +326,7 @@ where
     /// Queries the sequence number for the primary key from the network.
     pub async fn primary_key_sequence_number<'a>(&'a mut self) -> Result<u32, BoxError>
     where
-        Client: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+        Client: GrpcClient<GetAccountAtLatestBlockRequest<&'a [u8]>, AccountResponse>,
     {
         let address = &*self.address;
         let public_key = self.signer.serialize_public_key(&self.primary_public_key());
@@ -458,7 +454,7 @@ where
         transaction: &'a TransactionHeader<Arguments>,
     ) -> Result<SendTransactionResponse, BoxError>
     where
-        Client: for<'b> GrpcClient<GetAccountAtLatestBlockRequest<'b>, AccountResponse>,
+        Client: for<'b> GrpcClient<GetAccountAtLatestBlockRequest<&'b [u8]>, AccountResponse>,
         Client: GrpcClient<GetLatestBlockHeaderRequest, BlockHeaderResponse>,
         for<'b> Client: GrpcClient<
             SendTransactionRequest<

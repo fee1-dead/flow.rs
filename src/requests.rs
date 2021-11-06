@@ -36,14 +36,14 @@ access_api! {
     rpc Ping(PingRequest) returns (PingResponse);
     rpc GetLatestBlockHeader(GetLatestBlockHeaderRequest)
         returns (BlockHeaderResponse);
-    rpc GetBlockHeaderByID(GetBlockHeaderByIdRequest<'_>)
+    rpc GetBlockHeaderByID<Id>(GetBlockHeaderByIdRequest<Id>)
         returns (BlockHeaderResponse);
     rpc GetBlockHeaderByHeight(GetBlockHeaderByHeightRequest)
         returns (BlockHeaderResponse);
     rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockResponse);
-    rpc GetBlockByID(GetBlockByIdRequest<'_>) returns (BlockResponse);
+    rpc GetBlockByID<Id>(GetBlockByIdRequest<Id>) returns (BlockResponse);
     rpc GetBlockByHeight(GetBlockByHeightRequest) returns (BlockResponse);
-    rpc GetCollectionByID(GetCollectionByIdRequest<'_>) returns (CollectionResponse);
+    rpc GetCollectionByID<Id>(GetCollectionByIdRequest<Id>) returns (CollectionResponse);
     rpc SendTransaction<
         Script,
         Arguments,
@@ -63,12 +63,12 @@ access_api! {
         PayloadSignatures,
         EnvelopeSignatures,
     >) returns (SendTransactionResponse);
-    rpc GetTransaction(GetTransactionRequest<'_>) returns (TransactionResponse);
-    rpc GetTransactionResult(noseal GetTransactionRequest<'_>)
+    rpc GetTransaction<Id>(GetTransactionRequest<Id>) returns (TransactionResponse);
+    rpc GetTransactionResult<Id>(noseal GetTransactionRequest<Id>)
         returns (TransactionResultResponse);
-    rpc GetAccountAtLatestBlock(GetAccountAtLatestBlockRequest<'_>)
+    rpc GetAccountAtLatestBlock<Addr>(GetAccountAtLatestBlockRequest<Addr>)
         returns (AccountResponse);
-    rpc GetAccountAtBlockHeight(GetAccountAtBlockHeightRequest<'_>)
+    rpc GetAccountAtBlockHeight<Addr>(GetAccountAtBlockHeightRequest<Addr>)
         returns (AccountResponse);
     rpc ExecuteScriptAtLatestBlock<Script, Arguments>(ExecuteScriptAtLatestBlockRequest<Script, Arguments>)
         returns (ExecuteScriptResponse);
@@ -84,6 +84,6 @@ access_api! {
         returns (GetNetworkParametersResponse);
     rpc GetLatestProtocolStateSnapshot(GetLatestProtocolStateSnapshotRequest)
         returns (ProtocolStateSnapshotResponse);
-    rpc GetExecutionResultForBlockID(GetExecutionResultForBlockIdRequest<'_>)
+    rpc GetExecutionResultForBlockID<Id>(GetExecutionResultForBlockIdRequest<Id>)
         returns (ExecutionResultForBlockIdResponse);
 }

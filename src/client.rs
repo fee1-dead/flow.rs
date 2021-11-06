@@ -42,6 +42,17 @@ pub trait GrpcClient<I, O> {
     ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>>;
 }
 
+impl<'t, T, I, O> GrpcClient<I, O> for &'t mut T where T: GrpcClient<I, O> {
+    type Error = T::Error;
+
+    fn send<'a>(
+        &'a mut self,
+        input: I,
+    ) -> Pin<Box<dyn Future<Output = Result<O, Self::Error>> + 'a>> {
+        T::send(self, input)
+    }
+}
+
 /// A gRPC client wrapper. Has utility functions for sending requests.
 #[derive(Default, Debug, Clone, Copy)]
 pub struct FlowClient<T> {
@@ -233,14 +244,14 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves a transaction's result by its ID.
-        pub async fn transaction_result_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResultResponse {
+        pub async fn transaction_result_by_id<(Id)>(id: Id) GetTransactionRequest<Id> => TransactionResultResponse {
             GetTransactionRequest { id }
         }
     }
 
     remapping_requests! {
         /// Retrieves a transaction by its ID.
-        pub async fn transaction_by_id<('a)>(id: &'a [u8]) GetTransactionRequest<'a> => TransactionResponse {
+        pub async fn transaction_by_id<(Id)>(id: Id) GetTransactionRequest<Id> => TransactionResponse {
             GetTransactionRequest { id };
             remap = |txn_response| -> TransactionD {
                 txn_response.transaction
@@ -248,7 +259,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves information about an account at the latest block.
-        pub async fn account_at_latest_block<('a)>(address: &'a [u8]) GetAccountAtLatestBlockRequest<'a> => AccountResponse {
+        pub async fn account_at_latest_block<(Addr)>(address: Addr) GetAccountAtLatestBlockRequest<Addr> => AccountResponse {
             GetAccountAtLatestBlockRequest { address };
             remap = |acc_response| -> Account {
                 acc_response.account
@@ -256,7 +267,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves information about an account at the specified block height.
-        pub async fn account_at_block_height<('a)>(address: &'a [u8], block_height: u64) GetAccountAtBlockHeightRequest<'a> => AccountResponse {
+        pub async fn account_at_block_height<(Addr)>(address: Addr, block_height: u64) GetAccountAtBlockHeightRequest<Addr> => AccountResponse {
             GetAccountAtBlockHeightRequest { address, block_height };
             remap = |acc_response| -> Account {
                 acc_response.account
@@ -280,7 +291,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves header information of a block specified by its ID.
-        pub async fn block_header_by_id<('a)>(id: &'a [u8]) GetBlockHeaderByIdRequest<'a> => BlockHeaderResponse {
+        pub async fn block_header_by_id<(Id)>(id: Id) GetBlockHeaderByIdRequest<Id> => BlockHeaderResponse {
             GetBlockHeaderByIdRequest { id };
             remap = |header_response| -> BlockHeader {
                 header_response.0
@@ -304,7 +315,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves full information of a block specified by its ID.
-        pub async fn block_by_id<('a)>(id: &'a [u8]) GetBlockByIdRequest<'a> => BlockResponse {
+        pub async fn block_by_id<(Id)>(id: Id) GetBlockByIdRequest<Id> => BlockResponse {
             GetBlockByIdRequest { id };
             remap = |block_response| -> Block {
                 block_response.0
@@ -312,7 +323,7 @@ impl<Inner> FlowClient<Inner> {
         }
 
         /// Retrieves information of a collection specified by its ID.
-        pub async fn collection_by_id<('a)>(id: &'a [u8]) GetCollectionByIdRequest<'a> => CollectionResponse {
+        pub async fn collection_by_id<(Id)>(id: Id) GetCollectionByIdRequest<Id> => CollectionResponse {
             GetCollectionByIdRequest { id };
             remap = |collection_response| -> Collection {
                 collection_response.collection

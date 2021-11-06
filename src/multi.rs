@@ -245,7 +245,7 @@ impl PartyBuilder {
         acc: &'a mut Account<C, Sk, Sign, Hash>,
     ) -> Result<Self, BoxError>
     where
-        C: GrpcClient<GetAccountAtLatestBlockRequest<'a>, AccountResponse>,
+        C: GrpcClient<GetAccountAtLatestBlockRequest<&'a [u8]>, AccountResponse>,
         Sign: FlowSigner<SecretKey = Sk>,
         Hash: FlowHasher,
     {

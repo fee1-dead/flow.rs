@@ -5,7 +5,7 @@ use std::task::Poll;
 use std::time::Duration;
 
 use crate::access::*;
-use crate::client::{FlowClient, GrpcClient};
+use crate::client::GrpcClient;
 use crate::transaction::*;
 
 /// Repeatedly queries a client about a transaction,
@@ -14,24 +14,24 @@ use crate::transaction::*;
 /// If an error occured while making requests, yields Err.
 /// If the timeout has reached, yields Ok(None). Otherwise,
 /// yields Ok(Some(transaction_result)).
-pub struct Finalize<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> {
-    tx_id: &'a [u8],
-    client: &'a mut FlowClient<C>,
+pub struct Finalize<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> {
+    tx_id: Id,
+    client: C,
     delay: Duration,
     timeout: futures_timer::Delay,
-    state: FinalizeState<'a, C>,
+    state: FinalizeState<Id, C>,
 }
 
-impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Finalize<'a, C> {
+impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Finalize<Id, C> {
     /// Creates a new instance of [`Finalize`] with the transaction's id, the client, the delay, and the timeout.
     pub fn new(
-        tx_id: &'a [u8],
-        client: &'a mut FlowClient<C>,
+        tx_id: Id,
+        mut client: C,
         delay: Duration,
         timeout: Duration,
-    ) -> Self {
+    ) -> Self where Id: Copy {
         let timeout = futures_timer::Delay::new(timeout);
-        let fut = client.send(GetTransactionRequest { id: tx_id });
+        let fut = client.send(GetTransactionRequest { id: tx_id.clone() });
 
         // transmute PinnedBox<dyn Future + 'a> to PinnedBox<dyn Future + 'static>
         //
@@ -53,8 +53,8 @@ impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Fi
     }
 }
 
-impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Future
-    for Finalize<'a, C>
+impl<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> Future
+    for Finalize<Id, C> where Self: Unpin, Id: Copy,
 {
     type Output = Result<Option<TransactionResultResponse>, C::Error>;
 
@@ -121,7 +121,7 @@ impl<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> Fu
     }
 }
 
-enum FinalizeState<'a, C: GrpcClient<GetTransactionRequest<'a>, TransactionResultResponse>> {
+enum FinalizeState<Id, C: GrpcClient<GetTransactionRequest<Id>, TransactionResultResponse>> {
     Request(Pin<Box<dyn Future<Output = Result<TransactionResultResponse, C::Error>>>>),
     Waiting(futures_timer::Delay),
 }
