@@ -20,8 +20,6 @@ pub use template::*;
 mod finalize;
 pub use finalize::*;
 
-use crate::trait_hack::Hack;
-
 /// Status of a transaction.
 #[derive(Enumeration, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransactionStatus {
@@ -133,17 +131,13 @@ pub struct SignatureD {
         Arguments: HasItem,
         <Arguments as HasItem>::Item: AsRef<[u8]>,
         for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-        for<'a> Hack<<&'a Arguments as IntoIterator>::IntoIter>: Clone,
         Authorizers: HasItem,
         <Authorizers as HasItem>::Item: AsRef<[u8]>,
         for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
-        for<'a> Hack<<&'a Authorizers as IntoIterator>::IntoIter>: Clone,
         PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
         for<'a> &'a PayloadSignatures: IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
-        for<'a> Hack<<&'a PayloadSignatures as IntoIterator>::IntoIter>: Clone,
         EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
         for<'a> &'a EnvelopeSignatures: IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
-        for<'a> Hack<<&'a EnvelopeSignatures as IntoIterator>::IntoIter>: Clone,
 ))]
 /// A transaction represents a unit of computation that is submitted to the Flow network.
 ///
@@ -162,7 +156,7 @@ pub struct TransactionE<
     /// Raw source code for a Cadence script, encoded as UTF-8 bytes
     pub script: Script,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |it| it.0.map(EncodeAsRef::new))))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(x, |x| x.into_iter().map(EncodeAsRef::new))))]
     /// Arguments passed to the Cadence script, encoded as JSON-Cadence bytes
     pub arguments: Arguments,
 
@@ -180,15 +174,15 @@ pub struct TransactionE<
     /// Address of the payer account
     pub payer: Payer,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |it| it.0.map(AsRef::as_ref))))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(x, |x| x.into_iter().map(AsRef::as_ref))))]
     /// Addresses of the transaction authorizers
     pub authorizers: Authorizers,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |it| it.0)))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(x, |x| x.into_iter())))]
     /// Signatures from all payload signer accounts
     pub payload_signatures: PayloadSignatures,
 
-    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(Hack(x.into_iter()), |it| it.0)))]
+    #[otopr(encode_via(wire_types::LengthDelimitedWire, RepeatedMap::new(x, |x| x.into_iter())))]
     /// Signatures from all envelope signer accounts
     pub envelope_signatures: EnvelopeSignatures,
 }

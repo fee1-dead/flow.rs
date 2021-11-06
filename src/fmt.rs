@@ -309,22 +309,18 @@ where
     Arguments: HasItem,
     <Arguments as HasItem>::Item: AsRef<[u8]>,
     for<'a> &'a Arguments: IntoIterator<Item = &'a <Arguments as HasItem>::Item>,
-    for<'a> <&'a Arguments as IntoIterator>::IntoIter: Clone,
 
     Authorizers: HasItem,
     <Authorizers as HasItem>::Item: AsRef<[u8]>,
     for<'a> &'a Authorizers: IntoIterator<Item = &'a <Authorizers as HasItem>::Item>,
-    for<'a> <&'a Authorizers as IntoIterator>::IntoIter: Clone,
 
     PayloadSignatures: HasItem<Item = SignatureE<PayloadSignatureAddress, PayloadSignature>>,
     for<'a> &'a PayloadSignatures:
         IntoIterator<Item = &'a SignatureE<PayloadSignatureAddress, PayloadSignature>>,
-    for<'a> <&'a PayloadSignatures as IntoIterator>::IntoIter: Clone,
 
     EnvelopeSignatures: HasItem<Item = SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
     for<'a> &'a EnvelopeSignatures:
         IntoIterator<Item = &'a SignatureE<EnvelopeSignatureAddress, EnvelopeSignature>>,
-    for<'a> <&'a EnvelopeSignatures as IntoIterator>::IntoIter: Clone,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         struct Signatures<'a, I>(I, PhantomData<&'a ()>);
