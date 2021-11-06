@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["PADDED_TRANSACTION_DOMAIN_TAG","The transaction domain tag, padded to 32 bytes."]],"struct":[["Account","An account."]],"type":[["DefaultAccount","An account that uses the default signing and hashing algorithms."]]});
