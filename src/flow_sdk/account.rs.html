@@ -695,6 +695,7 @@
 <span id="695">695</span>
 <span id="696">696</span>
 <span id="697">697</span>
+<span id="698">698</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Mutate the blockchain with your private key(s).</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module contains ways to log in to an account via secret key(s) and an Access API client.</span>
@@ -883,6 +884,7 @@
     <span class="doccomment">///  - the client returns any errors while making requests</span>
     <span class="doccomment">///  - the secret keys does not add up to the full weight to be able to sign (weight &lt; 1000)</span>
     <span class="doccomment">///  - could not find any public key of the account that matches one of the the secret key supplied.</span>
+    <span class="doccomment">///  - there were duplicate secret keys supplied</span>
     <span class="doccomment">///  - the algorithms for the signer and the hasher do not match with the public information of a key.</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new_multisign</span><span class="op">&lt;</span><span class="ident">Addr</span><span class="op">&gt;</span>(
         <span class="ident">client</span>: <span class="ident">Client</span>,
@@ -954,8 +956,7 @@
             }
         } <span class="kw">else</span> {
             <span class="comment">// Hashing can be expensive for small sets.</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">keys_found</span> <span class="op">=</span> <span class="number">0</span>;
-            <span class="kw">let</span> <span class="ident">public_keys_to_find</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">secret_keys</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">public_keys_to_find</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">secret_keys</span>
                 .<span class="ident">iter</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">sk</span><span class="op">|</span> <span class="ident">signer</span>.<span class="ident">to_public_key</span>(<span class="ident">sk</span>))
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">pk</span><span class="op">|</span> <span class="ident">signer</span>.<span class="ident">serialize_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>))
@@ -967,12 +968,13 @@
                     .<span class="ident">enumerate</span>()
                     .<span class="ident">find</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">pubkey</span>)<span class="op">|</span> <span class="kw-2">*</span><span class="ident">pubkey</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">key</span>.<span class="ident">public_key</span>)
                 {
-                    <span class="ident">keys_found</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="comment">// Do not allow duplicate secret keys</span>
+                    <span class="ident">public_keys_to_find</span>.<span class="ident">swap_remove</span>(<span class="ident">index</span>);
                     <span class="ident">add_key</span>(<span class="ident">index</span>, <span class="ident">key</span>.<span class="ident">index</span>, <span class="ident">key</span>.<span class="ident">weight</span>);
                 }
             }
 
-            <span class="kw">if</span> <span class="ident">keys_found</span> <span class="op">!</span><span class="op">=</span> <span class="ident">public_keys_to_find</span>.<span class="ident">len</span>() {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">public_keys_to_find</span>.<span class="ident">is_empty</span>() {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::NoMatchingKeyFound</span>);
             }
         }

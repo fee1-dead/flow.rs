@@ -70,6 +70,8 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Errors</span>
 
 <span class="kw">use</span> <span class="ident">std::error::Error</span>;
@@ -83,6 +85,8 @@
 <span class="attribute">#[<span class="ident">non_exhaustive</span>]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">AccountError</span> {
     <span class="doccomment">/// There was not any public keys that matched the provided private key.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This could happen if you have provided duplicate secret keys.</span>
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Could not find a matching key for the private key.&quot;</span>)]</span>
     <span class="ident">NoMatchingKeyFound</span>,
 
