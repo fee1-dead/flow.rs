@@ -11,6 +11,8 @@ pub struct BoxError(Box<dyn Error + Send + Sync>);
 #[non_exhaustive]
 pub enum AccountError {
     /// There was not any public keys that matched the provided private key.
+    ///
+    /// This could happen if you have provided duplicate secret keys.
     #[error("Could not find a matching key for the private key.")]
     NoMatchingKeyFound,
 

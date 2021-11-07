@@ -186,6 +186,7 @@ where
     ///  - the client returns any errors while making requests
     ///  - the secret keys does not add up to the full weight to be able to sign (weight < 1000)
     ///  - could not find any public key of the account that matches one of the the secret key supplied.
+    ///  - there were duplicate secret keys supplied
     ///  - the algorithms for the signer and the hasher do not match with the public information of a key.
     pub async fn new_multisign<Addr>(
         client: Client,
@@ -257,8 +258,7 @@ where
             }
         } else {
             // Hashing can be expensive for small sets.
-            let mut keys_found = 0;
-            let public_keys_to_find: Vec<_> = secret_keys
+            let mut public_keys_to_find: Vec<_> = secret_keys
                 .iter()
                 .map(|sk| signer.to_public_key(sk))
                 .map(|pk| signer.serialize_public_key(&pk))
@@ -270,12 +270,13 @@ where
                     .enumerate()
                     .find(|(_, pubkey)| *pubkey == &*key.public_key)
                 {
-                    keys_found += 1;
+                    // Do not allow duplicate secret keys
+                    public_keys_to_find.swap_remove(index);
                     add_key(index, key.index, key.weight);
                 }
             }
 
-            if keys_found != public_keys_to_find.len() {
+            if !public_keys_to_find.is_empty() {
                 return Err(Error::NoMatchingKeyFound);
             }
         }
