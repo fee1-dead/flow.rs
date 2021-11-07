@@ -1,8 +1,9 @@
 use super::algorithms::*;
 use super::client::*;
 use super::immediate_fut;
+use crate::account::*;
 
-type MockAccount = crate::account::Account<MockClient, MockKey, MockSigner, MockHasher>;
+type MockAccount = Account<MockClient, MockKey, MockSigner, MockHasher>;
 
 #[test]
 fn test_account_new() {
@@ -19,4 +20,16 @@ fn test_account_new() {
         signatures.next()
     );
     assert_eq!(None, signatures.next());
+
+    let res = immediate_fut(MockAccount::new(MockClient, &[0x01], [0; 64]));
+
+    assert!(matches!(res, Err(Error::NoMatchingKeyFound)));
+
+    let res = immediate_fut(MockAccount::new(MockClient, &[0x01], ACC01_KEY_NOWEIGHT));
+
+    assert!(matches!(res, Err(Error::NotEnoughWeight)));
+
+    let res = immediate_fut(MockAccount::new(MockClient, &[0x01], ACC01_KEY_REVOKED));
+
+    assert!(matches!(res, Err(Error::KeyRevoked)));
 }

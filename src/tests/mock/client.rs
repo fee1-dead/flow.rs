@@ -12,20 +12,52 @@ pub const ACC01_KEY: [u8; 64] = {
     base
 };
 
+pub const ACC01_KEY_NOWEIGHT: [u8; 64] = {
+    let mut base = [0; 64];
+    base[0] = 0x03;
+    base
+};
+
+pub const ACC01_KEY_REVOKED: [u8; 64] = {
+    let mut base = [0; 64];
+    base[0] = 0x04;
+    base
+};
+
 fn acc_01() -> Account {
     Account {
         address: [0x01].into(),
         balance: 1337,
         code: [].into(),
-        keys: vec![AccountKey {
-            index: 0,
-            public_key: ACC01_KEY.into(),
-            sign_algo: Secp256k1::CODE,
-            hash_algo: Sha3::CODE,
-            weight: 1000,
-            sequence_number: 42,
-            revoked: false,
-        }]
+        keys: vec![
+            AccountKey {
+                index: 0,
+                public_key: ACC01_KEY.into(),
+                sign_algo: Secp256k1::CODE,
+                hash_algo: Sha3::CODE,
+                weight: 1000,
+                sequence_number: 42,
+                revoked: false,
+            },
+            AccountKey {
+                index: 1,
+                public_key: ACC01_KEY_NOWEIGHT.into(),
+                sign_algo: Secp256k1::CODE,
+                hash_algo: Sha3::CODE,
+                weight: 0,
+                sequence_number: 42,
+                revoked: false,
+            },
+            AccountKey {
+                index: 1,
+                public_key: ACC01_KEY_REVOKED.into(),
+                sign_algo: Secp256k1::CODE,
+                hash_algo: Sha3::CODE,
+                weight: 1000,
+                sequence_number: 42,
+                revoked: true,
+            },
+        ]
         .into(),
         contracts: Default::default(),
     }
