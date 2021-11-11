@@ -143,7 +143,7 @@ transaction(greeting: String) {
   }
 
   execute {
-    log(greeting.concat(",").concat(guest.toString()))
+    log(greeting.concat(",").concat(self.guest.toString()))
   }
 }
 ```
