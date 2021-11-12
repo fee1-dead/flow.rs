@@ -34,7 +34,7 @@ Add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-flow-sdk = "0.1.0"
+flow-sdk = "1.0.0"
 ```
 
 ## Connect
